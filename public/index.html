@@ -429,6 +429,39 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
   .hello h1{font-size:24px}
 }
 
+/* ---------- dados reais ---------- */
+.data-band{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px max(20px,env(safe-area-inset-right,0px)) 9px max(20px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);background:var(--surface-2);font-size:13px;color:var(--muted-2)}
+.data-band.demo{background:var(--warn-soft);color:var(--ink)}
+.data-band.demo svg{color:var(--warn)}
+.data-band.err{background:var(--bad-soft);color:var(--ink)}
+.data-band.err svg{color:var(--bad)}
+.data-band.live{background:var(--surface)}
+.band-src{display:flex;gap:6px;flex-wrap:wrap;min-width:0}
+.band-err{color:var(--bad);font-weight:600;flex:1;min-width:200px}
+.data-band .band-note{flex:1}
+.data-band.live .btn{margin-left:auto}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--line-2);border-top-color:var(--accent);animation:spin .8s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:18px;counter-reset:st}
+.steps>li{position:relative;padding-left:36px;counter-increment:st;color:var(--muted)}
+.steps>li::before{content:counter(st);position:absolute;left:0;top:-1px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:var(--surface-2);border:1px solid var(--line-2);color:var(--muted-2)}
+.steps>li.on,.steps>li.done{color:var(--ink)}
+.steps>li.on::before{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.steps>li.done::before{content:"✓";background:var(--good-soft);border-color:var(--good);color:var(--good)}
+.steps>li>b{font-size:14px}
+.help{margin-top:10px;font-size:12.5px;color:var(--muted-2)}
+.help summary{cursor:pointer;font-weight:600;color:var(--accent-ink)}
+.help p{margin-top:8px;line-height:1.55}
+.help a{color:var(--accent-ink);font-weight:600}
+.acc-list{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto}
+.acc-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;cursor:pointer;background:var(--surface)}
+.acc-opt:hover{background:var(--surface-2)}
+.acc-opt.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.acc-opt b{display:block;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acc-opt .mono{color:var(--muted)}
+.acc-opt input{accent-color:var(--accent);flex:none}
+.auth-link{margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-radius:10px;background:var(--accent-soft);color:var(--ink);font-size:13px}
+
 /* ---------- IA conectada ---------- */
 .prov-dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
 .ai-badge{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;border:1px solid var(--line-2);background:var(--surface);font-size:12px;font-weight:600;color:var(--ink);min-width:0;max-width:240px}
@@ -460,12 +493,17 @@ const { useState, useEffect, useRef, useMemo, Fragment } = React;
 const html = htm.bind(React.createElement);
 
 /* ================= helpers ================= */
-const fmtInt = n => Math.round(n).toLocaleString("pt-BR");
-const brl = n => "R$ " + Math.round(n).toLocaleString("pt-BR");
-const brl2 = n => "R$ " + n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const dec = (n, d = 2) => n.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
+const fin = n => typeof n === "number" && isFinite(n);
+const fmtInt = n => fin(n) ? Math.round(n).toLocaleString("pt-BR") : "—";
+const brl = n => fin(n) ? "R$ " + Math.round(n).toLocaleString("pt-BR") : "—";
+const brl2 = n => fin(n) ? "R$ " + n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—";
+const dec = (n, d = 2) => fin(n) ? n.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) : "—";
 const pct = (n, d = 1) => dec(n * 100, d) + "%";
-const xroas = n => dec(n, 2) + "x";
+const xroas = n => fin(n) ? dec(n, 2) + "x" : "n/d";
+// ROAS de uma campanha; Google Ads (via MCP) não informa receita, então fica sem ROAS
+const roasOf = c => c.noRev ? NaN : c.revenue / c.spend;
+// ROAS do período anterior; com dados reais, só sobre o investimento das campanhas que informam receita
+const prevRoas = () => ACTIVE.prev.tracked !== undefined ? ACTIVE.prev.revenue / ACTIVE.prev.tracked : ACTIVE.prev.revenue / ACTIVE.prev.spend;
 const kfmt = n => n >= 1e6 ? dec(n / 1e6, 2) + " mi" : n >= 1e3 ? dec(n / 1e3, 1) + " mil" : fmtInt(n);
 const delta = (a, b) => (a - b) / b;
 const store = {
@@ -592,8 +630,8 @@ const MONTH_BUDGET = 90000, MONTH_SPENT = 50400, MONTH_ELAPSED = 18 / 31;
 
 const chPresent = camps => ["meta", "google", "tiktok"].filter(k => camps.some(c => c.ch === k));
 function totals(list) {
-  const t = list.reduce((a, c) => ({ spend: a.spend + c.spend, revenue: a.revenue + c.revenue, purchases: a.purchases + c.purchases, clicks: a.clicks + c.clicks, impr: a.impr + c.impr }), { spend: 0, revenue: 0, purchases: 0, clicks: 0, impr: 0 });
-  return { ...t, roas: t.revenue / t.spend, cpa: t.spend / t.purchases, ctr: t.clicks / t.impr, ticket: t.revenue / t.purchases };
+  const t = list.reduce((a, c) => ({ spend: a.spend + c.spend, revenue: a.revenue + c.revenue, purchases: a.purchases + c.purchases, clicks: a.clicks + c.clicks, impr: a.impr + c.impr, tracked: a.tracked + (c.noRev ? 0 : c.spend) }), { spend: 0, revenue: 0, purchases: 0, clicks: 0, impr: 0, tracked: 0 });
+  return { ...t, roas: t.revenue / t.tracked, cpa: t.spend / t.purchases, ctr: t.clicks / t.impr, ticket: t.revenue / t.purchases };
 }
 const DAYS = (() => { const out = []; const end = new Date(2026, 9, 18); for (let i = 29; i >= 0; i--) { const d = new Date(end); d.setDate(end.getDate() - i); out.push(d); } return out; })();
 const dayLbl = d => String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0");
@@ -673,7 +711,7 @@ function scaleCamps(p) {
 function portfolioRows() {
   return PORTFOLIO.map((p, pi) => {
     const camps = scaleCamps(p); const t = totals(camps); const pace = p.spent / p.budget; const over = pace - MONTH_ELAPSED;
-    const bad = camps.filter(c => c.status === "ativa" && c.revenue / c.spend < 1.5).sort((a, b) => b.spend - a.spend);
+    const bad = camps.filter(c => c.status === "ativa" && roasOf(c) < 1.5).sort((a, b) => b.spend - a.spend);
     const waste7 = bad.reduce((a, c) => a + c.spend * 7 / 30, 0);
     const issues = [...p.issues];
     if (bad.length && waste7 >= 1000) issues.push({ t: "waste", ch: bad[0].ch, text: (bad.length > 1 ? bad.length + " campanhas" : "“" + bad[0].name + "”") + " com ROAS abaixo de 1,5x: " + brl(waste7) + " em 7 dias", act: "Ver campanhas", go: "campaigns" });
@@ -736,22 +774,23 @@ async function aiCall(payload, key) {
 }
 
 // Dados da conta aberta, enviados para a IA a cada pergunta
-function aiContext({ camps, screen, account, isAgency, rows, insights, budget, detail }) {
+function aiContext({ camps, screen, account, isAgency, rows, insights, budget, detail, live }) {
   const t = totals(camps);
   const r2 = n => Math.round(n * 100) / 100;
   const data = {
     conta: account,
     tela_atual: routeInfo(screen).label || screen,
-    periodo: "últimos 30 dias (19/09 a 18/10/2026)",
+    fonte: live ? "dados reais das contas conectadas" : "dados de exemplo (nenhuma conta conectada)",
+    periodo: live ? "últimos 30 dias" : "últimos 30 dias (19/09 a 18/10/2026)",
     moeda: "BRL",
     meta_roas: ACTIVE.target,
     saude_da_conta: ACTIVE.health,
     totais: { investimento: Math.round(t.spend), receita: Math.round(t.revenue), compras: t.purchases, roas: r2(t.roas), cpa: r2(t.cpa), ctr_pct: r2(t.ctr * 100), ticket_medio: r2(t.ticket) },
     periodo_anterior: { investimento: Math.round(ACTIVE.prev.spend), receita: Math.round(ACTIVE.prev.revenue), compras: Math.round(ACTIVE.prev.purchases) },
-    orcamento_do_mes: { total: budget.total, gasto_ate_agora: budget.spent, pct_do_mes_decorrido: Math.round(MONTH_ELAPSED * 100) },
+    orcamento_do_mes: budget ? { total: budget.total, gasto_ate_agora: budget.spent, pct_do_mes_decorrido: Math.round(MONTH_ELAPSED * 100) } : "não informado",
     campanhas: camps.map(c => ({
       id: c.id, nome: c.name, canal: CH[c.ch].label, status: c.status, orcamento_diario: c.budget,
-      investimento: c.spend, receita: c.revenue, compras: c.purchases, roas: r2(c.revenue / c.spend), cpa: r2(c.spend / c.purchases),
+      investimento: c.spend, receita: c.revenue, compras: c.purchases, roas: r2(roasOf(c)), cpa: r2(c.spend / c.purchases),
       ctr_pct: r2(c.clicks / c.impr * 100), frequencia: c.freq || null, variacao_receita_7d_pct: Math.round(c.d7 * 100), limitada_por_orcamento: !!c.limited,
     })),
     insights_do_dia: insights.map(i => ({ tipo: i.tag, titulo: i.title, detalhe: i.body })),
@@ -776,6 +815,7 @@ function aiSystem(data, screens, isAgency) {
     "Você é o Copilot de Marketing da ReadyAI, assistente de gestores de tráfego pago (Meta Ads, Google Ads e TikTok Ads).",
     "Responda sempre em português do Brasil, de forma direta e prática, como um analista sênior de mídia paga.",
     "Use SOMENTE os números em DADOS. Não invente métricas; se algo não estiver nos dados, diga que essa informação não está disponível.",
+    "Campanhas com roas null (Google Ads) não informam receita: avalie essas pelo CPA e pelas conversões.",
     "Valores em reais. ROAS = receita / investimento. A meta de ROAS da conta está em meta_roas. Formate no padrão brasileiro (R$ 12.300, 3,45x, 12%).",
     "",
     "FORMATO: devolva APENAS um objeto JSON válido, sem markdown e sem texto fora dele, com os campos:",
@@ -1004,6 +1044,7 @@ function ThemeToggle({ withLabel }) {
 
 /* ================= UI bits ================= */
 function Delta({ v, invert }) {
+  if (!fin(v)) return null;
   const good = invert ? v < 0 : v > 0;
   return html`<span className=${"delta " + (good ? "up" : "down")}><${Icon} n=${v > 0 ? "up" : "down"} s=${13} />${pct(Math.abs(v), 1)}</span>`;
 }
@@ -1078,7 +1119,7 @@ function HomeCopilot({ user, client, chat, camps, insights, go }) {
   const t = totals(camps);
   const byCh = chPresent(camps).map(k => [k, totals(camps.filter(c => c.ch === k))]);
   const maxR = Math.max(...byCh.map(([, v]) => v.roas));
-  const hour = 9;
+  const hour = new Date().getHours();
   const first = (user.name || "").split(" ")[0];
   const pace = MONTH_SPENT / MONTH_BUDGET;
   return html`<${Fragment}>
@@ -1100,7 +1141,7 @@ function HomeCopilot({ user, client, chat, camps, insights, go }) {
       <div className="mini-kpis">
         <div><small>Investimento 30d</small><b className="num">${brl(t.spend)}</b><br /><${Delta} v=${delta(t.spend, ACTIVE.prev.spend)} invert /></div>
         <div><small>Receita 30d</small><b className="num">${brl(t.revenue)}</b><br /><${Delta} v=${delta(t.revenue, ACTIVE.prev.revenue)} /></div>
-        <div><small>ROAS</small><b className="num">${xroas(t.roas)}</b><br /><${Delta} v=${delta(t.roas, ACTIVE.prev.revenue / ACTIVE.prev.spend)} /></div>
+        <div><small>ROAS</small><b className="num">${xroas(t.roas)}</b><br /><${Delta} v=${delta(t.roas, prevRoas())} /></div>
         <div><small>CPA</small><b className="num">${brl2(t.cpa)}</b><br /><${Delta} v=${delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases)} invert /></div>
       </div>
       <div><div className="ins-top" style=${{ marginBottom: 10 }}><div className="eyebrow">Precisa da sua atenção</div><button className="link-btn" onClick=${() => go("insights")}>Ver todos</button></div>
@@ -1111,11 +1152,11 @@ function HomeCopilot({ user, client, chat, camps, insights, go }) {
           <div className="bar-track" style=${{ position: "relative" }}><div className="bar-fill" style=${{ width: (v.roas / (maxR * 1.1) * 100) + "%", background: CH[k].color }}></div>
             <span style=${{ position: "absolute", top: -3, bottom: -3, left: (ACTIVE.target / (maxR * 1.1) * 100) + "%", borderLeft: "1.5px dashed var(--ink)" }}></span></div>
           <b className="num" style=${{ textAlign: "right" }}>${xroas(v.roas)}</b></div>`)}</div></div>
-      <div className="card card-pad"><div className="card-head"><div><div className="card-title">Ritmo do orçamento de outubro</div><div className="card-sub">${brl(MONTH_SPENT)} de ${brl(MONTH_BUDGET)} · ${pct(MONTH_ELAPSED, 0)} do mês</div></div>
+      ${ACTIVE.live ? null : html`<div className="card card-pad"><div className="card-head"><div><div className="card-title">Ritmo do orçamento de outubro</div><div className="card-sub">${brl(MONTH_SPENT)} de ${brl(MONTH_BUDGET)} · ${pct(MONTH_ELAPSED, 0)} do mês</div></div>
         <span className="pill pill-good">No ritmo</span></div>
         <div className="bar-track" style=${{ height: 12, position: "relative" }}><div className="bar-fill" style=${{ width: pct(pace, 1).replace(",", "."), background: "var(--accent)" }}></div>
-          <span style=${{ position: "absolute", top: -3, bottom: -3, left: (MONTH_ELAPSED * 100) + "%", borderLeft: "1.5px dashed var(--ink)" }}></span></div></div>
-      <span className="demo-note"><${Icon} n="eye" s=${13} />Dados de exemplo · últimos 30 dias (19/09 a 18/10)</span>
+          <span style=${{ position: "absolute", top: -3, bottom: -3, left: (MONTH_ELAPSED * 100) + "%", borderLeft: "1.5px dashed var(--ink)" }}></span></div></div>`}
+      <${DataNote} home />
     </aside>
   <//>`;
 }
@@ -1134,31 +1175,31 @@ function Overview({ camps }) {
   const spend = useMemo(() => series(t.spend, 11, .1, .12), [t.spend]);
   const byCh = chPresent(camps).map(k => [k, totals(camps.filter(c => c.ch === k))]);
   const top = [...camps].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
-  const funnel = [["Impressões", t.impr], ["Cliques", t.clicks], ["Adições ao carrinho", 8640], ["Checkouts iniciados", 3910], ["Compras", t.purchases]];
+  const funnel = ACTIVE.live ? [["Impressões", t.impr], ["Cliques", t.clicks], ["Compras e conversões", t.purchases]] : [["Impressões", t.impr], ["Cliques", t.clicks], ["Adições ao carrinho", 8640], ["Checkouts iniciados", 3910], ["Compras", t.purchases]];
   return html`<div className="stack">
-    <${PageHead} title="Visão geral" sub="Todos os canais somados nos últimos 30 dias, comparados com os 30 dias anteriores." right=${html`<span className="demo-note"><${Icon} n="eye" s=${13} />Dados de exemplo</span>`} />
+    <${PageHead} title="Visão geral" sub="Todos os canais somados nos últimos 30 dias, comparados com os 30 dias anteriores." right=${html`<${DataNote} />`} />
     <div className="grid g4">
       <${Kpi} label="Investimento" value=${brl(t.spend)} d=${delta(t.spend, ACTIVE.prev.spend)} invert />
       <${Kpi} label="Receita" value=${brl(t.revenue)} d=${delta(t.revenue, ACTIVE.prev.revenue)} />
-      <${Kpi} label="ROAS" value=${xroas(t.roas)} d=${delta(t.roas, ACTIVE.prev.revenue / ACTIVE.prev.spend)} hint=${"Meta da conta: " + xroas(ACTIVE.target)} />
+      <${Kpi} label="ROAS" value=${xroas(t.roas)} d=${delta(t.roas, prevRoas())} hint=${"Meta da conta: " + xroas(ACTIVE.target)} />
       <${Kpi} label="CPA" value=${brl2(t.cpa)} d=${delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases)} invert hint=${fmtInt(t.purchases) + " compras · ticket " + brl(t.ticket)} />
     </div>
-    <div className="grid g-21">
-      <div className="card card-pad"><div className="card-head"><div><div className="card-title">Receita x investimento por dia</div><div className="card-sub">Soma de Meta, Google e TikTok</div></div>
+    <div className=${ACTIVE.live ? "grid" : "grid g-21"}>
+      ${ACTIVE.live ? null : html`<div className="card card-pad"><div className="card-head"><div><div className="card-title">Receita x investimento por dia</div><div className="card-sub">Soma de Meta, Google e TikTok</div></div>
         <div style=${{ display: "flex", gap: 14, fontSize: 12.5, color: "var(--muted-2)" }}><span style=${{ display: "inline-flex", gap: 6, alignItems: "center" }}><span className="ch-dot" style=${{ background: "var(--accent)" }}></span>Receita</span><span style=${{ display: "inline-flex", gap: 6, alignItems: "center" }}><span className="ch-dot" style=${{ background: "var(--c-spend)" }}></span>Investimento</span></div></div>
         <${LineChart} labels=${DAYS.map(dayLbl)} sets=${[{ values: rev, color: "var(--accent)", area: true }, { values: spend, color: "var(--c-spend)", dash: true }]} />
-      </div>
+      </div>`}
       <div className="card card-pad"><div className="card-head"><div><div className="card-title">Investimento por canal</div><div className="card-sub">Participação e ROAS</div></div></div>
         <div className="stack" style=${{ gap: 14 }}>${byCh.map(([k, v]) => html`<div key=${k} className="stack" style=${{ gap: 6 }}>
           <div style=${{ display: "flex", justifyContent: "space-between", gap: 8 }}><${ChTag} ch=${k} /><span className="num" style=${{ fontSize: 13 }}><b>${brl(v.spend)}</b> · ${pct(v.spend / t.spend, 0)}</span></div>
           <div className="bar-track"><div className="bar-fill" style=${{ width: (v.spend / t.spend * 100) + "%", background: CH[k].color }}></div></div>
-          <div className="card-sub num">Receita ${brl(v.revenue)} · ROAS <b style=${{ color: v.roas >= ACTIVE.target ? "var(--good)" : "var(--bad)" }}>${xroas(v.roas)}</b></div></div>`)}</div>
+          <div className="card-sub num">${v.tracked ? "Receita " + brl(v.revenue) : fmtInt(v.purchases) + " conversões · CPA " + brl2(v.cpa)} · ROAS <b style=${{ color: !fin(v.roas) ? "var(--muted)" : v.roas >= ACTIVE.target ? "var(--good)" : "var(--bad)" }}>${xroas(v.roas)}</b></div></div>`)}</div>
       </div>
     </div>
     <div className="grid g-21">
       <div className="card card-pad"><div className="card-head"><div><div className="card-title">Campanhas com mais receita</div></div></div>
         <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Campanha</th><th>Canal</th><th className="r">Investido</th><th className="r">Receita</th><th className="r">ROAS</th></tr></thead>
-        <tbody>${top.map(c => html`<tr key=${c.id}><td><span className="cname">${c.name}</span></td><td><${ChTag} ch=${c.ch} /></td><td className="r num">${brl(c.spend)}</td><td className="r num">${brl(c.revenue)}</td><td className="r num"><b style=${{ color: "var(--ink)" }}>${xroas(c.revenue / c.spend)}</b></td></tr>`)}</tbody></table></div>
+        <tbody>${top.map(c => html`<tr key=${c.id}><td><span className="cname">${c.name}</span></td><td><${ChTag} ch=${c.ch} /></td><td className="r num">${brl(c.spend)}</td><td className="r num">${brl(c.revenue)}</td><td className="r num"><b style=${{ color: "var(--ink)" }}>${xroas(roasOf(c))}</b></td></tr>`)}</tbody></table></div>
       </div>
       <div className="card card-pad"><div className="card-head"><div><div className="card-title">Funil de tráfego</div><div className="card-sub">Taxa em relação à etapa anterior</div></div></div>
         <div className="stack" style=${{ gap: 10 }}>${funnel.map(([l, v], i) => html`<div key=${l} className="stack" style=${{ gap: 4 }}>
@@ -1172,7 +1213,7 @@ function Overview({ camps }) {
 function Analytics({ camps }) {
   const t = totals(camps);
   return html`<div className="stack">
-    <${PageHead} title="Performance analítica" sub="Quando, onde e para quem suas campanhas vendem." right=${html`<span className="demo-note"><${Icon} n="eye" s=${13} />Dados de exemplo</span>`} />
+    <${PageHead} title="Performance analítica" sub="Quando, onde e para quem suas campanhas vendem." right=${html`<${DataNote} partial="Indicadores reais; horário, público e região ainda de exemplo" />`} />
     <div className="grid g4">
       <${Kpi} label="CTR médio" value=${pct(t.ctr, 2)} d=${delta(t.ctr, ACTIVE.prev.clicks / ACTIVE.prev.impr)} />
       <${Kpi} label="CPC médio" value=${brl2(t.spend / t.clicks)} d=${delta(t.spend / t.clicks, ACTIVE.prev.spend / ACTIVE.prev.clicks)} invert />
@@ -1196,7 +1237,8 @@ function Analytics({ camps }) {
 }
 
 function recFor(c) {
-  const roas = c.revenue / c.spend;
+  if (c.noRev) return c.status !== "ativa" ? { k: "keep", label: "Manter pausada", pill: "pill-mute", icon: "pause", why: "Sem valor de conversão" } : { k: "keep", label: "Acompanhar", pill: "pill-mute", icon: "eye", why: c.ch === "google" ? "Sem valor de conversão: avalie pelo CPA" : "Campanha sem venda: avalie pelo custo por " + (c.result === "leads" ? "lead" : c.result === "conversas" ? "conversa" : "resultado") };
+  const roas = roasOf(c);
   if (c.status !== "ativa") return roas >= ACTIVE.target
     ? { k: "reactivate", label: "Reativar", pill: "pill-info", icon: "play", why: "ROAS de " + xroas(roas) + " quando estava ativa" }
     : { k: "keep", label: "Manter pausada", pill: "pill-mute", icon: "pause", why: "Estava abaixo da meta" };
@@ -1218,7 +1260,7 @@ function Campaigns({ camps, setCamps, toast, chat }) {
   const [pending, setPending] = useState(null);
   const withRec = camps.map(c => ({ ...c, rec: recFor(c) }));
   const list = withRec.filter(c => (ch === "all" || c.ch === ch) && (st === "all" || c.status === st) && (rf === "all" || c.rec.k === rf))
-    .sort((a, b) => sort === "rec" ? (REC_ORDER[a.rec.k] - REC_ORDER[b.rec.k]) || (b.spend - a.spend) : sort === "roas" ? b.revenue / b.spend - a.revenue / a.spend : b.spend - a.spend);
+    .sort((a, b) => sort === "rec" ? (REC_ORDER[a.rec.k] - REC_ORDER[b.rec.k]) || (b.spend - a.spend) : sort === "roas" ? (roasOf(b) || 0) - (roasOf(a) || 0) : b.spend - a.spend);
   const t = totals(list.length ? list : camps);
   const count = k => withRec.filter(c => c.rec.k === k).length;
   const freed = withRec.filter(c => c.rec.k === "pause").reduce((a, c) => a + c.budget, 0);
@@ -1237,7 +1279,7 @@ function Campaigns({ camps, setCamps, toast, chat }) {
     if (r.k === "pause") return html`<button className="btn btn-sm btn-danger" onClick=${() => setPending({ id: c.id, kind: "pause" })}><${Icon} n="pause" s=${13} />Pausar</button>`;
     if (r.k === "scale") return html`<button className="btn btn-sm btn-good" onClick=${() => setPending({ id: c.id, kind: "scale" })}><${Icon} n="up" s=${13} />Escalar +20%</button>`;
     if (r.k === "reactivate") return html`<button className="btn btn-sm btn-line" onClick=${() => setPending({ id: c.id, kind: "reactivate" })}><${Icon} n="play" s=${13} />Reativar</button>`;
-    if (r.k === "review") return html`<button className="btn btn-sm btn-line" onClick=${() => chat.send("Por que a campanha " + c.name + " está com ROAS de " + xroas(c.revenue / c.spend) + "?", true)}><${Icon} n="sparkles" s=${13} />Analisar</button>`;
+    if (r.k === "review") return html`<button className="btn btn-sm btn-line" onClick=${() => chat.send("Por que a campanha " + c.name + " está com ROAS de " + xroas(roasOf(c)) + "?", true)}><${Icon} n="sparkles" s=${13} />Analisar</button>`;
     return html`<span style=${{ color: "var(--muted)", fontSize: 12.5 }}>Nada a fazer</span>`;
   };
   const confirmText = (c, kind) => kind === "pause" ? "Pausar “" + c.name + "”? Isso libera " + brl(c.budget) + "/dia de orçamento."
@@ -1264,7 +1306,7 @@ function Campaigns({ camps, setCamps, toast, chat }) {
     </div>
     <div className="card card-pad"><div className="tbl-wrap" style=${{ marginTop: -18 }}><table className="tbl camp-tbl">
       <thead><tr><th>Campanha</th><th>Ligada</th><th className="r">Orçamento/dia</th><th className="r">Investido</th><th className="r">CPA</th><th>ROAS x meta</th><th>7 dias</th><th>Recomendação</th><th>Ação</th></tr></thead>
-      <tbody>${list.map(c => { const roas = c.revenue / c.spend; const sp = series(c.revenue, c.id.length * 13 + c.spend % 97, c.d7 * 2, .3).slice(-14); const on = c.status === "ativa";
+      <tbody>${list.map(c => { const roas = roasOf(c); const sp = series(c.revenue, c.id.length * 13 + c.spend % 97, c.d7 * 2, .3).slice(-14); const on = c.status === "ativa";
         const sev = { pause: "var(--bad)", review: "var(--warn)", scale: "var(--good)", reactivate: "var(--accent)" }[c.rec.k];
         return html`<${Fragment} key=${c.id}><tr className=${on ? "" : "off"}>
           <td style=${{ boxShadow: sev ? "inset 3px 0 0 " + sev : "none" }}><span className="cname" title=${c.name}>${c.name}</span><span style=${{ display: "flex", gap: 8, alignItems: "center", marginTop: 3 }}><${ChTag} ch=${c.ch} />${c.limited ? html`<span className="pill pill-info" style=${{ height: 19, fontSize: 11 }}>Limitada pelo orçamento</span>` : null}</span></td>
@@ -1367,7 +1409,7 @@ function Creatives({ camps }) {
         <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, flexWrap: "wrap" }}><${ChTag} ch=${k.ch} /><span className=${"pill " + st[k.status][0]}>${st[k.status][1]}</span></div>
         <div className="cre-stats"><div><small>ROAS</small><b className="num">${xroas(k.roas)}</b></div><div><small>CTR</small><b className="num">${pct(k.ctr, 1)}</b></div><div><small>${k.hook != null ? "Retenção 3s" : "Investido"}</small><b className="num">${k.hook != null ? pct(k.hook, 0) : brl(k.spend)}</b></div></div>
       </div></article>`)}</div>`}
-    <p className="demo-note"><${Icon} n="image" s=${13} />Ilustrações de exemplo. Com as contas conectadas, aparecem as imagens e vídeos reais dos anúncios.</p>
+    <p className="demo-note"><${Icon} n="image" s=${13} />${ACTIVE.live ? "Ranking de criativos ainda com dados de exemplo. A leitura dos anúncios reais entra na próxima etapa." : "Ilustrações de exemplo. Com as contas conectadas, aparecem as imagens e vídeos reais dos anúncios."}</p>
   </div>`;
 }
 
@@ -1528,30 +1570,276 @@ function Insights({ insights, chat, go }) {
     ${list.length === 0 ? html`<p style=${{ color: "var(--muted)" }}>Nenhum insight nessa categoria agora.</p>` : null}
   </div>`;
 }
-function Integrations() {
-  const items = [
-    ["Meta Ads", "Campanhas, conjuntos, anúncios e criativos", "on", "Conta 1029384756 · Loja Aurora"],
-    ["Google Ads", "Search, PMax, Shopping e YouTube", "on", "Customer ID 482-193-0571"],
-    ["TikTok Ads", "Campanhas e Spark Ads", "on", "Advertiser 7301928374"],
-    // Canais preparados, mas ocultos e desabilitados por enquanto
-    ["LinkedIn Ads", "Campanhas B2B e Lead Gen Forms", "off", "Não conectado", true],
-    ["Pinterest Ads", "Pins promovidos e catálogo", "off", "Não conectado", true],
-    ["Kwai Ads", "Campanhas de vídeo curto", "off", "Não conectado", true],
-    ["Google Analytics 4", "Sessões, receita e atribuição do site", "off", "Não conectado"],
-    ["WhatsApp Business", "Conversas e CRM de vendas", "soon", "Disponível em breve"],
+function Integrations({ client, onUpdate, toast, isAgency, live }) {
+  const others = [
+    ["Google Analytics 4", "Sessões, receita e atribuição do site", "Ainda sem conector"],
+    ["WhatsApp Business", "Conversas e CRM de vendas", "Disponível em breve"],
   ];
   return html`<div className="stack">
     <${PageHead} title="Integrações" sub="Contas que o painel, o copilot e as inteligências do agente usam. Alterações nas contas sempre pedem sua confirmação." />
+    <${AdIntegrations} client=${client} onUpdate=${onUpdate} toast=${toast} isAgency=${isAgency} live=${live} />
     <${AIIntegrations} />
-    <div className="eyebrow" style=${{ marginTop: 6 }}>Plataformas de anúncio e dados</div>
-    <div className="grid g2">${items.filter(x => !x[4]).map(([n, d, s, a]) => html`<article key=${n} className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title">${n}</div><div className="card-sub">${d}</div></div>
-        <span className=${"pill " + (s === "on" ? "pill-good" : s === "soon" ? "pill-violet" : "pill-mute")}>${s === "on" ? html`<span className="dot"></span>Conectado` : s === "soon" ? "Em breve" : "Não conectado"}</span></div>
-      <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}><span className="mono" style=${{ color: "var(--muted)" }}>${a}</span>
-        ${s === "soon" ? null : html`<button className="btn btn-sm btn-line">${s === "on" ? "Gerenciar" : "Conectar"}</button>`}</div>
+    <div className="eyebrow" style=${{ marginTop: 6 }}>Outras fontes</div>
+    <div className="grid g2">${others.map(([n, d, a]) => html`<article key=${n} className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title">${n}</div><div className="card-sub">${d}</div></div><span className="pill pill-violet">Em breve</span></div>
+      <span className="mono" style=${{ color: "var(--muted)" }}>${a}</span>
     </article>`)}</div>
   </div>`;
 }
+function DataNote({ partial, home }) {
+  if (!ACTIVE.live) return html`<span className="demo-note"><${Icon} n="eye" s=${13} />${home ? "Dados de exemplo · últimos 30 dias (19/09 a 18/10)" : "Dados de exemplo"}</span>`;
+  return html`<span className="demo-note"><${Icon} n="check" s=${13} />${partial || "Dados reais · últimos 30 dias"}</span>`;
+}
+/* ================= dados reais: Meta Ads (token) e Google Ads (MCP) ================= */
+// As conexões ficam no cadastro de cada cliente (conn.meta e conn.google), salvo neste navegador.
+// O servidor (/api/meta e /api/google) busca as campanhas e devolve no mesmo formato dos dados de exemplo.
+async function apiPost(path, body, headers) {
+  let r;
+  try {
+    r = await fetch(path, { method: "POST", headers: { "content-type": "application/json", ...(headers || {}) }, body: JSON.stringify(body) });
+  } catch (e) { throw new Error("Sem conexão com o servidor do app. Confira sua internet e tente de novo."); }
+  let j = {}; try { j = await r.json(); } catch (e) {}
+  if (!r.ok) {
+    const err = new Error(j.error || (r.status === 404 || r.status === 405 ? "O servidor do app não está disponível aqui. Use a versão publicada na Vercel." : "Falha na consulta (" + r.status + ")."));
+    err.code = j.code; throw err;
+  }
+  return j;
+}
+const slugify = s => (String(s || "cliente").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "cliente").slice(0, 40);
+const metaOn = conn => !!(conn && conn.meta && conn.meta.token && conn.meta.accountId);
+const googleOn = conn => !!(conn && conn.google && conn.google.slug && conn.google.customerId);
+
+function useLiveData(client, enabled) {
+  const conn = client.conn || {};
+  const [tick, setTick] = useState(0);
+  const [st, setSt] = useState({ status: "idle", camps: [], errors: {}, sources: [] });
+  const m = metaOn(conn) ? conn.meta : null, g = googleOn(conn) ? conn.google : null;
+  const key = JSON.stringify([enabled, m && [m.accountId, m.token.slice(-8)], g && [g.slug, g.customerId, g.refreshToken || ""], tick]);
+  useEffect(() => {
+    if (!enabled || (!m && !g)) { setSt({ status: "idle", camps: [], errors: {}, sources: [] }); return; }
+    let dead = false;
+    setSt(s => ({ ...s, status: "loading", errors: {} }));
+    Promise.allSettled([
+      m ? apiPost("/api/meta", { action: "data", account_id: m.accountId }, { "x-meta-token": m.token }) : Promise.resolve(null),
+      g ? apiPost("/api/google", { action: "data", slug: g.slug, customer_id: g.customerId, refresh_token: g.refreshToken || undefined }) : Promise.resolve(null),
+    ]).then(([rm, rg]) => {
+      if (dead) return;
+      const camps = [], prev = { spend: 0, revenue: 0, purchases: 0, clicks: 0, impr: 0, tracked: 0 }, errors = {}, sources = [];
+      [["meta", rm, m], ["google", rg, g]].forEach(([ch, r, c]) => {
+        if (!c) return;
+        if (r.status === "rejected") { errors[ch] = r.reason.message; return; }
+        const v = r.value || {};
+        camps.push(...(v.campaigns || []));
+        if (v.prev) Object.keys(prev).forEach(k => { prev[k] += v.prev[k] || 0; });
+        sources.push({ ch, label: ch === "meta" ? (c.accountName || c.accountId) : (c.customerName || c.customerId), n: (v.campaigns || []).length, note: v.note });
+      });
+      setSt({ status: sources.length ? "ready" : "error", camps, prev, errors, sources, at: new Date() });
+    });
+    return () => { dead = true; };
+  }, [key]);
+  return { ...st, reload: () => setTick(t => t + 1), hasConn: !!(m || g) };
+}
+
+// Saúde da conta a partir dos dados reais: ROAS contra a meta, peso das campanhas abaixo da meta e quedas da semana
+function liveHealth(camps, target) {
+  const t = totals(camps); const act = camps.filter(c => c.status === "ativa");
+  let h = 80;
+  if (isFinite(t.roas)) h += Math.max(-35, Math.min(15, (t.roas / target - 1) * 40));
+  const badSpend = act.filter(c => !c.noRev && roasOf(c) < 1.5).reduce((a, c) => a + c.spend, 0);
+  h -= Math.min(20, badSpend / Math.max(1, t.spend) * 60);
+  h -= Math.min(10, act.filter(c => c.d7 <= -0.2).length * 3);
+  return Math.round(Math.max(25, Math.min(96, h)));
+}
+
+function buildLiveInsights(camps) {
+  const T = ACTIVE.target, list = [];
+  const t = totals(camps);
+  const act = camps.filter(c => c.status === "ativa" && c.spend > 0);
+  const rev = act.filter(c => !c.noRev);
+  const bad = rev.filter(c => roasOf(c) < T).sort((a, b) => b.spend - a.spend)[0];
+  if (bad) list.push({ id: "l1", sev: roasOf(bad) < 1.5 ? "bad" : "warn", tag: "Atenção", icon: "alert", title: `“${bad.name}” está abaixo da meta de ROAS`, body: `${CH[bad.ch].label}: investiu ${brl(bad.spend)} em 30 dias e trouxe ${brl(bad.revenue)}, ROAS de ${xroas(roasOf(bad))}. A meta da conta é ${xroas(T)}.`, metric: xroas(roasOf(bad)), ask: `O que faço com a campanha “${bad.name}”?`, goto: "campaigns" });
+  const zero = act.filter(c => !c.noRev && c.purchases === 0 && c.spend >= Math.max(200, t.spend * 0.03)).sort((a, b) => b.spend - a.spend)[0];
+  if (zero) list.push({ id: "l2", sev: "bad", tag: "Sem conversões", icon: "wallet", title: `“${zero.name}” gastou sem converter`, body: `${CH[zero.ch].label}: ${brl(zero.spend)} investidos em 30 dias sem nenhuma compra ou conversão registrada. Vale conferir a otimização e o rastreamento.`, metric: brl(zero.spend), ask: `Por que a campanha “${zero.name}” não converte?`, goto: "campaigns" });
+  const fat = act.filter(c => c.ch === "meta" && c.freq >= 3.5).sort((a, b) => b.freq - a.freq)[0];
+  if (fat) list.push({ id: "l3", sev: "warn", tag: "Risco", icon: "eye", title: `Frequência alta em “${fat.name}”`, body: `Frequência de ${dec(fat.freq, 1)} em 30 dias: o mesmo público está vendo o anúncio muitas vezes. A receita da campanha variou ${fat.d7 >= 0 ? "+" : "−"}${pct(Math.abs(fat.d7), 0)} na última semana.`, metric: "freq. " + dec(fat.freq, 1), ask: `Como resolvo a fadiga da campanha “${fat.name}”?`, goto: "campaigns" });
+  const drop = act.filter(c => c.d7 <= -0.2 && c !== bad).sort((a, b) => b.spend - a.spend)[0];
+  if (drop) list.push({ id: "l4", sev: "warn", tag: "Queda na semana", icon: "down", title: `“${drop.name}” caiu ${pct(-drop.d7, 0)} na semana`, body: `${CH[drop.ch].label}: comparando os últimos 7 dias com os 7 anteriores, ${drop.noRev ? "o investimento" : "a receita"} caiu ${pct(-drop.d7, 0)}.`, metric: "−" + pct(-drop.d7, 0), ask: `Por que a campanha “${drop.name}” caiu esta semana?`, goto: "campaigns" });
+  const best = rev.filter(c => roasOf(c) >= T * 1.3 && c.spend >= t.spend * 0.03).sort((a, b) => roasOf(b) - roasOf(a))[0];
+  if (best) list.push({ id: "l5", sev: "good", tag: "Oportunidade", icon: "up", title: `“${best.name}” tem espaço para escalar`, body: `ROAS de ${xroas(roasOf(best))}, acima da meta de ${xroas(T)}, com ${brl(best.spend)} investidos.${best.budget ? " Orçamento atual de " + brl(best.budget) + "/dia." : ""}`, metric: xroas(roasOf(best)), ask: `Quanto posso escalar a campanha “${best.name}”?`, goto: "campaigns" });
+  if (ACTIVE.prev.purchases > 0 && t.purchases > 0) {
+    const d = delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases);
+    list.push({ id: "l6", sev: d <= 0 ? "good" : "warn", tag: "Tendência", icon: "target", title: `CPA ${d <= 0 ? "caiu" : "subiu"} ${pct(Math.abs(d), 0)} no período`, body: `CPA de ${brl2(t.cpa)} contra ${brl2(ACTIVE.prev.spend / ACTIVE.prev.purchases)} nos 30 dias anteriores.`, metric: (d <= 0 ? "−" : "+") + pct(Math.abs(d), 0), ask: d <= 0 ? "O que fez meu CPA cair?" : "Por que meu CPA subiu?", goto: "overview" });
+  }
+  if (camps.some(c => c.noRev && c.ch === "google")) list.push({ id: "l7", sev: "info", tag: "Google sem receita", icon: "bulb", title: "Google Ads aparece sem ROAS", body: "O conector do Google Ads ainda não informa o valor das conversões, então as campanhas do Google entram no CPA e nas conversões, mas não no ROAS.", metric: "n/d", ask: "Como estão minhas campanhas do Google pelo CPA?", goto: "campaigns" });
+  return list;
+}
+
+function DataBand({ live, company, go, isLive }) {
+  if (live.status === "loading") return html`<div className="data-band"><span className="spin" aria-hidden="true"></span><span>Buscando as campanhas conectadas…</span></div>`;
+  const errs = Object.entries(live.errors || {});
+  if (isLive) return html`<div className="data-band live"><span className="pill pill-good"><span className="dot"></span>Dados reais</span>
+    <span className="band-src">${live.sources.map(s => html`<span key=${s.ch} className="acc-chip"><span className="ch-dot" style=${{ background: CH[s.ch].color }}></span>${CH[s.ch].label} · ${s.label}</span>`)}</span>
+    ${errs.length ? html`<span className="band-err">${errs.map(([ch, m]) => CH[ch].label + ": " + m).join(" ")}</span>` : html`<span className="band-note hide-sm">Últimos 30 dias · atualizado às ${live.at ? live.at.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}</span>`}
+    <button className="btn btn-sm btn-line" onClick=${live.reload}>Atualizar</button></div>`;
+  if (errs.length) return html`<div className="data-band err"><${Icon} n="alert" s=${15} /><span style=${{ flex: 1, minWidth: 200 }}>${errs.map(([ch, m]) => html`<span key=${ch} style=${{ display: "block" }}><b>${CH[ch].label}:</b> ${m}</span>`)}<span style=${{ display: "block", color: "var(--muted-2)" }}>Enquanto isso, o painel mostra dados de exemplo.</span></span>
+    <button className="btn btn-sm btn-line" onClick=${live.reload}>Tentar de novo</button><button className="btn btn-sm btn-primary" onClick=${() => go("integrations")}>Ver integrações</button></div>`;
+  if (live.status === "ready") return html`<div className="data-band"><${Icon} n="eye" s=${15} /><span style=${{ flex: 1, minWidth: 200 }}>${live.sources.map(s => s.note).filter(Boolean)[0] || "As contas conectadas não têm campanhas com investimento nos últimos 30 dias."} O painel mostra dados de exemplo.</span><button className="btn btn-sm btn-line" onClick=${() => go("integrations")}>Ver integrações</button></div>`;
+  return html`<div className="data-band demo"><${Icon} n="eye" s=${15} /><span style=${{ flex: 1, minWidth: 200 }}>Você está vendo <b>dados de exemplo</b>. Conecte o Meta Ads ou o Google Ads para ver as campanhas de ${company}.</span><button className="btn btn-sm btn-primary" onClick=${() => go("integrations")}><${Icon} n="plug" s=${14} />Conectar contas</button></div>`;
+}
+
+function MetaConnectDrawer({ client, onUpdate, onClose, toast }) {
+  const cur = (client.conn || {}).meta || null;
+  const [token, setToken] = useState(cur ? cur.token : ""); const [show, setShow] = useState(false);
+  const [list, setList] = useState(null); const [user, setUser] = useState("");
+  const [sel, setSel] = useState(cur ? cur.accountId : ""); const [q, setQ] = useState("");
+  const [busy, setBusy] = useState(false); const [err, setErr] = useState(null);
+  const find = async e => {
+    e && e.preventDefault(); if (!token.trim() || busy) return;
+    setBusy(true); setErr(null);
+    try {
+      const j = await apiPost("/api/meta", { action: "accounts" }, { "x-meta-token": token.trim() });
+      setList(j.accounts || []); setUser(j.user || "");
+      if (!(j.accounts || []).length) setErr("O token é válido, mas não enxerga nenhuma conta de anúncio. Confira se o usuário tem acesso às contas no Business Manager.");
+      else if (!(j.accounts || []).some(a => a.id === sel)) setSel((j.accounts.find(a => a.active) || j.accounts[0]).id);
+    } catch (e2) { setErr(e2.message); } finally { setBusy(false); }
+  };
+  const save = () => {
+    const a = list.find(x => x.id === sel); if (!a) return;
+    onUpdate({ conn: { ...(client.conn || {}), meta: { token: token.trim(), accountId: a.id, accountName: a.name, user, at: new Date().toISOString() } } });
+    toast("Meta Ads conectado: " + a.name); onClose();
+  };
+  const shown = (list || []).filter(a => !q || (a.name + a.id).toLowerCase().includes(q.toLowerCase()));
+  return html`<${Fragment}><div className="drawer-bg" style=${{ zIndex: 60 }} onClick=${onClose}></div>
+    <aside className="drawer" style=${{ zIndex: 61 }} role="dialog" aria-modal="true" aria-label="Conectar Meta Ads">
+      <div className="drawer-head"><div><div className="eyebrow">Integração · ${client.company}</div><h2 style=${{ fontSize: 20, fontWeight: 700 }}>Conectar Meta Ads</h2>
+        <div className="card-sub">Leitura das campanhas pela Marketing API da Meta, com um token de acesso.</div></div>
+        <button type="button" className="btn btn-ghost btn-sm" onClick=${onClose} aria-label="Fechar"><${Icon} n="x" /></button></div>
+      <div className="drawer-body">
+        <ol className="steps">
+          <li className=${list ? "done" : "on"}><b>Token de acesso</b>
+            <form onSubmit=${find} className="stack" style=${{ gap: 8, marginTop: 8 }}>
+              <div className="pass-wrap"><input id="meta-token" className="input mono" style=${{ fontSize: 13 }} type=${show ? "text" : "password"} autoComplete="off" spellCheck="false" placeholder="EAAG…" value=${token} onInput=${e => { setToken(e.target.value); setList(null); }} />
+                <button type="button" className="pass-eye" onClick=${() => setShow(!show)} aria-label=${show ? "Ocultar token" : "Mostrar token"}><${Icon} n=${show ? "eyeOff" : "eye"} s=${16} /></button></div>
+              <button className="btn btn-primary" type="submit" disabled=${!token.trim() || busy}>${busy ? "Validando token…" : list ? "Buscar contas de novo" : "Validar e buscar contas"}</button>
+            </form>
+            <details className="help"><summary>Como gerar o token</summary>
+              <p><b>Para testar:</b> abra o <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer">Graph API Explorer</a>, escolha seu app, adicione a permissão <span className="mono">ads_read</span> e clique em Generate Access Token. Esse token expira em poucas horas.</p>
+              <p><b>Para uso contínuo:</b> no Business Manager, em Configurações do negócio › Usuários do sistema, crie um usuário do sistema, dê acesso às contas de anúncio e gere um token com <span className="mono">ads_read</span>. Esse token não expira.</p></details>
+          </li>
+          <li className=${list ? "on" : ""}><b>Conta de anúncio</b>
+            ${list ? html`<div className="stack" style=${{ gap: 8, marginTop: 8 }}>
+              ${user ? html`<span className="card-sub">Token de ${user} · ${list.length} ${list.length === 1 ? "conta" : "contas"}</span>` : null}
+              ${list.length > 8 ? html`<input id="meta-q" className="input" placeholder="Buscar conta" value=${q} onInput=${e => setQ(e.target.value)} aria-label="Buscar conta" />` : null}
+              <div className="acc-list" role="radiogroup" aria-label="Conta de anúncio">${shown.map(a => html`<label key=${a.id} className=${"acc-opt" + (sel === a.id ? " on" : "")}>
+                <input type="radio" name="meta-acc" checked=${sel === a.id} onChange=${() => setSel(a.id)} />
+                <span style=${{ minWidth: 0, flex: 1 }}><b>${a.name}</b><span className="mono">${a.id} · ${a.currency}</span></span>
+                <span className=${"pill " + (a.active ? "pill-good" : "pill-warn")}>${a.status}</span></label>`)}</div>
+            </div>` : html`<p className="card-sub" style=${{ marginTop: 6 }}>Aparece depois de validar o token.</p>`}
+          </li>
+        </ol>
+        ${err ? html`<div className="err" role="alert">${err}</div>` : null}
+        <div className="ai-note"><${Icon} n="shield" s=${15} /><div>O token fica salvo neste navegador, no cadastro de ${client.company}, e só é usado para ler campanhas. Pausar ou alterar orçamento pelo painel continua sendo simulação.</div></div>
+      </div>
+      <div className="drawer-foot">
+        ${cur ? html`<button type="button" className="btn btn-line" onClick=${() => { const c = { ...(client.conn || {}) }; delete c.meta; onUpdate({ conn: c }); toast("Meta Ads desconectado"); onClose(); }}>Desconectar</button>` : html`<button type="button" className="btn btn-line" onClick=${onClose}>Cancelar</button>`}
+        <button type="button" className="btn btn-primary" disabled=${!list || !sel} onClick=${save}>Conectar conta</button>
+      </div>
+    </aside><//>`;
+}
+
+function GoogleConnectDrawer({ client, onUpdate, onClose, toast }) {
+  const cur = (client.conn || {}).google || null;
+  const [slug, setSlug] = useState(cur ? cur.slug : "readyai-" + slugify(client.company));
+  const [rt, setRt] = useState(cur ? cur.refreshToken || "" : "");
+  const [auth, setAuth] = useState(null); const [list, setList] = useState(null); const [sel, setSel] = useState(cur ? cur.customerId : "");
+  const [busy, setBusy] = useState(""); const [err, setErr] = useState(null);
+  const body = extra => ({ slug, refresh_token: rt.trim() || undefined, ...extra });
+  const authorize = async () => {
+    setBusy("auth"); setErr(null); setList(null);
+    try { const j = await apiPost("/api/google", body({ action: "connect" })); setAuth(j); if (j.authorized) await accounts(); }
+    catch (e) { setErr(e.message); } finally { setBusy(""); }
+  };
+  const accounts = async () => {
+    setBusy("acc"); setErr(null);
+    try {
+      const j = await apiPost("/api/google", body({ action: "accounts" }));
+      const l = j.accounts || []; setList(l); setAuth({ authorized: true });
+      if (!l.length) setErr("O login do Google não enxerga nenhuma conta do Google Ads.");
+      else if (!l.some(a => a.id === sel)) setSel((l.find(a => !a.manager) || l[0]).id);
+    } catch (e) { setErr(e.message); if (e.code === "needs_auth") setAuth(null); } finally { setBusy(""); }
+  };
+  const save = () => {
+    const a = list.find(x => x.id === sel); if (!a) return;
+    onUpdate({ conn: { ...(client.conn || {}), google: { slug, customerId: a.id, customerName: a.name ? a.name + " · " + a.label : a.label, refreshToken: rt.trim() || undefined, at: new Date().toISOString() } } });
+    toast("Google Ads conectado: " + (a.name || a.label)); onClose();
+  };
+  return html`<${Fragment}><div className="drawer-bg" style=${{ zIndex: 60 }} onClick=${onClose}></div>
+    <aside className="drawer" style=${{ zIndex: 61 }} role="dialog" aria-modal="true" aria-label="Conectar Google Ads">
+      <div className="drawer-head"><div><div className="eyebrow">Integração · ${client.company}</div><h2 style=${{ fontSize: 20, fontWeight: 700 }}>Conectar Google Ads</h2>
+        <div className="card-sub">Leitura das campanhas pelo MCP do Google Ads, o mesmo conector usado no Claude.</div></div>
+        <button type="button" className="btn btn-ghost btn-sm" onClick=${onClose} aria-label="Fechar"><${Icon} n="x" /></button></div>
+      <div className="drawer-body">
+        <ol className="steps">
+          <li className=${auth && auth.authorized ? "done" : "on"}><b>Autorizar no Google</b>
+            <p className="card-sub" style=${{ marginTop: 4 }}>O MCP guarda a autorização deste cliente com o identificador <span className="mono">${slug}</span>. Quem tem acesso à conta do Google Ads faz o login uma vez.</p>
+            <div style=${{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+              <button type="button" className="btn btn-primary" disabled=${!!busy} onClick=${authorize}>${busy === "auth" ? "Verificando…" : auth && auth.authorized ? "Verificar de novo" : "Autorizar no Google"}</button>
+              ${auth && !auth.authorized ? html`<button type="button" className="btn btn-line" disabled=${!!busy} onClick=${accounts}>${busy === "acc" ? "Buscando…" : "Já autorizei, buscar contas"}</button>` : null}
+            </div>
+            ${auth && !auth.authorized && auth.url ? html`<div className="auth-link"><span>Abra o login do Google, autorize o acesso e volte aqui:</span><a className="btn btn-sm btn-line" href=${auth.url} target="_blank" rel="noopener noreferrer"><${Icon} n="arrowR" s=${13} />Abrir login do Google</a></div>` : null}
+            <details className="help"><summary>Opções avançadas</summary>
+              <div className="field" style=${{ marginTop: 8 }}><label htmlFor="g-slug">Identificador do cliente no MCP</label><input id="g-slug" className="input mono" style=${{ fontSize: 13 }} value=${slug} onInput=${e => { setSlug(slugify(e.target.value)); setAuth(null); setList(null); }} /><span className="card-sub">Use o mesmo identificador que esse cliente já usa no conector do Claude, se houver.</span></div>
+              <div className="field" style=${{ marginTop: 8 }}><label htmlFor="g-rt">refresh_token (só se o MCP pedir)</label><input id="g-rt" className="input mono" style=${{ fontSize: 13 }} type="password" autoComplete="off" value=${rt} onInput=${e => setRt(e.target.value)} placeholder="Copiado da página de sucesso do login" /><span className="card-sub">Necessário apenas quando o MCP não tem banco persistente e mostra o token na página de sucesso.</span></div>
+            </details>
+          </li>
+          <li className=${list ? "on" : ""}><b>Conta do Google Ads</b>
+            ${list ? html`<div className="acc-list" role="radiogroup" aria-label="Conta do Google Ads" style=${{ marginTop: 8 }}>${list.map(a => html`<label key=${a.id} className=${"acc-opt" + (sel === a.id ? " on" : "")}>
+                <input type="radio" name="g-acc" checked=${sel === a.id} onChange=${() => setSel(a.id)} />
+                <span style=${{ minWidth: 0, flex: 1 }}><b>${a.name || "Conta " + a.label}</b><span className="mono">${a.label}${a.via ? " · via MCC " + a.via : ""}</span></span>
+                ${a.manager ? html`<span className="pill pill-mute">Gerenciadora</span>` : null}</label>`)}</div>` : html`<p className="card-sub" style=${{ marginTop: 6 }}>Aparece depois da autorização.</p>`}
+          </li>
+        </ol>
+        ${err ? html`<div className="err" role="alert">${err}</div>` : null}
+        <div className="ai-note"><${Icon} n="bulb" s=${15} /><div>O conector do Google Ads ainda não informa o valor das conversões. As campanhas do Google entram com investimento, cliques e conversões, e o ROAS delas aparece como n/d.</div></div>
+      </div>
+      <div className="drawer-foot">
+        ${cur ? html`<button type="button" className="btn btn-line" onClick=${() => { const c = { ...(client.conn || {}) }; delete c.google; onUpdate({ conn: c }); toast("Google Ads desconectado"); onClose(); }}>Desconectar</button>` : html`<button type="button" className="btn btn-line" onClick=${onClose}>Cancelar</button>`}
+        <button type="button" className="btn btn-primary" disabled=${!list || !sel} onClick=${save}>Conectar conta</button>
+      </div>
+    </aside><//>`;
+}
+
+function AdIntegrations({ client, onUpdate, toast, isAgency, live }) {
+  const [open, setOpen] = useState(null);
+  const conn = client.conn || {};
+  const [target, setTarget] = useState(String(client.targetRoas || 3).replace(".", ","));
+  const saveTarget = e => { e.preventDefault(); const v = parseFloat(target.replace(",", ".")); if (!(v > 0 && v < 100)) return toast("Informe uma meta de ROAS entre 0,1 e 99"); onUpdate({ targetRoas: Math.round(v * 100) / 100 }); toast("Meta de ROAS salva: " + xroas(v)); };
+  const card = (key, title, sub, on, detail, err) => html`<article key=${key} className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title" style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: CH[key].color }}></span>${title}</div><div className="card-sub">${sub}</div></div>
+      <span className=${"pill " + (err ? "pill-bad" : on ? "pill-good" : "pill-mute")}>${err ? "Com erro" : on ? html`<span className="dot"></span>Conectado` : "Não conectado"}</span></div>
+    ${err ? html`<div className="err" style=${{ fontSize: 12.5 }}>${err}</div>` : null}
+    <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}><span className="mono" style=${{ color: "var(--muted)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>${detail}</span>
+      <button className=${"btn btn-sm " + (on ? "btn-line" : "btn-primary")} onClick=${() => setOpen(key)}>${on ? "Gerenciar" : "Conectar"}</button></div>
+  </article>`;
+  return html`<div className="stack" style=${{ gap: 10 }}>
+    <div className="eyebrow">Contas de anúncio</div>
+    ${isAgency ? html`<p className="card-sub">Na carteira da agência os painéis dos clientes ainda usam dados de exemplo. Os dados reais funcionam nos planos Starter e Pro.</p>` : null}
+    <div className="grid g2">
+      ${card("meta", "Meta Ads", "Campanhas, investimento, compras e receita pela Marketing API", metaOn(conn), metaOn(conn) ? conn.meta.accountName + " · " + conn.meta.accountId : "Token de acesso com ads_read", live && live.errors && live.errors.meta)}
+      ${card("google", "Google Ads", "Campanhas, investimento, cliques e conversões pelo MCP do Google Ads", googleOn(conn), googleOn(conn) ? conn.google.customerName : "Login com a conta Google", live && live.errors && live.errors.google)}
+      <article className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title" style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: CH.tiktok.color }}></span>TikTok Ads</div><div className="card-sub">Campanhas e Spark Ads</div></div><span className="pill pill-violet">Em breve</span></div>
+        <span className="mono" style=${{ color: "var(--muted)" }}>Ainda sem conector</span></article>
+      <form className="card card-pad" onSubmit=${saveTarget} style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div><div className="card-title">Meta de ROAS da conta</div><div className="card-sub">Base dos insights, das recomendações e do copilot</div></div>
+        <div style=${{ display: "flex", gap: 8, alignItems: "center" }}><input id="target-roas" className="input num" style=${{ maxWidth: 110 }} inputMode="decimal" value=${target} onInput=${e => setTarget(e.target.value)} aria-label="Meta de ROAS" /><span style=${{ color: "var(--muted)" }}>x</span><button className="btn btn-sm btn-line" type="submit">Salvar</button></div>
+      </form>
+    </div>
+    ${open === "meta" ? html`<${MetaConnectDrawer} client=${client} onUpdate=${onUpdate} onClose=${() => setOpen(null)} toast=${toast} />` : null}
+    ${open === "google" ? html`<${GoogleConnectDrawer} client=${client} onUpdate=${onUpdate} onClose=${() => setOpen(null)} toast=${toast} />` : null}
+  </div>`;
+}
+
 function AIIntegrations() {
   const { conn } = useAI();
   return html`<div className="stack" style=${{ gap: 10 }}><div className="eyebrow">Inteligência artificial do copilot</div>
@@ -1571,10 +1859,10 @@ function Locked({ mod, plan }) {
 }
 
 /* ================= app do cliente ================= */
-function ClientApp({ client, onLogout, impersonating, onBackToConsole }) {
+function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate, startScreen }) {
   const allowed = new Set([...client.modules, "integrations"]);
   const isAgency = allowed.has("portfolio");
-  const [screen, setScreen] = useState(isAgency ? "portfolio" : allowed.has("copilot") ? "copilot" : "overview");
+  const [screen, setScreen] = useState(startScreen && allowed.has(startScreen) ? startScreen : isAgency ? "portfolio" : allowed.has("copilot") ? "copilot" : "overview");
   const [activeId, setActiveId] = useState("aurora");
   const activeAcc = PORTFOLIO.find(p => p.id === activeId);
   const pfRows = useMemo(() => isAgency ? portfolioRows() : [], [isAgency]);
@@ -1584,7 +1872,10 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole }) {
     const row = activeRow;
     const f = 1 - activeAcc.d7;
     ACTIVE = { target: activeAcc.target, health: row.health, prev: { spend: PREV.spend * activeAcc.k, revenue: PREV.revenue * activeAcc.k * activeAcc.rm * f, purchases: PREV.purchases * activeAcc.k * activeAcc.rm * f, clicks: PREV.clicks * activeAcc.k, impr: PREV.impr * activeAcc.k } };
-  } else ACTIVE = { prev: PREV, target: TARGET_ROAS, health: 78 };
+  }
+  const live = useLiveData(client, !isAgency);
+  const isLive = !isAgency && live.status === "ready" && live.camps.length > 0;
+  if (!isAgency) ACTIVE = isLive ? { prev: live.prev, target: client.targetRoas || TARGET_ROAS, health: liveHealth(live.camps, client.targetRoas || TARGET_ROAS), live: true } : { prev: PREV, target: TARGET_ROAS, health: 78 };
   const [open, setOpen] = useState(() => ({ painel: true, gerenciador: true, inteligencias: true }));
   const [sideOpen, setSideOpen] = useState(false); const [dockOpen, setDockOpen] = useState(false);
   const [dockHidden, setDockHiddenS] = useState(() => store.get("readyai_dock_hidden", false));
@@ -1593,10 +1884,11 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole }) {
   const openCopilot = () => { if (isNarrow()) setDockOpen(true); else setDockHidden(false); };
   const closeCopilot = () => { if (dockOpen) setDockOpen(false); else setDockHidden(true); };
   const [camps, setCamps] = useState(CAMPAIGNS0);
+  useEffect(() => { if (!isAgency) setCamps(isLive ? live.camps : CAMPAIGNS0); }, [isLive, live.at]);
   const [msgs, setMsgs] = useState([]); const [typing, setTyping] = useState(false);
   const [toastMsg, setToastMsg] = useState(null);
   const toast = m => { setToastMsg(m); clearTimeout(toast.t); toast.t = setTimeout(() => setToastMsg(null), 2600); };
-  const insights = useMemo(() => buildInsights(camps), [camps]);
+  const insights = useMemo(() => isLive ? buildLiveInsights(camps) : buildInsights(camps), [camps, isLive, client.targetRoas]);
   const go = key => { setScreen(key); setSideOpen(false); setDockOpen(false); const g = NAV.find(n => (n.children || []).some(c => c.key === key)); if (g) setOpen(o => ({ ...o, [g.id]: true })); };
   const ai = useAI();
   const send = async (text, openDock) => {
@@ -1607,8 +1899,8 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole }) {
     const history = [...msgs, { id, role: "user", text }];
     setMsgs(history); setTyping(true);
     const screens = [...allowed].filter(k => k !== "whatsapp");
-    const budget = isAgency ? { total: activeAcc.budget, spent: activeAcc.spent } : { total: MONTH_BUDGET, spent: MONTH_SPENT };
-    const data = aiContext({ camps, screen, account: accountName, isAgency, rows: pfRows, insights, budget, detail: !isAgency || activeId === "aurora" });
+    const budget = isLive ? null : isAgency ? { total: activeAcc.budget, spent: activeAcc.spent } : { total: MONTH_BUDGET, spent: MONTH_SPENT };
+    const data = aiContext({ camps, screen, account: accountName, isAgency, rows: pfRows, insights, budget, detail: !isLive && (!isAgency || activeId === "aurora"), live: isLive });
     try {
       const j = await aiCall({ provider: ai.conn.provider, model: ai.conn.model, system: aiSystem(data, screens, isAgency), messages: history.filter(m => !m.error).map(toAIMessage) }, ai.conn.key);
       setMsgs(m => [...m, { id: id + 1, role: "bot", ...parseAIReply(j.text, { camps, screens, clientIds: isAgency ? PORTFOLIO.map(x => x.id) : [] }) }]);
@@ -1654,7 +1946,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole }) {
   else if (screen === "portfolio") body = html`<${Portfolio} chat=${chat} openClient=${openClient} toast=${toast} agency=${client.company} rows=${pfRows} />`;
   else if (screen === "skills") body = html`<${Skills} chat=${chat} toast=${toast} />`;
   else if (screen === "insights") body = html`<${Insights} insights=${insights} chat=${chat} go=${go} />`;
-  else if (screen === "integrations") body = html`<${Integrations} />`;
+  else if (screen === "integrations") body = html`<${Integrations} client=${client} onUpdate=${onUpdate} toast=${toast} isAgency=${isAgency} live=${live} />`;
   const showDock = !isHome && allowed.has("copilot");
   return html`<div style=${{ display: "flex", flexDirection: "column", height: "100%" }}>
     ${impersonating ? html`<div className="imp-banner"><span>Você está vendo como ${client.name} (${client.company}) · plano ${PLANS[client.plan].name}</span><button onClick=${onBackToConsole}>Voltar ao console</button></div>` : null}
@@ -1685,12 +1977,13 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole }) {
           <div className="crumb"><button className="btn btn-ghost btn-sm menu-btn" onClick=${() => setSideOpen(true)} aria-label="Abrir menu"><${Icon} n="menu" /></button>
             ${isAgency && inClient ? html`<button className="crumb-link hide-sm" onClick=${toPortfolio}>Carteira</button><span className="hide-sm" style=${{ color: "var(--line-2)" }}>/</span><span className="crumb-client"><span className="c-av sm">${activeAcc.name[0]}</span>${activeAcc.name}</span><span style=${{ color: "var(--line-2)" }}>/</span>` : null}
             ${info.group !== info.label && !(isAgency && inClient) ? html`<span className="hide-sm">${info.group}</span><span className="hide-sm" style=${{ color: "var(--line-2)" }}>/</span>` : null}<b>${info.label}</b></div>
-          <div className="top-actions">${!isHome && allowed.has("copilot") ? html`<button className=${"btn btn-line btn-sm dock-toggle hide-md" + (dockHidden ? "" : " on")} onClick=${() => (dockHidden ? openCopilot() : closeCopilot())} aria-pressed=${!dockHidden}><${Icon} n="sparkles" s=${14} />${dockHidden ? "Abrir copilot" : "Fechar copilot"}</button>` : null}<span className="chip-sel hide-sm"><${Icon} n="calendar" s=${14} />Últimos 30 dias</span>${isAgency ? html`<${ClientSwitcher} rows=${pfRows} activeId=${activeId} inClient=${inClient} onPick=${id => openClient(id, screen === "portfolio" ? "copilot" : screen)} onPortfolio=${toPortfolio} />` : html`<span className="chip-sel hide-sm"><span className="ch-dot" style=${{ background: "var(--c-meta)" }}></span><span className="ch-dot" style=${{ background: "var(--c-google)" }}></span><span className="ch-dot" style=${{ background: "var(--c-tiktok)" }}></span>3 contas</span>`}</div>
+          <div className="top-actions">${!isHome && allowed.has("copilot") ? html`<button className=${"btn btn-line btn-sm dock-toggle hide-md" + (dockHidden ? "" : " on")} onClick=${() => (dockHidden ? openCopilot() : closeCopilot())} aria-pressed=${!dockHidden}><${Icon} n="sparkles" s=${14} />${dockHidden ? "Abrir copilot" : "Fechar copilot"}</button>` : null}<span className="chip-sel hide-sm"><${Icon} n="calendar" s=${14} />Últimos 30 dias</span>${isAgency ? html`<${ClientSwitcher} rows=${pfRows} activeId=${activeId} inClient=${inClient} onPick=${id => openClient(id, screen === "portfolio" ? "copilot" : screen)} onPortfolio=${toPortfolio} />` : html`<span className="chip-sel hide-sm">${isLive ? live.sources.map(x => html`<span key=${x.ch} className="ch-dot" style=${{ background: CH[x.ch].color }}></span>`) : html`<span className="ch-dot" style=${{ background: "var(--c-meta)" }}></span><span className="ch-dot" style=${{ background: "var(--c-google)" }}></span><span className="ch-dot" style=${{ background: "var(--c-tiktok)" }}></span>`}${isLive ? live.sources.length + (live.sources.length === 1 ? " conta" : " contas") : "3 contas de exemplo"}</span>`}</div>
         </header>
         ${isAgency && inClient ? html`<div className="client-band"><span className="c-av sm">${activeAcc.name[0]}</span><span>Você está no ambiente de <b>${activeAcc.name}</b></span>
           <span className="band-accs hide-sm">${activeRow.accounts.map(a => html`<span key=${a.ch} className="acc-chip">${html`<span className="ch-dot" style=${{ background: CH[a.ch].color }}></span>`}<span className="mono">${a.id}</span></span>`)}</span>
           <span className="band-note hide-sm">Ações e relatórios valem só para este cliente</span>
           <button className="btn btn-sm btn-line" onClick=${toPortfolio}><${Icon} n="users" s=${13} />Voltar para a carteira</button></div>` : null}
+        ${!isAgency ? html`<${DataBand} live=${live} company=${client.company} go=${go} isLive=${isLive} />` : null}
         <div className=${"work" + (isHome ? " home" : showDock && !dockHidden ? "" : " no-dock")}>
           ${isHome && can ? html`<${HomeCopilot} user=${client} client=${{ ...client, company: accountName }} chat=${chat} camps=${camps} insights=${insights} go=${go} />` : html`<div className="pane">${body}</div>`}
           ${showDock && (!dockHidden || dockOpen) ? html`<aside className=${"dock" + (dockOpen ? " open" : "")} aria-label="Copilot"><${DockChat} chat=${chat} screen=${screen} onClose=${closeCopilot} /></aside>` : null}
@@ -1766,6 +2059,11 @@ function ClientDrawer({ c, upd, onClose, onImpersonate, toast, visibleMods }) {
       <div className="drawer-head"><div><div className="eyebrow">Cliente</div><h2 style=${{ fontSize: 20, fontWeight: 700 }}>${c.company}</h2><div className="card-sub">${c.name} · ${c.email} · cliente desde ${c.since.split("-").reverse().join("/")}</div></div>
         <button className="btn btn-ghost btn-sm" onClick=${onClose} aria-label="Fechar"><${Icon} n="x" /></button></div>
       <div className="drawer-body">
+        <section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Contas de anúncio</div>
+          ${[["meta", "Meta Ads", metaOn(c.conn) ? c.conn.meta.accountName + " · " + c.conn.meta.accountId : null], ["google", "Google Ads", googleOn(c.conn) ? c.conn.google.customerName : null]].map(([k, l, d]) => html`<div key=${k} className="mod-row"><div><b style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: CH[k].color }}></span>${l}</b><small>${d || "Não conectado"}</small></div><span className=${"pill " + (d ? "pill-good" : "pill-mute")}>${d ? "Conectado" : "Pendente"}</span></div>`)}
+          <div className="mod-row"><div><b>Meta de ROAS</b><small>Usada nos insights e no copilot</small></div><span className="num" style=${{ fontWeight: 700 }}>${xroas(c.targetRoas || TARGET_ROAS)}</span></div>
+          <div><button className="btn btn-line btn-sm" disabled=${c.status === "suspenso"} onClick=${() => onImpersonate(c.id, "integrations")}><${Icon} n="plug" s=${14} />Conectar contas deste cliente</button></div>
+          <div className="card-sub">Abre a plataforma como ${c.company}, direto em Integrações. As conexões ficam salvas neste navegador.</div></section>
         <section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Plano</div>
           <div className="seg">${Object.entries(PLANS).map(([k, p]) => html`<button key=${k} className=${c.plan === k ? "on" : ""} onClick=${() => setPlan(k)}>${p.name} · ${brl(p.price)}</button>`)}</div>
           <div className="card-sub">Trocar o plano redefine os módulos para o pacote padrão. Depois você pode ajustar um a um.</div></section>
@@ -1786,10 +2084,11 @@ function ClientDrawer({ c, upd, onClose, onImpersonate, toast, visibleMods }) {
     </aside><//>`;
 }
 function NewClient({ onClose, onCreate }) {
-  const [f, setF] = useState({ company: "", name: "", email: "", plan: "pro" }); const [err, setErr] = useState("");
+  const [f, setF] = useState({ company: "", name: "", email: "", plan: "pro", targetRoas: "3" }); const [err, setErr] = useState("");
   const set = k => e => setF({ ...f, [k]: e.target.value });
   const submit = e => { e.preventDefault(); if (!f.company || !f.name || !/.+@.+\..+/.test(f.email)) { setErr("Preencha empresa, nome e um e-mail válido."); return; }
-    const p = tempPass(); onCreate({ id: "cl" + Date.now(), ...f, password: p, newPass: p, modules: [...PLANS[f.plan].modules], status: "convite", since: new Date().toISOString().slice(0, 10), lastAccess: "nunca", accounts: 0 }); };
+    const tr = parseFloat(String(f.targetRoas).replace(",", ".")); if (!(tr > 0 && tr < 100)) { setErr("Informe a meta de ROAS, por exemplo 3."); return; }
+    const p = tempPass(); onCreate({ id: "cl" + Date.now(), ...f, email: f.email.trim().toLowerCase(), targetRoas: Math.round(tr * 100) / 100, conn: {}, password: p, newPass: p, modules: [...PLANS[f.plan].modules], status: "convite", since: new Date().toISOString().slice(0, 10), lastAccess: "nunca", accounts: 0 }); };
   return html`<${Fragment}><div className="drawer-bg" onClick=${onClose}></div>
     <aside className="drawer" role="dialog" aria-label="Novo cliente"><form onSubmit=${submit} style=${{ display: "flex", flexDirection: "column", height: "100%" }}>
       <div className="drawer-head"><div><div className="eyebrow">Novo cliente</div><h2 style=${{ fontSize: 20, fontWeight: 700 }}>Liberar acesso</h2><div className="card-sub">Uma senha temporária é gerada ao salvar.</div></div><button type="button" className="btn btn-ghost btn-sm" onClick=${onClose} aria-label="Fechar"><${Icon} n="x" /></button></div>
@@ -1797,6 +2096,7 @@ function NewClient({ onClose, onCreate }) {
         <div className="field"><label htmlFor="nc-co">Empresa</label><input id="nc-co" className="input" value=${f.company} onInput=${set("company")} placeholder="Ex.: Ótica Lumière" /></div>
         <div className="field"><label htmlFor="nc-n">Gestor de marketing</label><input id="nc-n" className="input" value=${f.name} onInput=${set("name")} placeholder="Nome completo" /></div>
         <div className="field"><label htmlFor="nc-e">E-mail de login</label><input id="nc-e" type="email" className="input" value=${f.email} onInput=${set("email")} placeholder="nome@empresa.com.br" /></div>
+        <div className="field"><label htmlFor="nc-roas">Meta de ROAS</label><input id="nc-roas" className="input num" inputMode="decimal" style=${{ maxWidth: 140 }} value=${f.targetRoas} onInput=${set("targetRoas")} /><span className="card-sub">Pode ser ajustada depois em Integrações.</span></div>
         <div className="field"><label htmlFor="nc-p">Plano</label><select id="nc-p" className="input" value=${f.plan} onChange=${set("plan")}>${Object.entries(PLANS).map(([k, p]) => html`<option key=${k} value=${k}>${p.name} · ${brl(p.price)}/mês</option>`)}</select></div>
         ${err ? html`<div className="err">${err}</div>` : null}
       </div>
@@ -1881,10 +2181,11 @@ function App() {
   useEffect(() => store.set(KEY, { clients, session }), [clients, session]);
   if (!session) return html`<${Login} clients=${clients} onLogin=${s => { setSession(s); if (s.role === "client") setClients(cs => cs.map(c => c.id === s.clientId ? { ...c, lastAccess: "agora", status: c.status === "convite" ? "ativo" : c.status } : c)); }} />`;
   const logout = () => setSession(null);
-  if (session.role === "admin" && !session.as) return html`<${AdminConsole} clients=${clients} setClients=${setClients} onLogout=${logout} onImpersonate=${id => setSession({ ...session, as: id })} />`;
+  if (session.role === "admin" && !session.as) return html`<${AdminConsole} clients=${clients} setClients=${setClients} onLogout=${logout} onImpersonate=${(id, to) => setSession({ ...session, as: id, to })} />`;
   const cid = session.as || session.clientId; const client = clients.find(c => c.id === cid);
   if (!client) { return html`<${Login} clients=${clients} onLogin=${setSession} />`; }
-  return html`<${ClientApp} key=${client.id + client.modules.join()} client=${client} onLogout=${logout} impersonating=${!!session.as} onBackToConsole=${() => setSession({ role: "admin" })} />`;
+  const onUpdate = patch => setClients(cs => cs.map(c => c.id === client.id ? { ...c, ...patch } : c));
+  return html`<${ClientApp} key=${client.id + client.modules.join()} client=${client} onLogout=${logout} impersonating=${!!session.as} onBackToConsole=${() => setSession({ role: "admin" })} onUpdate=${onUpdate} startScreen=${session.to} />`;
 }
 ReactDOM.createRoot(document.getElementById("root")).render(html`<${App} />`);
 </script>

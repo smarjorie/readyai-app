@@ -1,91 +1,92 @@
 # ReadyAI · Assistente de Marketing
 
-Painel de marketing multicanal (Meta, Google e TikTok Ads) com um copilot conversacional.
-O copilot conversa usando **Claude (Anthropic)** ou **ChatGPT (OpenAI)** com a chave de API da própria pessoa.
+Painel de marketing multicanal com um copilot conversacional.
+
+- **Dados reais:** Meta Ads pela Marketing API (token de acesso) e Google Ads pelo MCP do Google Ads.
+- **Copilot:** conversa usando Claude (Anthropic) ou ChatGPT (OpenAI) com a chave de API da própria pessoa.
+- Sem contas conectadas, o painel mostra dados de exemplo, com um aviso no topo.
 
 ## Estrutura
 
 ```
 public/index.html   app completo (React via CDN, sem build)
-api/chat.js         função serverless da Vercel: repassa a conversa para Anthropic ou OpenAI
-vercel.json         config da Vercel (pasta public + timeout da função)
-package.json        só metadados; não há dependências para instalar
+api/chat.js         conversa do copilot -> Anthropic ou OpenAI
+api/meta.js         Meta Ads -> Graph API v25 (contas, campanhas, 30 dias, semana, período anterior)
+api/google.js       Google Ads -> MCP do Google Ads (autorização, contas, campanhas)
+vercel.json         config da Vercel (pasta public + timeout das funções)
 ```
 
-## Como a parte conversacional funciona
+Não há dependências para instalar.
 
-1. Sem IA conectada, o chat mostra **Conectar Claude** e **Conectar ChatGPT** (também em *Integrações*).
-2. A pessoa cola a chave de API. O app valida a chave listando os modelos da conta e deixa escolher o modelo.
-3. A chave fica salva só no navegador (localStorage). A cada pergunta, o app envia para `/api/chat`
-   a conversa e os dados da conta aberta (campanhas, totais, metas, insights). A função repassa para a
-   Anthropic ou a OpenAI e devolve a resposta. A chave não é gravada nem logada no servidor.
-4. A IA responde em JSON estruturado, que o app desenha como texto, cards de números, recomendações,
-   botões de navegação e propostas de alteração (pausar, reativar, mudar orçamento) que só valem com
-   o clique em **Confirmar**. O app valida tudo o que a IA devolve: ação para tela inexistente ou
-   campanha que não existe é descartada.
+## Passo a passo: novo cliente com dados reais
+
+1. Entre como admin (`admin@readyai.com`) e clique em **Novo cliente**. Informe empresa, gestor, e-mail, meta de ROAS e plano.
+2. Na gaveta do cliente, clique em **Conectar contas deste cliente**. A plataforma abre como esse cliente, direto em Integrações.
+3. **Meta Ads → Conectar:** cole o token, clique em *Validar e buscar contas*, escolha a conta de anúncio e clique em *Conectar conta*.
+4. **Google Ads → Conectar:** clique em *Autorizar no Google*.
+   - Se aparecer *Abrir login do Google*, quem tem acesso à conta faz o login.
+   - Depois, volte e clique em *Já autorizei, buscar contas*.
+   - Escolha a conta (não a gerenciadora/MCC) e clique em *Conectar conta*.
+5. O topo passa a mostrar **Dados reais** com as contas conectadas. Painel, campanhas, insights e copilot usam esses números.
+
+### Token da Meta
+
+- **Para testar:** no [Graph API Explorer](https://developers.facebook.com/tools/explorer/), escolha um app, adicione a permissão `ads_read` e gere o token. Ele expira em poucas horas.
+- **Para uso contínuo:** no Business Manager, em Configurações do negócio › Usuários do sistema, crie um usuário do sistema, dê acesso às contas de anúncio e gere um token com `ads_read`. Esse token não expira.
+
+### MCP do Google Ads
+
+- Por padrão o app usa `https://google-ads-api-five.vercel.app/mcp`. Para outro endereço, crie a variável `GOOGLE_MCP_URL` na Vercel. Se o MCP exigir chave na URL, inclua a chave nela.
+- Cada cliente tem um identificador no MCP (padrão `readyai-<empresa>`). Se o cliente já usa o conector no Claude com outro identificador, informe o mesmo em *Opções avançadas*.
+- Se o MCP não tiver banco persistente, ele mostra um `refresh_token` na página de sucesso do login. Cole esse token em *Opções avançadas*.
+
+## Copilot (Claude ou ChatGPT)
+
+Em Integrações (ou no próprio chat), clique em **Conectar Claude** ou **Conectar ChatGPT** e cole a chave de API.
+
+- A chave fica salva só no navegador.
+- A cada pergunta, o app envia a conversa e os dados da conta aberta para `/api/chat`, que repassa ao provedor.
+- Propostas de alteração (pausar, reativar, mudar orçamento) só valem com o clique em **Confirmar**, e por enquanto são simulação.
 
 Onde criar as chaves:
 - Claude: https://console.anthropic.com/settings/keys
 - ChatGPT: https://platform.openai.com/api-keys
 
-O uso é cobrado na conta de API de cada provedor, separado das assinaturas Claude Pro ou ChatGPT Plus.
+## O que já é real e o que ainda é exemplo
 
-## Publicar: GitHub + Vercel
+| Parte | Com contas conectadas |
+|---|---|
+| Investimento, receita, compras/leads/conversas, ROAS, CPA, CTR | Real (Meta e Google) |
+| Comparação com os 30 dias anteriores e variação da semana | Real |
+| Insights, saúde da conta, recomendações por campanha, copilot | Calculados sobre os dados reais |
+| Google Ads: receita e ROAS | Aparecem como n/d. O MCP ainda não devolve valor de conversão |
+| Gráfico diário, horário, público, região, criativos | Ainda de exemplo (sinalizado na tela) |
+| TikTok Ads | Ainda sem conector |
+| Carteira da agência (plano Scale) | Ainda de exemplo |
+| Pausar e mudar orçamento | Simulação; nada muda nas contas |
 
-### 1. Subir para o GitHub
+Campanhas de leads, conversas ou alcance na Meta não entram no ROAS. Elas são avaliadas pelo custo por resultado.
 
-Crie um repositório vazio no GitHub (ex.: `readyai-app`) e, dentro desta pasta:
+## Publicar
 
-```bash
-git init
-git add .
-git commit -m "ReadyAI com copilot conectado ao Claude e ao ChatGPT"
-git branch -M main
-git remote add origin https://github.com/SEU-USUARIO/readyai-app.git
-git push -u origin main
-```
+1. **GitHub:** suba o conteúdo desta pasta (as pastas `public` e `api` e os arquivos da raiz) para o repositório.
+2. **Vercel:** importe o repositório com *Framework Preset* **Other** e deixe os comandos de build vazios.
 
-Sem terminal: no GitHub, abra o repositório vazio, clique em *uploading an existing file* e arraste
-o conteúdo desta pasta (as pastas `public` e `api` e os arquivos da raiz).
-
-### 2. Importar na Vercel
-
-1. Em https://vercel.com/new, escolha **Import** no repositório.
-2. *Framework Preset*: **Other**. Deixe *Build Command* e *Install Command* vazios.
-3. *Output Directory* já vem do `vercel.json` (`public`).
-4. Não há variáveis de ambiente para configurar. Clique em **Deploy**.
-
-Cada `git push` na `main` publica uma nova versão automaticamente.
-
-## Rodar localmente
-
-A rota `/api/chat` precisa do ambiente da Vercel:
-
-```bash
-npm i -g vercel
-vercel dev
-```
-
-Abrir o `index.html` direto no navegador mostra o app, mas o chat não responde (não há `/api/chat`).
+Cada `git push` publica de novo. Para testar localmente: `npm i -g vercel` e depois `vercel dev`.
 
 ## Acessos de demonstração
 
 | Perfil | E-mail | Senha |
 |---|---|---|
+| Gestora (console) | admin@readyai.com | readyAI@2026 |
 | Cliente plano Pro | camila@lojaaurora.com.br | demo123 |
 | Cliente plano Starter | marina@studiovitta.com.br | demo123 |
 | Agência (plano Scale) | rafael@nortex.com.br | demo123 |
-| Gestora (console) | admin@readyai.com | a senha definida na versão original |
 
-## Antes de usar com clientes de verdade
+## Limites desta versão
 
-- **Login é de demonstração.** Usuários, senhas e o cadastro de clientes vivem no código e no
-  navegador; qualquer pessoa com o link vê o código-fonte. Para produção, troque por autenticação
-  real (ex.: Supabase Auth, Clerk ou Auth.js) e um banco de dados.
-- **Dados de campanhas são de exemplo.** O copilot analisa os números que estão no app.
-- **Conexão com Meta e Google.** A versão no claude.ai usa os conectores (MCP) da conta do Claude,
-  uma ponte que só existe dentro do claude.ai. Na Vercel, os dados reais precisam vir das APIs
-  (Meta Marketing API com token de acesso; Google Ads API com developer token e OAuth) por novas
-  rotas em `api/`, como no projeto Traffiq.
-- **Limite de uso.** Como cada pessoa usa a própria chave, o custo fica com ela; mesmo assim, vale
-  adicionar limite de requisições em `/api/chat` se o link for público.
+- **Tudo fica no navegador.** Clientes, senhas, conexões e tokens ficam no localStorage de quem configurou.
+  - Se você conecta as contas de um cliente no seu computador, o cliente não vê essas conexões ao entrar no computador dele.
+  - Para produção, o próximo passo é um banco (por exemplo Supabase ou Upstash) e login de verdade.
+- **Login de demonstração.** Os usuários e as senhas estão no código, e qualquer pessoa com o link pode ver.
+- **Tokens no navegador.** O token da Meta e as chaves de IA ficam em texto no localStorage. Use em navegador de confiança.
