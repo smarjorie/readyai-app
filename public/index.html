@@ -462,6 +462,9 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .acc-opt input{accent-color:var(--accent);flex:none}
 .auth-link{margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-radius:10px;background:var(--accent-soft);color:var(--ink);font-size:13px}
 
+.wait-card{display:flex;gap:14px;align-items:flex-start;max-width:680px}
+.wait-card b{display:block;font-size:15px}
+
 /* ---------- IA conectada ---------- */
 .prov-dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
 .ai-badge{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;border:1px solid var(--line-2);background:var(--surface);font-size:12px;font-weight:600;color:var(--ink);min-width:0;max-width:240px}
@@ -1434,10 +1437,11 @@ function Portfolio({ chat, openClient, toast, agency, rows }) {
   const queue = all.filter(i => f === "all" || i.t === f).sort((a, b) => (done[a.key] ? 1 : 0) - (done[b.key] ? 1 : 0) || ISSUE[a.t].rank - ISSUE[b.t].rank);
   const left = all.filter(i => !done[i.key]).length;
   const list = rows.filter(r => f === "all" || r.issues.some(i => i.t === f))
-    .sort((a, b) => sort === "spend" ? b.t.spend - a.t.spend : sort === "roas" ? b.t.roas / b.target - a.t.roas / a.target : a.health - b.health);
+    .sort((a, b) => sort === "spend" ? b.t.spend - a.t.spend : sort === "roas" ? (b.t.roas / b.target || 0) - (a.t.roas / a.target || 0) : a.health - b.health);
+  const isReal = rows.length > 0 && rows[0].live;
   const chIcon = ch => html`<span className="ch-dot" style=${{ background: CH[ch].color }}></span>`;
   return html`<div className="stack">
-    <${PageHead} title="Carteira de clientes" sub=${agency + " · " + rows.length + " clientes e " + nAcc + " contas de anúncio conectadas pelos Business Managers, pela conta MCC do Google e pelo Business Center do TikTok."}
+    <${PageHead} title="Carteira de clientes" sub=${isReal ? agency + " · " + rows.length + (rows.length === 1 ? " conta de anúncio da Meta, lida" : " contas de anúncio da Meta, lidas") + " pelo token conectado. Cada conta aparece como um cliente." : agency + " · " + rows.length + " clientes e " + nAcc + " contas de anúncio conectadas pelos Business Managers, pela conta MCC do Google e pelo Business Center do TikTok."}
       right=${html`<button className="btn btn-primary" onClick=${() => toast(rows.length + " relatórios agendados com a marca da " + agency + " (simulação)")}><${Icon} n="send" s=${14} />Enviar relatórios da carteira</button>`} />
     <div className="ops">${tiles.map(x => { const I = ISSUE[x.t]; const on = f === x.t; return html`<button key=${x.t} type="button" className=${"op" + (on ? " on" : "")} style=${{ "--sev": I.c }} onClick=${() => setF(on ? "all" : x.t)} aria-pressed=${on}>
       <span className="op-top"><span className="op-ico"><${Icon} n=${I.icon} s=${15} /></span>${I.short}</span>
@@ -1465,9 +1469,9 @@ function Portfolio({ chat, openClient, toast, agency, rows }) {
           <td><button type="button" className="acc-btn" onClick=${() => setExp({ ...exp, [r.id]: !exp[r.id] })} aria-expanded=${!!exp[r.id]}>
             ${r.chs.map(c => html`<span key=${c} className="acc-chip">${chIcon(c)}${CH[c].label.replace(" Ads", "")}${r.accounts.find(a => a.ch === c).issue ? html`<span className="acc-alert" title="Conta com problema"></span>` : null}</span>`)}
             <span style=${{ display: "grid", transform: exp[r.id] ? "rotate(180deg)" : "none" }}><${Icon} n="chevD" s=${13} /></span></button></td>
-          <td className="r num">${brl(r.yday)}<span className="rec-why" style=${{ textAlign: "right" }}>de ${brl(r.dayBudget)}/dia</span></td>
-          <td><span style=${{ display: "inline-flex", alignItems: "center", gap: 8 }}><${RoasBar} roas=${r.t.roas} target=${r.target} /><b className="num" style=${{ color: r.t.roas >= r.target ? "var(--good)" : "var(--bad)" }}>${xroas(r.t.roas)}</b></span><span className="rec-why">meta ${xroas(r.target)}</span></td>
-          <td><span style=${{ display: "inline-flex", alignItems: "center", gap: 8 }}><${PaceBar} pace=${r.pace} /><span className="num" style=${{ fontWeight: 600, color: Math.abs(r.over) > .2 ? "var(--warn)" : "var(--ink)" }}>${pct(r.pace, 0)}</span></span><span className="rec-why">${kfmt(r.spent)} de ${kfmt(r.budget)}</span></td>
+          <td className="r num">${brl(r.yday)}<span className="rec-why" style=${{ textAlign: "right" }}>${r.live ? "no mês " + brl(r.spent) : "de " + brl(r.dayBudget) + "/dia"}</span></td>
+          <td><span style=${{ display: "inline-flex", alignItems: "center", gap: 8 }}><${RoasBar} roas=${r.t.roas} target=${r.target} /><b className="num" style=${{ color: !fin(r.t.roas) ? "var(--muted)" : r.t.roas >= r.target ? "var(--good)" : "var(--bad)" }}>${xroas(r.t.roas)}</b></span><span className="rec-why">meta ${xroas(r.target)}</span></td>
+          <td>${r.live ? html`<span style=${{ color: "var(--muted)" }}>—</span><span className="rec-why">Sem orçamento mensal definido</span>` : html`<span style=${{ display: "inline-flex", alignItems: "center", gap: 8 }}><${PaceBar} pace=${r.pace} /><span className="num" style=${{ fontWeight: 600, color: Math.abs(r.over) > .2 ? "var(--warn)" : "var(--ink)" }}>${pct(r.pace, 0)}</span></span><span className="rec-why">${kfmt(r.spent)} de ${kfmt(r.budget)}</span>`}</td>
           <td><span className=${"pill pill-" + healthCls(r.health)}>${r.health}</span></td>
           <td><span className="pend">${Object.keys(ISSUE).filter(t => r.issues.some(i => i.t === t)).map(t => html`<span key=${t} className=${"pill " + ISSUE[t].pill} title=${r.issues.filter(i => i.t === t).map(i => i.text).join(" · ")}><${Icon} n=${ISSUE[t].icon} s=${11} />${r.issues.filter(i => i.t === t).length}</span>`)}</span></td>
           <td><button className="btn btn-sm btn-primary" onClick=${() => openClient(r.id)}>Entrar<${Icon} n="arrowR" s=${13} /></button></td>
@@ -1475,7 +1479,7 @@ function Portfolio({ chat, openClient, toast, agency, rows }) {
         ${exp[r.id] ? html`<tr className="confirm-row"><td colSpan="8"><div className="acc-list">${r.accounts.map(a => html`<div key=${a.ch} className="acc-item">${chIcon(a.ch)}<b>${CH[a.ch].label}</b><span className="mono" style=${{ color: "var(--muted)" }}>${a.id}</span><span style=${{ color: "var(--muted)", fontSize: 12 }}>via ${a.parent}</span>
           ${a.issue ? html`<span className=${"pill " + ISSUE[a.issue.t].pill}>${a.issue.text}</span>` : html`<span className="pill pill-good"><span className="dot"></span>Entregando</span>`}</div>`)}</div></td></tr>` : null}
       <//>`)}</tbody></table></div></div>
-    <p className="demo-note"><${Icon} n="eye" s=${13} />Carteira de exemplo. Na versão real, a lista vem das contas que a agência acessa pelos Business Managers, pela MCC e pelo Business Center.</p>
+    <p className="demo-note"><${Icon} n="eye" s=${13} />${isReal ? "Contas lidas pelo token da Meta. O ritmo do mês aparece quando houver orçamento mensal por cliente; Google Ads e TikTok entram na carteira na próxima etapa." : "Carteira de exemplo. Conecte o token da Meta em Integrações da agência para ver as contas reais."}</p>
   </div>`;
 }
 
@@ -1486,7 +1490,7 @@ function ClientSwitcher({ rows, activeId, onPick, onPortfolio, inClient }) {
   const list = rows.filter(r => r.name.toLowerCase().includes(q.toLowerCase()));
   return html`<div className="switcher" ref=${ref}>
     <button type="button" className="chip-sel client-switch" onClick=${() => setOpen(!open)} aria-expanded=${open} aria-haspopup="listbox">
-      ${inClient ? html`<span className="c-av sm">${act.name[0]}</span><b style=${{ fontWeight: 600 }}>${act.name}</b>` : html`<${Icon} n="building" s=${14} /><b style=${{ fontWeight: 600 }}>Trocar de cliente</b>`}<${Icon} n="chevD" s=${13} /></button>
+      ${inClient && act ? html`<span className="c-av sm">${act.name[0]}</span><b style=${{ fontWeight: 600 }}>${act.name}</b>` : html`<${Icon} n="building" s=${14} /><b style=${{ fontWeight: 600 }}>Trocar de cliente</b>`}<${Icon} n="chevD" s=${13} /></button>
     ${open ? html`<div className="sw-pop" role="listbox">
       <input id="sw-q" className="input" placeholder="Buscar cliente" value=${q} onInput=${e => setQ(e.target.value)} autoFocus=${true} />
       <button type="button" className=${"sw-item" + (!inClient ? " on" : "")} onClick=${() => { setOpen(false); onPortfolio(); }}><span className="c-av sm" style=${{ background: "var(--surface-2)", color: "var(--ink)" }}><${Icon} n="users" s=${12} /></span><span style=${{ flex: 1 }}><b>Toda a carteira</b><small>${rows.length} clientes</small></span></button>
@@ -1687,7 +1691,7 @@ function DataBand({ live, company, go, isLive }) {
   return html`<div className="data-band demo"><${Icon} n="eye" s=${15} /><span style=${{ flex: 1, minWidth: 200 }}>Você está vendo <b>dados de exemplo</b>. Conecte o Meta Ads ou o Google Ads para ver as campanhas de ${company}.</span><button className="btn btn-sm btn-primary" onClick=${() => go("integrations")}><${Icon} n="plug" s=${14} />Conectar contas</button></div>`;
 }
 
-function MetaConnectDrawer({ client, onUpdate, onClose, toast }) {
+function MetaConnectDrawer({ client, onUpdate, onClose, toast, agency }) {
   const cur = (client.conn || {}).meta || null;
   const [token, setToken] = useState(cur ? cur.token : ""); const [show, setShow] = useState(false);
   const [list, setList] = useState(null); const [user, setUser] = useState("");
@@ -1704,6 +1708,10 @@ function MetaConnectDrawer({ client, onUpdate, onClose, toast }) {
     } catch (e2) { setErr(e2.message); } finally { setBusy(false); }
   };
   const save = () => {
+    if (agency) {
+      onUpdate({ conn: { ...(client.conn || {}), meta: { token: token.trim(), accountId: "all", accountName: list.length + " contas", user, at: new Date().toISOString() } } });
+      toast("Meta Ads conectado: " + list.length + " contas na carteira"); onClose(); return;
+    }
     const a = list.find(x => x.id === sel); if (!a) return;
     onUpdate({ conn: { ...(client.conn || {}), meta: { token: token.trim(), accountId: a.id, accountName: a.name, user, at: new Date().toISOString() } } });
     toast("Meta Ads conectado: " + a.name); onClose();
@@ -1726,12 +1734,12 @@ function MetaConnectDrawer({ client, onUpdate, onClose, toast }) {
               <p><b>Para testar:</b> abra o <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer">Graph API Explorer</a>, escolha seu app, adicione a permissão <span className="mono">ads_read</span> e clique em Generate Access Token. Esse token expira em poucas horas.</p>
               <p><b>Para uso contínuo:</b> no Business Manager, em Configurações do negócio › Usuários do sistema, crie um usuário do sistema, dê acesso às contas de anúncio e gere um token com <span className="mono">ads_read</span>. Esse token não expira.</p></details>
           </li>
-          <li className=${list ? "on" : ""}><b>Conta de anúncio</b>
+          <li className=${list ? "on" : ""}><b>${agency ? "Contas que entram na carteira" : "Conta de anúncio"}</b>
             ${list ? html`<div className="stack" style=${{ gap: 8, marginTop: 8 }}>
               ${user ? html`<span className="card-sub">Token de ${user} · ${list.length} ${list.length === 1 ? "conta" : "contas"}</span>` : null}
               ${list.length > 8 ? html`<input id="meta-q" className="input" placeholder="Buscar conta" value=${q} onInput=${e => setQ(e.target.value)} aria-label="Buscar conta" />` : null}
-              <div className="acc-list" role="radiogroup" aria-label="Conta de anúncio">${shown.map(a => html`<label key=${a.id} className=${"acc-opt" + (sel === a.id ? " on" : "")}>
-                <input type="radio" name="meta-acc" checked=${sel === a.id} onChange=${() => setSel(a.id)} />
+              <div className="acc-list" role=${agency ? "list" : "radiogroup"} aria-label="Conta de anúncio">${shown.map(a => html`<label key=${a.id} className=${"acc-opt" + (!agency && sel === a.id ? " on" : "")}>
+                ${agency ? null : html`<input type="radio" name="meta-acc" checked=${sel === a.id} onChange=${() => setSel(a.id)} />`}
                 <span style=${{ minWidth: 0, flex: 1 }}><b>${a.name}</b><span className="mono">${a.id} · ${a.currency}</span></span>
                 <span className=${"pill " + (a.active ? "pill-good" : "pill-warn")}>${a.status}</span></label>`)}</div>
             </div>` : html`<p className="card-sub" style=${{ marginTop: 6 }}>Aparece depois de validar o token.</p>`}
@@ -1742,7 +1750,7 @@ function MetaConnectDrawer({ client, onUpdate, onClose, toast }) {
       </div>
       <div className="drawer-foot">
         ${cur ? html`<button type="button" className="btn btn-line" onClick=${() => { const c = { ...(client.conn || {}) }; delete c.meta; onUpdate({ conn: c }); toast("Meta Ads desconectado"); onClose(); }}>Desconectar</button>` : html`<button type="button" className="btn btn-line" onClick=${onClose}>Cancelar</button>`}
-        <button type="button" className="btn btn-primary" disabled=${!list || !sel} onClick=${save}>Conectar conta</button>
+        <button type="button" className="btn btn-primary" disabled=${!list || (!agency && !sel)} onClick=${save}>${agency ? "Conectar carteira" : "Conectar conta"}</button>
       </div>
     </aside><//>`;
 }
@@ -1823,9 +1831,9 @@ function AdIntegrations({ client, onUpdate, toast, isAgency, live }) {
   </article>`;
   return html`<div className="stack" style=${{ gap: 10 }}>
     <div className="eyebrow">Contas de anúncio</div>
-    ${isAgency ? html`<p className="card-sub">Na carteira da agência os painéis dos clientes ainda usam dados de exemplo. Os dados reais funcionam nos planos Starter e Pro.</p>` : null}
+    ${isAgency ? html`<p className="card-sub">Na agência, todas as contas de anúncio que o token da Meta acessa viram clientes da carteira. Google Ads e TikTok ainda não entram na carteira.</p>` : null}
     <div className="grid g2">
-      ${card("meta", "Meta Ads", "Campanhas, investimento, compras e receita pela Marketing API", metaOn(conn), metaOn(conn) ? conn.meta.accountName + " · " + conn.meta.accountId : "Token de acesso com ads_read", live && live.errors && live.errors.meta)}
+      ${card("meta", "Meta Ads", "Campanhas, investimento, compras e receita pela Marketing API", metaOn(conn), metaOn(conn) ? (isAgency ? "Token" + (conn.meta.user ? " de " + conn.meta.user : "") + " · carteira com as contas dele" : conn.meta.accountName + " · " + conn.meta.accountId) : "Token de acesso com ads_read", live && live.errors && live.errors.meta)}
       ${card("google", "Google Ads", "Campanhas, investimento, cliques e conversões pelo MCP do Google Ads", googleOn(conn), googleOn(conn) ? conn.google.customerName : "Login com a conta Google", live && live.errors && live.errors.google)}
       <article className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
         <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title" style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: CH.tiktok.color }}></span>TikTok Ads</div><div className="card-sub">Campanhas e Spark Ads</div></div><span className="pill pill-violet">Em breve</span></div>
@@ -1835,7 +1843,7 @@ function AdIntegrations({ client, onUpdate, toast, isAgency, live }) {
         <div style=${{ display: "flex", gap: 8, alignItems: "center" }}><input id="target-roas" className="input num" style=${{ maxWidth: 110 }} inputMode="decimal" value=${target} onInput=${e => setTarget(e.target.value)} aria-label="Meta de ROAS" /><span style=${{ color: "var(--muted)" }}>x</span><button className="btn btn-sm btn-line" type="submit">Salvar</button></div>
       </form>
     </div>
-    ${open === "meta" ? html`<${MetaConnectDrawer} client=${client} onUpdate=${onUpdate} onClose=${() => setOpen(null)} toast=${toast} />` : null}
+    ${open === "meta" ? html`<${MetaConnectDrawer} client=${client} onUpdate=${onUpdate} onClose=${() => setOpen(null)} toast=${toast} agency=${isAgency} />` : null}
     ${open === "google" ? html`<${GoogleConnectDrawer} client=${client} onUpdate=${onUpdate} onClose=${() => setOpen(null)} toast=${toast} />` : null}
   </div>`;
 }
@@ -1858,24 +1866,98 @@ function Locked({ mod, plan }) {
     <p style=${{ fontSize: 13, color: "var(--muted)" }}>Para liberar, fale com seu gestor de conta: <span className="mono" style=${{ userSelect: "all", color: "var(--ink)" }}>comercial@readyai.com</span></p></div>`;
 }
 
+/* ================= carteira da agência com as contas reais do token da Meta ================= */
+function usePortfolio(client, enabled) {
+  const m = enabled && metaOn(client.conn) ? client.conn.meta : null;
+  const [tick, setTick] = useState(0);
+  const [st, setSt] = useState({ status: "idle", accounts: [] });
+  const key = JSON.stringify([m && m.token.slice(-8), tick]);
+  useEffect(() => {
+    if (!m) { setSt({ status: "idle", accounts: [] }); return; }
+    let dead = false;
+    setSt(s => ({ ...s, status: "loading", error: null }));
+    apiPost("/api/meta", { action: "portfolio" }, { "x-meta-token": m.token })
+      .then(j => { if (!dead) setSt({ status: "ready", accounts: j.accounts || [], truncated: j.truncated, at: new Date() }); })
+      .catch(e => { if (!dead) setSt({ status: "error", accounts: [], error: e.message }); });
+    return () => { dead = true; };
+  }, [key]);
+  return { ...st, reload: () => setTick(t => t + 1) };
+}
+
+// Transforma cada conta de anúncio numa linha da carteira, no mesmo formato da carteira de exemplo
+function livePortfolioRows(accounts, target) {
+  const BLOCK = { 2: "Conta desativada", 3: "Pagamento pendente: entrega parada", 7: "Conta em análise pela Meta", 8: "Pagamento pendente: entrega parada", 9: "Período de carência do pagamento", 100: "Encerramento pendente", 101: "Conta encerrada" };
+  return accounts.map(a => {
+    const m = a.m30, w1 = a.w1, w0 = a.w0;
+    const tracked = m.revenue > 0 ? m.spend : 0;
+    const t = { spend: m.spend, revenue: m.revenue, purchases: m.purchases, clicks: m.clicks, impr: m.impr, tracked, roas: m.revenue / tracked, cpa: m.spend / m.purchases, ctr: m.clicks / m.impr, ticket: m.revenue / m.purchases };
+    const issues = [];
+    if (a.status !== 1) issues.push({ t: "block", ch: "meta", text: (BLOCK[a.status] || "Conta com restrição") + (a.reason ? " (" + a.reason + ")" : ""), act: "Ver conta", go: "overview" });
+    const r7 = w1.revenue / w1.spend;
+    let waste7 = 0;
+    if (a.status === 1 && m.revenue > 0 && w1.spend >= 300 && r7 < 1.5) { waste7 = w1.spend; issues.push({ t: "waste", ch: "meta", text: "ROAS de " + xroas(r7) + " nos últimos 7 dias: " + brl(w1.spend) + " investidos", act: "Ver campanhas", go: "campaigns" }); }
+    if (a.status === 1 && m.purchases > 0 && w1.spend >= 100 && w1.purchases === 0) issues.push({ t: "track", ch: "meta", text: "Nenhuma conversão registrada em 7 dias, com " + brl(w1.spend) + " de gasto", act: "Ver visão geral", go: "overview" });
+    if (a.status === 1 && t.roas >= target * 1.5 && w1.spend > 0 && (!w1.revenue || r7 >= target)) issues.push({ t: "opp", ch: "meta", text: "ROAS de " + xroas(t.roas) + " em 30 dias, bem acima da meta", act: "Escalar", go: "campaigns" });
+    const base7 = m.revenue > 0 ? [w1.revenue, w0.revenue] : [w1.spend, w0.spend];
+    const d7 = base7[1] > 0 ? (base7[0] - base7[1]) / base7[1] : 0;
+    issues.sort((x, y) => ISSUE[x.t].rank - ISSUE[y.t].rank);
+    let health = m.spend > 0 ? 96 - issues.reduce((s, i) => s + ISSUE[i.t].w, 0) : 60;
+    if (fin(t.roas) && t.roas < target) health -= Math.round((target - t.roas) / target * 40);
+    if (a.status !== 1) health = Math.min(health, 40);
+    health = Math.max(25, Math.min(96, health));
+    const seg = [a.business || "Meta Ads", m.spend > 0 ? null : "sem gasto em 30 dias"].filter(Boolean).join(" · ");
+    return { id: a.id, name: a.name, seg, target, budget: NaN, spent: a.month, chs: ["meta"], d7, issues, t, pace: NaN, over: 0, health, waste7, live: true, status: a.status,
+      accounts: [{ ch: "meta", id: a.id, parent: a.business || "acesso direto do token", issue: issues.find(i => i.t === "block" || i.t === "track") }],
+      yday: a.yday, dayBudget: NaN };
+  });
+}
+
+function PortfolioBand({ pf, go, demo, accountsN }) {
+  if (demo) return html`<div className="data-band demo"><${Icon} n="eye" s=${15} /><span style=${{ flex: 1, minWidth: 200 }}>Você está vendo uma <b>carteira de exemplo</b>. Conecte o token da Meta para carregar as contas de anúncio da agência como clientes.</span><button className="btn btn-sm btn-primary" onClick=${() => go("integrations")}><${Icon} n="plug" s=${14} />Conectar Meta Ads</button></div>`;
+  if (pf.status === "loading") return html`<div className="data-band"><span className="spin" aria-hidden="true"></span><span>Carregando as contas de anúncio do token da Meta…</span></div>`;
+  if (pf.status === "error") return html`<div className="data-band err"><${Icon} n="alert" s=${15} /><span style=${{ flex: 1, minWidth: 200 }}><b>Meta Ads:</b> ${pf.error} Enquanto isso, a carteira mostra dados de exemplo.</span><button className="btn btn-sm btn-line" onClick=${pf.reload}>Tentar de novo</button><button className="btn btn-sm btn-primary" onClick=${() => go("integrations")}>Ver integrações</button></div>`;
+  if (pf.status === "ready" && !accountsN) return html`<div className="data-band"><${Icon} n="eye" s=${15} /><span style=${{ flex: 1, minWidth: 200 }}>O token é válido, mas não enxerga nenhuma conta de anúncio. A carteira mostra dados de exemplo.</span><button className="btn btn-sm btn-line" onClick=${() => go("integrations")}>Ver integrações</button></div>`;
+  return html`<div className="data-band live"><span className="pill pill-good"><span className="dot"></span>Dados reais</span>
+    <span className="band-src"><span className="acc-chip"><span className="ch-dot" style=${{ background: CH.meta.color }}></span>Meta Ads · ${accountsN} ${accountsN === 1 ? "conta de anúncio" : "contas de anúncio"}${pf.truncated ? " (primeiras 100)" : ""}</span></span>
+    <span className="band-note hide-sm">Últimos 30 dias · atualizado às ${pf.at ? pf.at.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}</span>
+    <button className="btn btn-sm btn-line" onClick=${pf.reload}>Atualizar</button></div>`;
+}
+
+function AccountWait({ live, name, onBack }) {
+  const errs = Object.values(live.errors || {});
+  if (live.status === "loading" || live.status === "idle") return html`<div className="card card-pad wait-card"><span className="spin" aria-hidden="true"></span><div><b>Carregando as campanhas de ${name}</b><div className="card-sub">Buscando os últimos 30 dias na Meta.</div></div></div>`;
+  return html`<div className="card card-pad wait-card"><${Icon} n=${errs.length ? "alert" : "eye"} s=${20} /><div style=${{ flex: 1, minWidth: 0 }}><b>${errs.length ? "Não consegui carregar as campanhas de " + name : name + " não tem campanhas com investimento nos últimos 30 dias"}</b>
+    <div className="card-sub">${errs.length ? errs[0] : "Escolha outra conta na carteira ou volte quando houver campanhas rodando."}</div>
+    <div className="msg-actions" style=${{ marginTop: 10 }}>${errs.length ? html`<button className="btn btn-sm btn-line" onClick=${live.reload}>Tentar de novo</button>` : null}<button className="btn btn-sm btn-primary" onClick=${onBack}>Voltar para a carteira</button></div></div></div>`;
+}
+
 /* ================= app do cliente ================= */
 function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate, startScreen }) {
   const allowed = new Set([...client.modules, "integrations"]);
   const isAgency = allowed.has("portfolio");
   const [screen, setScreen] = useState(startScreen && allowed.has(startScreen) ? startScreen : isAgency ? "portfolio" : allowed.has("copilot") ? "copilot" : "overview");
-  const [activeId, setActiveId] = useState("aurora");
-  const activeAcc = PORTFOLIO.find(p => p.id === activeId);
-  const pfRows = useMemo(() => isAgency ? portfolioRows() : [], [isAgency]);
-  const activeRow = pfRows.find(r => r.id === activeId);
-  const accountName = isAgency ? activeAcc.name : client.company;
-  if (isAgency) {
+  const [activeId, setActiveId] = useState(null);
+  const target = client.targetRoas || TARGET_ROAS;
+  const agencyMeta = isAgency && metaOn(client.conn);
+  const pf = usePortfolio(client, agencyMeta);
+  const livePf = agencyMeta && pf.status === "ready" && pf.accounts.length > 0;
+  const pfRows = useMemo(() => !isAgency ? [] : livePf ? livePortfolioRows(pf.accounts, target) : portfolioRows(), [isAgency, livePf, pf.at, target]);
+  const activeRow = isAgency ? (pfRows.find(r => r.id === activeId) || pfRows.find(r => r.id === "aurora") || pfRows[0]) : null;
+  const activeAcc = livePf ? activeRow : isAgency ? (PORTFOLIO.find(p => p.id === activeRow.id) || PORTFOLIO[0]) : null;
+  const accountName = isAgency ? activeRow.name : client.company;
+  if (isAgency && !livePf) {
     const row = activeRow;
     const f = 1 - activeAcc.d7;
     ACTIVE = { target: activeAcc.target, health: row.health, prev: { spend: PREV.spend * activeAcc.k, revenue: PREV.revenue * activeAcc.k * activeAcc.rm * f, purchases: PREV.purchases * activeAcc.k * activeAcc.rm * f, clicks: PREV.clicks * activeAcc.k, impr: PREV.impr * activeAcc.k } };
   }
-  const live = useLiveData(client, !isAgency);
-  const isLive = !isAgency && live.status === "ready" && live.camps.length > 0;
-  if (!isAgency) ACTIVE = isLive ? { prev: live.prev, target: client.targetRoas || TARGET_ROAS, health: liveHealth(live.camps, client.targetRoas || TARGET_ROAS), live: true } : { prev: PREV, target: TARGET_ROAS, health: 78 };
+  // dados reais: a conta do cliente (Starter/Pro) ou a conta aberta na carteira da agência
+  const liveSrc = isAgency ? (livePf && activeRow ? { conn: { meta: { token: client.conn.meta.token, accountId: activeRow.id, accountName: activeRow.name } } } : { conn: {} }) : client;
+  const live = useLiveData(liveSrc, isAgency ? !!(livePf && activeId && screen !== "portfolio") : true);
+  const isLive = live.status === "ready" && live.camps.length > 0 && (!isAgency || !!(livePf && activeId && screen !== "portfolio"));
+  if (!isAgency || livePf) ACTIVE = isLive ? { prev: live.prev, target, health: liveHealth(live.camps, target), live: true }
+    : isAgency ? { prev: { spend: NaN, revenue: NaN, purchases: NaN, clicks: NaN, impr: NaN }, target, health: activeRow ? activeRow.health : 70, live: true }
+    : { prev: PREV, target: TARGET_ROAS, health: 78 };
+  const waiting = isAgency && livePf && screen !== "portfolio" && screen !== "integrations" && !isLive;
   const [open, setOpen] = useState(() => ({ painel: true, gerenciador: true, inteligencias: true }));
   const [sideOpen, setSideOpen] = useState(false); const [dockOpen, setDockOpen] = useState(false);
   const [dockHidden, setDockHiddenS] = useState(() => store.get("readyai_dock_hidden", false));
@@ -1884,7 +1966,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   const openCopilot = () => { if (isNarrow()) setDockOpen(true); else setDockHidden(false); };
   const closeCopilot = () => { if (dockOpen) setDockOpen(false); else setDockHidden(true); };
   const [camps, setCamps] = useState(CAMPAIGNS0);
-  useEffect(() => { if (!isAgency) setCamps(isLive ? live.camps : CAMPAIGNS0); }, [isLive, live.at]);
+  useEffect(() => { if (isLive) setCamps(live.camps); else if (!isAgency) setCamps(CAMPAIGNS0); }, [isLive, live.at]);
   const [msgs, setMsgs] = useState([]); const [typing, setTyping] = useState(false);
   const [toastMsg, setToastMsg] = useState(null);
   const toast = m => { setToastMsg(m); clearTimeout(toast.t); toast.t = setTimeout(() => setToastMsg(null), 2600); };
@@ -1899,11 +1981,11 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
     const history = [...msgs, { id, role: "user", text }];
     setMsgs(history); setTyping(true);
     const screens = [...allowed].filter(k => k !== "whatsapp");
-    const budget = isLive ? null : isAgency ? { total: activeAcc.budget, spent: activeAcc.spent } : { total: MONTH_BUDGET, spent: MONTH_SPENT };
-    const data = aiContext({ camps, screen, account: accountName, isAgency, rows: pfRows, insights, budget, detail: !isLive && (!isAgency || activeId === "aurora"), live: isLive });
+    const budget = isLive || livePf ? null : isAgency ? { total: activeAcc.budget, spent: activeAcc.spent } : { total: MONTH_BUDGET, spent: MONTH_SPENT };
+    const data = aiContext({ camps, screen, account: accountName, isAgency, rows: pfRows, insights, budget, detail: !isLive && !livePf && (!isAgency || activeRow.id === "aurora"), live: isLive || livePf });
     try {
       const j = await aiCall({ provider: ai.conn.provider, model: ai.conn.model, system: aiSystem(data, screens, isAgency), messages: history.filter(m => !m.error).map(toAIMessage) }, ai.conn.key);
-      setMsgs(m => [...m, { id: id + 1, role: "bot", ...parseAIReply(j.text, { camps, screens, clientIds: isAgency ? PORTFOLIO.map(x => x.id) : [] }) }]);
+      setMsgs(m => [...m, { id: id + 1, role: "bot", ...parseAIReply(j.text, { camps, screens, clientIds: isAgency ? pfRows.map(x => x.id) : [] }) }]);
     } catch (e) {
       setMsgs(m => [...m, { id: id + 1, role: "bot", error: true, text: e.message, actions: [{ label: "Revisar conexão da IA", connect: true }] }]);
     } finally { setTyping(false); }
@@ -1920,12 +2002,13 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
     setTimeout(() => setMsgs(m => [...m, { id: Date.now(), role: "bot", text: done, actions: [{ label: "Ver campanhas", goto: "campaigns" }] }]), 400);
     toast("Alteração aplicada (simulação)");
   };
-  const openClient = (id, to) => { const p = PORTFOLIO.find(x => x.id === id); setActiveId(id); setCamps(scaleCamps(p)); setMsgs([]); go(to || "copilot"); toast("Você entrou no ambiente de " + p.name); };
+  const openClient = (id, to) => { const p = pfRows.find(x => x.id === id); if (!p) return; setActiveId(id); if (!livePf) setCamps(scaleCamps(PORTFOLIO.find(x => x.id === id))); setMsgs([]); go(to || "copilot"); toast("Você entrou no ambiente de " + p.name); };
   const toPortfolio = () => { setMsgs([]); go("portfolio"); };
   const chat = { msgs, typing, send, onConfirm, ai: !!ai.conn, onAction: a => { if (a.connect) aiStore.open(); else if (a.open) openClient(a.open, a.go); else if (a.goto) go(a.goto); } };
   const info = routeInfo(screen);
   const isHome = screen === "copilot";
-  const inClient = !isAgency || screen !== "portfolio";
+  // na agência, Integrações sem conta aberta é a tela da agência (fica no nível da carteira)
+  const inClient = !isAgency || (screen !== "portfolio" && !(screen === "integrations" && !activeId));
   const can = allowed.has(screen);
   const navGroup = g => {
     const active = (g.children || []).some(c => c.key === screen);
@@ -1961,7 +2044,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
           ${FOOT_NAV.map(g => html`<button key=${g.id} className=${"nav-item" + (screen === g.key ? " on" : "")} onClick=${() => go(g.key)}><span className="ico-wrap"><${Icon} n=${g.icon} s=${16} /></span>Integrações da agência</button>`)}
         </nav>` : html`
         ${isAgency ? html`<div className="client-card"><button className="back-link" onClick=${toPortfolio}><${Icon} n="chevR" s=${13} />Voltar para a carteira</button>
-          <div style=${{ display: "flex", gap: 10, alignItems: "center" }}><span className="c-av">${activeAcc.name[0]}</span><div style=${{ minWidth: 0 }}><div className="eyebrow" style=${{ fontSize: 10 }}>Ambiente do cliente</div><b style=${{ fontSize: 14, display: "block", lineHeight: 1.25 }}>${activeAcc.name}</b></div></div></div>` : null}
+          <div style=${{ display: "flex", gap: 10, alignItems: "center" }}><span className="c-av">${activeRow.name[0]}</span><div style=${{ minWidth: 0 }}><div className="eyebrow" style=${{ fontSize: 10 }}>Ambiente do cliente</div><b style=${{ fontSize: 14, display: "block", lineHeight: 1.25 }}>${activeRow.name}</b></div></div></div>` : null}
         <nav className="nav">
           ${NAV.filter(g => !g.hidden && g.key !== "portfolio").map(g => g.children ? navGroup(g) : html`<button key=${g.id} className=${"nav-item" + (g.accent ? " accent" : "") + (screen === g.key ? " on" : "")} onClick=${() => go(g.key)}>
             <span className="ico-wrap"><${Icon} n=${g.icon} s=${14} /></span><span style=${{ flex: 1 }}>${g.label}</span>${allowed.has(g.key) ? null : html`<${Icon} n="lock" s=${12} />`}</button>`)}
@@ -1975,17 +2058,19 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
       <main className="main">
         <header className="topbar">
           <div className="crumb"><button className="btn btn-ghost btn-sm menu-btn" onClick=${() => setSideOpen(true)} aria-label="Abrir menu"><${Icon} n="menu" /></button>
-            ${isAgency && inClient ? html`<button className="crumb-link hide-sm" onClick=${toPortfolio}>Carteira</button><span className="hide-sm" style=${{ color: "var(--line-2)" }}>/</span><span className="crumb-client"><span className="c-av sm">${activeAcc.name[0]}</span>${activeAcc.name}</span><span style=${{ color: "var(--line-2)" }}>/</span>` : null}
+            ${isAgency && inClient ? html`<button className="crumb-link hide-sm" onClick=${toPortfolio}>Carteira</button><span className="hide-sm" style=${{ color: "var(--line-2)" }}>/</span><span className="crumb-client"><span className="c-av sm">${activeRow.name[0]}</span>${activeRow.name}</span><span style=${{ color: "var(--line-2)" }}>/</span>` : null}
             ${info.group !== info.label && !(isAgency && inClient) ? html`<span className="hide-sm">${info.group}</span><span className="hide-sm" style=${{ color: "var(--line-2)" }}>/</span>` : null}<b>${info.label}</b></div>
-          <div className="top-actions">${!isHome && allowed.has("copilot") ? html`<button className=${"btn btn-line btn-sm dock-toggle hide-md" + (dockHidden ? "" : " on")} onClick=${() => (dockHidden ? openCopilot() : closeCopilot())} aria-pressed=${!dockHidden}><${Icon} n="sparkles" s=${14} />${dockHidden ? "Abrir copilot" : "Fechar copilot"}</button>` : null}<span className="chip-sel hide-sm"><${Icon} n="calendar" s=${14} />Últimos 30 dias</span>${isAgency ? html`<${ClientSwitcher} rows=${pfRows} activeId=${activeId} inClient=${inClient} onPick=${id => openClient(id, screen === "portfolio" ? "copilot" : screen)} onPortfolio=${toPortfolio} />` : html`<span className="chip-sel hide-sm">${isLive ? live.sources.map(x => html`<span key=${x.ch} className="ch-dot" style=${{ background: CH[x.ch].color }}></span>`) : html`<span className="ch-dot" style=${{ background: "var(--c-meta)" }}></span><span className="ch-dot" style=${{ background: "var(--c-google)" }}></span><span className="ch-dot" style=${{ background: "var(--c-tiktok)" }}></span>`}${isLive ? live.sources.length + (live.sources.length === 1 ? " conta" : " contas") : "3 contas de exemplo"}</span>`}</div>
+          <div className="top-actions">${!isHome && allowed.has("copilot") ? html`<button className=${"btn btn-line btn-sm dock-toggle hide-md" + (dockHidden ? "" : " on")} onClick=${() => (dockHidden ? openCopilot() : closeCopilot())} aria-pressed=${!dockHidden}><${Icon} n="sparkles" s=${14} />${dockHidden ? "Abrir copilot" : "Fechar copilot"}</button>` : null}<span className="chip-sel hide-sm"><${Icon} n="calendar" s=${14} />Últimos 30 dias</span>${isAgency ? html`<${ClientSwitcher} rows=${pfRows} activeId=${activeRow ? activeRow.id : null} inClient=${inClient} onPick=${id => openClient(id, screen === "portfolio" ? "copilot" : screen)} onPortfolio=${toPortfolio} />` : html`<span className="chip-sel hide-sm">${isLive ? live.sources.map(x => html`<span key=${x.ch} className="ch-dot" style=${{ background: CH[x.ch].color }}></span>`) : html`<span className="ch-dot" style=${{ background: "var(--c-meta)" }}></span><span className="ch-dot" style=${{ background: "var(--c-google)" }}></span><span className="ch-dot" style=${{ background: "var(--c-tiktok)" }}></span>`}${isLive ? live.sources.length + (live.sources.length === 1 ? " conta" : " contas") : "3 contas de exemplo"}</span>`}</div>
         </header>
-        ${isAgency && inClient ? html`<div className="client-band"><span className="c-av sm">${activeAcc.name[0]}</span><span>Você está no ambiente de <b>${activeAcc.name}</b></span>
+        ${isAgency && inClient ? html`<div className="client-band"><span className="c-av sm">${activeRow.name[0]}</span><span>Você está no ambiente de <b>${activeRow.name}</b></span>
           <span className="band-accs hide-sm">${activeRow.accounts.map(a => html`<span key=${a.ch} className="acc-chip">${html`<span className="ch-dot" style=${{ background: CH[a.ch].color }}></span>`}<span className="mono">${a.id}</span></span>`)}</span>
           <span className="band-note hide-sm">Ações e relatórios valem só para este cliente</span>
           <button className="btn btn-sm btn-line" onClick=${toPortfolio}><${Icon} n="users" s=${13} />Voltar para a carteira</button></div>` : null}
-        ${!isAgency ? html`<${DataBand} live=${live} company=${client.company} go=${go} isLive=${isLive} />` : null}
+        ${!isAgency ? html`<${DataBand} live=${live} company=${client.company} go=${go} isLive=${isLive} />`
+          : screen === "portfolio" ? html`<${PortfolioBand} pf=${pf} go=${go} demo=${!agencyMeta} accountsN=${pf.accounts.length} />`
+          : isLive ? html`<${DataBand} live=${live} company=${activeRow.name} go=${go} isLive=${true} />` : null}
         <div className=${"work" + (isHome ? " home" : showDock && !dockHidden ? "" : " no-dock")}>
-          ${isHome && can ? html`<${HomeCopilot} user=${client} client=${{ ...client, company: accountName }} chat=${chat} camps=${camps} insights=${insights} go=${go} />` : html`<div className="pane">${body}</div>`}
+          ${isHome && can && !waiting ? html`<${HomeCopilot} user=${client} client=${{ ...client, company: accountName }} chat=${chat} camps=${camps} insights=${insights} go=${go} />` : html`<div className="pane">${waiting ? html`<${AccountWait} live=${live} name=${activeRow.name} onBack=${toPortfolio} />` : body}</div>`}
           ${showDock && (!dockHidden || dockOpen) ? html`<aside className=${"dock" + (dockOpen ? " open" : "")} aria-label="Copilot"><${DockChat} chat=${chat} screen=${screen} onClose=${closeCopilot} /></aside>` : null}
         </div>
       </main>
@@ -2179,6 +2264,8 @@ function App() {
   const [clients, setClients] = useState(saved && saved.clients ? saved.clients : SEED_CLIENTS);
   const [session, setSession] = useState(saved && saved.session ? saved.session : null);
   useEffect(() => store.set(KEY, { clients, session }), [clients, session]);
+  // "abrir direto em Integrações" vale só na entrada; depois de usado, sai da sessão
+  useEffect(() => { if (session && session.to) setSession(x => { const n = { ...x }; delete n.to; return n; }); }, [session && session.to]);
   if (!session) return html`<${Login} clients=${clients} onLogin=${s => { setSession(s); if (s.role === "client") setClients(cs => cs.map(c => c.id === s.clientId ? { ...c, lastAccess: "agora", status: c.status === "convite" ? "ativo" : c.status } : c)); }} />`;
   const logout = () => setSession(null);
   if (session.role === "admin" && !session.as) return html`<${AdminConsole} clients=${clients} setClients=${setClients} onLogout=${logout} onImpersonate=${(id, to) => setSession({ ...session, as: id, to })} />`;

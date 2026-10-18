@@ -40,6 +40,18 @@ Não há dependências para instalar.
 - Cada cliente tem um identificador no MCP (padrão `readyai-<empresa>`). Se o cliente já usa o conector no Claude com outro identificador, informe o mesmo em *Opções avançadas*.
 - Se o MCP não tiver banco persistente, ele mostra um `refresh_token` na página de sucesso do login. Cole esse token em *Opções avançadas*.
 
+## Agência (plano Scale)
+
+1. Crie o cliente com o plano **Scale** e clique em **Conectar contas deste cliente**.
+2. Em **Meta Ads → Conectar**, cole o token e clique em *Validar e buscar contas*.
+   - O app mostra todas as contas que o token acessa.
+   - Clique em *Conectar carteira*.
+3. Em **Carteira de clientes**, cada conta de anúncio aparece como um cliente, na lateral e na tabela.
+   - A **Fila de hoje** mostra contas desativadas ou com pagamento pendente, ROAS de 7 dias abaixo de 1,5x, contas sem conversão na semana e oportunidades de escala.
+4. Clique numa conta para abrir o painel dela com as campanhas reais. Para trocar de conta, use o seletor do topo.
+
+Use um token de usuário do sistema do Business Manager da agência, com acesso a todas as contas dos clientes.
+
 ## Copilot (Claude ou ChatGPT)
 
 Em Integrações (ou no próprio chat), clique em **Conectar Claude** ou **Conectar ChatGPT** e cole a chave de API.
@@ -62,7 +74,9 @@ Onde criar as chaves:
 | Google Ads: receita e ROAS | Aparecem como n/d. O MCP ainda não devolve valor de conversão |
 | Gráfico diário, horário, público, região, criativos | Ainda de exemplo (sinalizado na tela) |
 | TikTok Ads | Ainda sem conector |
-| Carteira da agência (plano Scale) | Ainda de exemplo |
+| Carteira da agência (plano Scale) | Real para a Meta: cada conta de anúncio do token vira um cliente (até 100 contas) |
+| Ritmo do mês na carteira | Ainda sem orçamento mensal por cliente |
+| Google Ads e TikTok na carteira | Ainda não entram |
 | Pausar e mudar orçamento | Simulação; nada muda nas contas |
 
 Campanhas de leads, conversas ou alcance na Meta não entram no ROAS. Elas são avaliadas pelo custo por resultado.

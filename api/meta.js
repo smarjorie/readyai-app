@@ -157,6 +157,42 @@ async function data(token, accountId) {
   };
 }
 
+// Carteira da agência: todas as contas que o token acessa, com os números de cada uma.
+// Usa campos aninhados (insights dentro de /me/adaccounts) para não fazer uma chamada por conta.
+async function portfolio(token) {
+  const met = "{spend,impressions,clicks,actions,action_values}";
+  const tr = (a, b) => `insights.time_range(${JSON.stringify({ since: ymd(daysAgo(a)), until: ymd(daysAgo(b)) })})${met}`;
+  const q = fields => graphAll("/me/adaccounts", { fields: "account_id," + fields, limit: 25 }, token, 4);
+  const [base, w1, w0, yday, month] = await Promise.all([
+    q("name,account_status,disable_reason,currency,business{name},insights.date_preset(last_30d)" + met),
+    q("insights.date_preset(last_7d)" + met),
+    q(tr(14, 8)),
+    q("insights.date_preset(yesterday)" + met),
+    q("insights.date_preset(this_month)" + met),
+  ]);
+  const ins = row => {
+    const r = (row && row.insights && row.insights.data && row.insights.data[0]) || {};
+    const res = result(r.actions);
+    return { spend: num(r.spend), revenue: pick(r.action_values), purchases: res.n, result: res.kind, clicks: num(r.clicks), impr: num(r.impressions) };
+  };
+  const by = list => Object.fromEntries(list.map(a => [a.account_id, a]));
+  const W1 = by(w1), W0 = by(w0), Y = by(yday), M = by(month);
+  const STATUS = { 1: "Ativa", 2: "Desativada", 3: "Pagamento pendente", 7: "Em análise", 8: "Pagamento pendente", 9: "Período de carência", 100: "Encerramento pendente", 101: "Encerrada" };
+  const REASON = { 1: "política de anúncios", 2: "revisão de propriedade intelectual", 3: "risco de pagamento", 5: "revisão de anúncios", 7: "encerramento definitivo", 8: "conta de revenda sem uso", 9: "conta sem uso" };
+  const accounts = base.map(a => ({
+    id: "act_" + a.account_id,
+    name: a.name || a.account_id,
+    status: a.account_status,
+    statusLabel: STATUS[a.account_status] || "Outro",
+    reason: REASON[a.disable_reason] || "",
+    business: (a.business && a.business.name) || "",
+    currency: a.currency || "BRL",
+    m30: ins(a), w1: ins(W1[a.account_id]), w0: ins(W0[a.account_id]),
+    yday: ins(Y[a.account_id]).spend, month: ins(M[a.account_id]).spend,
+  })).sort((x, y) => (y.m30.spend - x.m30.spend) || x.name.localeCompare(y.name, "pt-BR"));
+  return { accounts, truncated: base.length >= 100 };
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return send(res, 405, { error: "Use POST." });
   const token = String(req.headers["x-meta-token"] || "").trim();
@@ -164,6 +200,7 @@ export default async function handler(req, res) {
   const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
   try {
     if (body.action === "accounts") return send(res, 200, await accounts(token));
+    if (body.action === "portfolio") return send(res, 200, await portfolio(token));
     if (body.action === "data") {
       if (!/^(act_)?\d{5,}$/.test(String(body.account_id || ""))) return send(res, 400, { error: "Escolha uma conta de anúncio." });
       return send(res, 200, await data(token, String(body.account_id)));
