@@ -1,0 +1,1892 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>ReadyAI Assistente de Marketing</title><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: app shell = sidebar | dados | copilot. Na home o copilot ocupa o centro e os insights ficam ao lado. */
+:root{
+  --bg:#f4f5f7; --surface:#ffffff; --surface-2:#f8f9fb; --line:#e6e8ec; --line-2:#d5d9e0;
+  --ink:#111827; --muted:#6b7280; --muted-2:#4b5563;
+  --accent:#1e6bff; --accent-ink:#1557e0; --accent-soft:#eaf1ff; --on-accent:#ffffff;
+  --good:#15803d; --good-soft:#e7f6ec; --warn:#b45309; --warn-soft:#fef3e2;
+  --bad:#b91c1c; --bad-soft:#fdecec; --on-bad:#ffffff; --on-good:#ffffff; --violet:#6d28d9; --violet-soft:#f1ecfe;
+  --c-meta:#1e6bff; --c-google:#e0730f; --c-tiktok:#0f9488; --c-spend:#9aa3b1; --c-linkedin:#0a66c2; --c-pinterest:#d0263a; --c-kwai:#e5a000;
+  --btn:#111827; --btn-hover:#2a3140; --btn-ink:#ffffff;
+  --shadow:0 1px 2px rgba(17,24,39,.05),0 8px 24px rgba(17,24,39,.06);
+  --overlay:rgba(17,24,39,.32);
+  --f-body:"Hanken Grotesk",Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+/* Tema claro é o padrão; o escuro só entra quando a pessoa escolhe no botão de tema */
+:root.rdy-dark{
+  --bg:#0e1116; --surface:#161a21; --surface-2:#1b2029; --line:#262c36; --line-2:#343b47;
+  --ink:#e8eaee; --muted:#9aa3b1; --muted-2:#b7bec9;
+  --accent:#5b8dff; --accent-ink:#8fb0ff; --accent-soft:#1a2540; --on-accent:#0b1020;
+  --good:#4ade80; --good-soft:#11251a; --warn:#fbbf24; --warn-soft:#2a2010;
+  --bad:#f87171; --bad-soft:#2c1517; --on-bad:#1a0b0b; --on-good:#06180d; --violet:#a78bfa; --violet-soft:#221a38;
+  --c-meta:#5b8dff; --c-google:#f59e3b; --c-tiktok:#2dd4bf; --c-spend:#5d6675; --c-linkedin:#5aa2e8; --c-pinterest:#f06a78; --c-kwai:#f5c242;
+  --btn:#e8eaee; --btn-hover:#ffffff; --btn-ink:#0e1116;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35); --overlay:rgba(0,0,0,.55);
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5;
+  font-feature-settings:"tnum" 1;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{text-wrap:balance;letter-spacing:-.015em}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--f-mono);font-size:11px;letter-spacing:.02em}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+#root{height:100%}
+.boot{display:grid;place-items:center;height:100%;color:var(--muted)}
+
+/* buttons & inputs */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 14px;border-radius:10px;font-weight:600;font-size:13.5px;white-space:nowrap;transition:background .15s,border-color .15s,color .15s}
+.btn-primary{background:var(--btn);color:var(--btn-ink)}
+.btn-primary:hover{background:var(--btn-hover)}
+.btn-accent{background:var(--accent);color:var(--on-accent)}
+.btn-accent:hover{filter:brightness(1.07)}
+.btn-ghost{color:var(--muted-2)}
+.btn-ghost:hover{background:var(--surface-2);color:var(--ink)}
+.btn-line{border:1px solid var(--line-2);background:var(--surface)}
+.btn-line:hover{background:var(--surface-2)}
+.btn-sm{height:30px;padding:0 10px;font-size:12.5px;border-radius:8px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12.5px;font-weight:600;color:var(--muted-2)}
+.input{height:40px;border:1px solid var(--line-2);background:var(--surface);border-radius:10px;padding:0 12px;outline:none;width:100%;min-width:0}
+textarea.input{height:auto;padding:10px 12px;resize:vertical}
+.input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+select.input{padding-right:28px}
+
+/* pills */
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.pill-good{background:var(--good-soft);color:var(--good)}
+.pill-warn{background:var(--warn-soft);color:var(--warn)}
+.pill-bad{background:var(--bad-soft);color:var(--bad)}
+.pill-info{background:var(--accent-soft);color:var(--accent-ink)}
+.pill-violet{background:var(--violet-soft);color:var(--violet)}
+.pill-mute{background:var(--surface-2);color:var(--muted-2);border:1px solid var(--line)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.ch-dot{width:8px;height:8px;border-radius:3px;flex:none}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px}
+.card-pad{padding:18px}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.card-title{font-size:15px;font-weight:650;font-weight:600}
+.card-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+
+/* ---------- login ---------- */
+.login{min-height:100%;display:grid;grid-template-columns:1.1fr 1fr;background:var(--surface)}
+.login-side{background-color:var(--surface-2);background-image:radial-gradient(circle at 12% 8%,var(--accent-soft),transparent 46%),radial-gradient(var(--line-2) 1px,transparent 1.2px);background-size:100% 100%,20px 20px;color:var(--ink);padding-block:48px;padding-left:max(clamp(32px,6vw,112px),env(safe-area-inset-left,0px));padding-right:clamp(32px,6vw,112px);display:flex;flex-direction:column;position:relative;overflow:hidden;border-right:1px solid var(--line)}
+.login-side h1{font-size:42px;line-height:1.06;font-weight:700;max-width:17ch;letter-spacing:-.025em}
+.login-side h1 em{font-style:normal;color:var(--accent)}
+.login-side .lead{color:var(--muted-2);max-width:48ch;font-size:15.5px;margin-top:14px}
+.ch-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.ch-chips > span{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:12.5px;font-weight:600;color:var(--muted-2)}
+.login-inner{width:100%;max-width:600px;margin:0 auto;flex:1;display:flex;flex-direction:column;gap:34px}
+.stage{position:relative;max-width:600px;width:100%}
+.stage .card{box-shadow:var(--shadow)}
+.st-main{position:relative;z-index:1;width:88%;margin:34px auto 104px 4%;padding:18px 18px 26px;display:flex;flex-direction:column;gap:12px}
+.st-float{position:absolute;z-index:2;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);font-size:12.5px}
+.st-alert{top:0;right:0;display:flex;align-items:center;gap:8px;padding:9px 12px;animation:floaty 6s ease-in-out infinite}
+.st-report{left:0;bottom:6px;width:236px;padding:11px 12px;display:flex;gap:10px;align-items:flex-start;animation:floaty 6.5s ease-in-out 1.2s infinite}
+.st-report .ok{width:26px;height:26px;border-radius:8px;background:var(--good-soft);color:var(--good);display:grid;place-items:center;flex:none}
+.st-report small{display:block;color:var(--muted);font-size:11.5px;margin-top:1px}
+.st-report .chs{display:flex;gap:4px;margin-top:6px;flex-wrap:nowrap}
+.st-report .chs span{white-space:nowrap;font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:5px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted-2)}
+.st-chat{right:0;bottom:0;width:290px;padding:12px 14px;display:flex;gap:10px;font-size:13px;line-height:1.45;animation:floaty 7s ease-in-out .6s infinite reverse}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.trust{display:flex;gap:8px 16px;flex-wrap:wrap;margin-top:auto;font-size:12.5px;color:var(--muted)}
+.trust span{display:inline-flex;align-items:center;gap:6px}
+.login-main{display:flex;align-items:center;justify-content:center;padding:40px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
+.login-box{width:100%;max-width:380px;display:flex;flex-direction:column;gap:18px}
+.pass-wrap{position:relative}
+.pass-wrap .input{padding-right:44px}
+.pass-eye{position:absolute;top:50%;right:4px;transform:translateY(-50%);width:34px;height:34px;border-radius:8px;display:grid;place-items:center;color:var(--muted)}
+.pass-eye:hover{color:var(--ink);background:var(--surface-2)}
+.login-box h2{font-size:24px;font-weight:700}
+.demo-creds{border:1px dashed var(--line-2);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.cred{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:9px;background:var(--surface-2);text-align:left;width:100%}
+.cred:hover{background:var(--accent-soft)}
+.cred small{display:block;color:var(--muted);font-size:12px}
+.err{color:var(--bad);background:var(--bad-soft);padding:9px 12px;border-radius:10px;font-size:13px}
+@media (max-width:1180px){.stage{display:flex;flex-direction:column;gap:10px}.st-main{width:100%;margin:0}.st-float{position:static;width:auto;animation:none}}
+@media (max-width:860px){.login{grid-template-columns:1fr}.login-side{padding:28px max(16px,env(safe-area-inset-right,0px)) 28px max(16px,env(safe-area-inset-left,0px));border-right:0;border-bottom:1px solid var(--line)}.login-side h1{font-size:30px}.stage,.trust{display:none}}
+
+/* ---------- app shell ---------- */
+.shell{display:grid;grid-template-columns:232px minmax(0,1fr);height:100%}
+.side{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;padding:14px 10px}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 8px 16px}
+.logo{width:30px;height:30px;border-radius:9px;background:var(--ink);color:var(--bg);display:grid;place-items:center;flex:none}
+.brand b{font-size:16px;font-weight:700;letter-spacing:-.02em}
+.brand small{display:block;font-size:11px;color:var(--muted);font-weight:500;margin-top:-2px}
+.nav{display:flex;flex-direction:column;gap:2px;flex:1;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:9px;color:var(--muted-2);font-weight:550;font-weight:500;font-size:13.5px;text-align:left}
+.nav-item:hover{background:var(--surface-2);color:var(--ink)}
+.nav-item.on{background:var(--surface-2);color:var(--ink);font-weight:600}
+.nav-item.accent{color:var(--ink);font-weight:600}
+.nav-item.accent .ico-wrap{background:var(--accent);color:var(--on-accent)}
+.ico-wrap{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;flex:none}
+.nav-sub{display:flex;flex-direction:column;gap:1px;margin:2px 0 6px 21px;padding-left:10px;border-left:1px solid var(--line)}
+.nav-sub button{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:6px 10px;border-radius:8px;color:var(--muted);font-size:13px;text-align:left}
+.nav-sub button:hover{color:var(--ink);background:var(--surface-2)}
+.nav-sub button.on{color:var(--ink);font-weight:600;background:var(--accent-soft)}
+.nav-sep{height:1px;background:var(--line);margin:8px 6px}
+.side-foot{border-top:1px solid var(--line);padding-top:10px;margin-top:8px}
+.who{display:flex;align-items:center;gap:10px;padding:8px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--accent-soft);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
+.who b{font-size:13px;display:block;line-height:1.2}
+.who small{font-size:11.5px;color:var(--muted)}
+.who b,.who small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who{gap:8px;padding:8px 4px}
+.who .btn-sm{padding:0 6px}
+
+.main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--surface);min-height:60px}
+.crumb{display:flex;align-items:center;gap:8px;min-width:0}
+.crumb span{color:var(--muted);font-size:13px;white-space:nowrap}
+.crumb b{font-size:15px;font-weight:650;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-actions{display:flex;align-items:center;gap:8px}
+.chip-sel{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 10px;border:1px solid var(--line-2);border-radius:9px;font-size:13px;background:var(--surface);white-space:nowrap}
+.menu-btn{display:none}
+@media (max-width:1180px){.hide-md{display:none!important}}
+.imp-banner{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:7px 16px;background:var(--violet-soft);color:var(--violet);font-size:13px;font-weight:600;text-align:center}
+.imp-banner button{text-decoration:underline;font-weight:700}
+
+.work{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 360px}
+.work.no-dock{grid-template-columns:minmax(0,1fr)}
+.work.home{grid-template-columns:minmax(0,1fr) 420px}
+.pane{overflow-y:auto;min-width:0;padding:22px 24px 40px}
+.dock{border-left:1px solid var(--line);background:var(--surface);min-height:0;display:flex;flex-direction:column}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.page-head h1{font-size:24px;font-weight:700}
+.page-head p{color:var(--muted);font-size:14px;margin-top:4px;max-width:64ch}
+.demo-note{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g-21{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+@media (max-width:1280px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g-21{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:640px){.g4,.g3,.g2{grid-template-columns:minmax(0,1fr)}}
+.stack{display:flex;flex-direction:column;gap:14px}
+
+.kpi{padding:16px;display:flex;flex-direction:column;gap:6px}
+.kpi-l{font-size:12.5px;color:var(--muted);font-weight:500;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.kpi-v{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.delta{font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:3px}
+.up{color:var(--good)} .down{color:var(--bad)}
+
+.tbl-wrap{overflow-x:auto;margin:0 -18px -18px}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{font-size:11.5px;color:var(--muted);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;letter-spacing:.02em}
+.tbl td{padding:11px 12px;border-bottom:1px solid var(--line);white-space:nowrap;color:var(--muted-2)}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td.r,.tbl th.r{text-align:right}
+.tbl td:first-child,.tbl th:first-child{padding-left:18px}
+.tbl td:last-child,.tbl th:last-child{padding-right:18px}
+.tbl tbody tr:hover td{background:var(--surface-2)}
+.cname{color:var(--ink);font-weight:600;max-width:320px;overflow:hidden;text-overflow:ellipsis;display:block}
+
+.bar-row{display:grid;grid-template-columns:110px minmax(0,1fr) 64px;align-items:center;gap:10px;font-size:13px}
+.bar-track{height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line)}
+.bar-fill{height:100%;border-radius:99px}
+
+.seg{display:inline-flex;padding:3px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);gap:2px;flex-wrap:wrap}
+.seg button{height:28px;padding:0 10px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+.toggle{position:relative;width:36px;height:20px;border-radius:20px;background:var(--line-2);transition:background .2s;flex:none}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.toggle.on{background:var(--accent)}
+.toggle.on::after{transform:translateX(16px)}
+.toggle[disabled]{opacity:.45;cursor:not-allowed}
+
+/* ---------- chat ---------- */
+.chat{display:flex;flex-direction:column;min-height:0;height:100%}
+.chat-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.chat-head b{font-size:14px;display:flex;align-items:center;gap:8px}
+.ctx{font-size:11.5px;color:var(--muted)}
+.msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;min-height:0}
+.msg{max-width:92%;font-size:13.5px;line-height:1.55}
+.msg.user{align-self:flex-end;background:var(--ink);color:var(--bg);padding:9px 13px;border-radius:14px 14px 4px 14px}
+.msg.bot{align-self:flex-start;display:flex;gap:10px}
+.bot-ico{width:26px;height:26px;border-radius:8px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;flex:none;margin-top:1px}
+.bot-body{display:flex;flex-direction:column;gap:10px;min-width:0}
+.bot-body p{color:var(--ink)}
+.bot-body ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.mini-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.mini{border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:var(--surface-2)}
+.mini small{display:block;font-size:11.5px;color:var(--muted)}
+.mini b{font-size:16px;font-weight:700}
+.msg-actions{display:flex;gap:6px;flex-wrap:wrap}
+.confirm-box{border:1px solid var(--warn);background:var(--warn-soft);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.typing{display:inline-flex;gap:4px;padding:8px 0}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:blink 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.sugs{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 10px}
+.sug{font-size:12.5px;padding:6px 10px;border-radius:999px;border:1px solid var(--line-2);background:var(--surface);color:var(--muted-2);text-align:left}
+.sug:hover{border-color:var(--accent);color:var(--accent-ink)}
+.composer{padding:10px 12px 12px;border-top:1px solid var(--line)}
+.composer form{display:flex;align-items:flex-end;gap:8px;border:1px solid var(--line-2);border-radius:14px;padding:6px 6px 6px 12px;background:var(--surface)}
+.composer form:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.composer textarea{flex:1;border:0;outline:none;resize:none;background:transparent;min-height:24px;max-height:120px;padding:6px 0;font-size:14px;min-width:0}
+.send{width:34px;height:34px;border-radius:10px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;flex:none}
+.send[disabled]{opacity:.4}
+
+/* home copilot */
+.home-chat{display:flex;flex-direction:column;min-height:0;height:100%;background:var(--bg)}
+.home-chat .msgs{padding:24px max(24px,4%)}
+.home-chat .composer{border-top:0;padding:8px max(24px,4%) 20px}
+.home-chat .composer form{box-shadow:var(--shadow);padding:8px 8px 8px 16px}
+.home-chat .sugs{padding:0 max(24px,4%) 8px}
+.hello{padding:28px max(24px,4%) 6px}
+.hello h1{font-size:30px;font-weight:700;line-height:1.15;max-width:30ch}
+.hello p{color:var(--muted);margin-top:8px;font-size:14.5px}
+.hello .badge-co{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--accent-ink);background:var(--accent-soft);padding:4px 10px;border-radius:999px;margin-bottom:14px}
+.insights-pane{border-left:1px solid var(--line);background:var(--surface);overflow-y:auto;padding:18px 18px 32px;display:flex;flex-direction:column;gap:16px}
+.health{display:flex;align-items:center;gap:14px;padding:14px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line)}
+.ins{border:1px solid var(--line);border-radius:14px;padding:13px 14px 12px 16px;position:relative;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
+.ins::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;background:var(--sev)}
+.ins h3{font-size:13.5px;font-weight:650;font-weight:600;line-height:1.35}
+.ins p{font-size:12.5px;color:var(--muted-2);line-height:1.5}
+.ins-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ins-acts{display:flex;gap:6px;flex-wrap:wrap}
+.link-btn{font-size:12.5px;font-weight:600;color:var(--accent-ink);display:inline-flex;align-items:center;gap:4px;padding:4px 0}
+.link-btn:hover{text-decoration:underline}
+.mini-kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mini-kpis div{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.mini-kpis small{font-size:11.5px;color:var(--muted);display:block}
+.mini-kpis b{font-size:18px;font-weight:700;letter-spacing:-.01em}
+
+/* creatives */
+.cre{overflow:hidden;display:flex;flex-direction:column}
+.thumb{aspect-ratio:16/10;max-width:100%;position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:12px;color:#fff}
+.thumb .fmt{align-self:flex-start;background:rgba(0,0,0,.35);padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600}
+.thumb .hl{font-size:15px;font-weight:700;line-height:1.15;text-shadow:0 1px 8px rgba(0,0,0,.25);max-width:14ch}
+.thumb .fmt,.thumb .hl{position:relative;z-index:1}
+.thumb::after{content:"";position:absolute;inset:45% 0 0 0;background:linear-gradient(to top,rgba(0,0,0,.38),transparent);pointer-events:none}
+.thumb .hl{z-index:2}
+.cre-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.cre-body{padding:10px 12px 12px!important;gap:8px!important}
+.client-switch{cursor:pointer;background:var(--surface)}
+.switcher{position:relative}
+.sw-pop{position:absolute;right:0;top:calc(100% + 6px);width:320px;max-width:calc(100vw - 32px);max-height:440px;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:8px;z-index:50;display:flex;flex-direction:column;gap:2px}
+.sw-pop .input{height:36px;margin-bottom:4px}
+.sw-item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:9px;text-align:left;width:100%}
+.sw-item:hover{background:var(--surface-2)}
+.sw-item.on{background:var(--accent-soft)}
+.sw-item b{display:block;font-size:13.5px;font-weight:600}
+.sw-item small{display:block;font-size:11.5px;color:var(--muted)}
+.sw-sep{height:1px;background:var(--line);margin:4px 2px}
+.c-av{width:34px;height:34px;border-radius:10px;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-weight:700;font-size:14px;flex:none}
+.c-av.sm{width:22px;height:22px;border-radius:6px;font-size:11px}
+.hdot{width:8px;height:8px;border-radius:50%;flex:none}
+.hdot.good{background:var(--good)}.hdot.warn{background:var(--warn)}.hdot.bad{background:var(--bad)}
+.nav-label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:12px 10px 4px}
+.client-card{margin:0 0 10px;padding:10px;border-radius:12px;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);display:flex;flex-direction:column;gap:8px}
+.back-link{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--accent-ink);align-self:flex-start}
+.back-link svg{transform:rotate(180deg)}
+.client-band{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px max(20px,env(safe-area-inset-right,0px)) 8px 20px;background:var(--accent-soft);border-bottom:1px solid color-mix(in srgb,var(--accent) 25%,transparent);font-size:13px;color:var(--ink)}
+.band-accs{display:flex;gap:6px;flex-wrap:wrap}
+.band-note{color:var(--muted-2);font-size:12px;margin-left:auto}
+.client-band .btn{margin-left:auto}
+.band-note+.btn{margin-left:0}
+.crumb-link{color:var(--muted);font-size:13px}
+.crumb-link:hover{color:var(--accent-ink);text-decoration:underline}
+.crumb-client{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;white-space:nowrap}
+.acc-chip{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:7px;background:var(--surface);border:1px solid var(--line);font-size:12px;color:var(--muted-2);position:relative;white-space:nowrap}
+.acc-alert{width:7px;height:7px;border-radius:50%;background:var(--bad);box-shadow:0 0 0 2px var(--surface)}
+.acc-btn{display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap;color:var(--muted)}
+.acc-list{display:flex;flex-direction:column;gap:6px;padding:2px 0}
+.acc-item{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;white-space:normal}
+.pend{display:inline-flex;gap:4px;flex-wrap:wrap}
+.pend .pill{height:22px;padding:0 7px}
+.ops{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+@media (max-width:1380px){.ops{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:700px){.ops{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.op{display:flex;flex-direction:column;gap:6px;text-align:left;padding:14px 14px 13px;border-radius:14px;background:var(--surface);border:1px solid var(--line);position:relative;overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.op::before{content:"";position:absolute;left:0;top:0;right:0;height:3px;background:var(--sev)}
+.op:hover{border-color:var(--sev)}
+.op.on{border-color:var(--sev);box-shadow:0 0 0 2px color-mix(in srgb,var(--sev) 30%,transparent)}
+.op-top{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--muted-2)}
+.op-ico{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:var(--sev);background:color-mix(in srgb,var(--sev) 12%,transparent)}
+.op-n{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.op-n small{font-size:12.5px;font-weight:500;color:var(--muted);letter-spacing:0}
+.op-d{font-size:12px;color:var(--muted);line-height:1.35}
+.queue{padding:4px 0 6px;overflow:hidden}
+.queue-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 18px 10px}
+.q-row{display:grid;grid-template-columns:22px 148px 150px minmax(0,1fr) auto;align-items:center;gap:12px;padding:9px 18px;border-top:1px solid var(--line);font-size:13px;position:relative}
+.q-row::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--sev)}
+.q-row.done{opacity:.5}
+.q-row.done .q-text{text-decoration:line-through}
+.q-more{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;border-top:1px solid var(--line);font-size:12.5px;font-weight:600;color:var(--accent-ink)}
+.q-more:hover{background:var(--surface-2)}
+.q-check{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--line-2);display:grid;place-items:center;color:var(--on-good)}
+.q-check.on{background:var(--good);border-color:var(--good)}
+.q-client{font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.q-text{display:flex;align-items:center;gap:7px;color:var(--muted-2);min-width:0}
+.q-acts{justify-self:end}
+@media (max-width:900px){.q-row{grid-template-columns:22px minmax(0,1fr) auto;row-gap:4px}.q-row .pill{grid-column:2}.q-client{grid-column:2}.q-text{grid-column:2}.q-acts{grid-column:3;grid-row:1}}
+.client-switch{cursor:pointer}
+.client-switch:hover{border-color:var(--accent);color:var(--accent-ink)}
+.view-seg button{display:grid;place-items:center;width:34px;padding:0}
+.cre-list{overflow:hidden}
+.cre-row{display:grid;grid-template-columns:52px minmax(0,2.4fr) minmax(110px,1fr) 70px 60px 90px 90px;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted-2)}
+.cre-row:last-child{border-bottom:0}
+.cre-row:not(.cre-row-head):hover{background:var(--surface-2)}
+.cre-row .r{text-align:right}
+.cre-row-head{font-size:11.5px;font-weight:600;color:var(--muted);padding-top:12px;padding-bottom:10px;letter-spacing:.02em}
+.mini-thumb{position:relative;width:52px;height:52px;border-radius:10px;overflow:hidden;display:block}
+@media (max-width:760px){.cre-row{grid-template-columns:52px minmax(0,1fr) 70px}.cre-row>:nth-child(3),.cre-row>:nth-child(5),.cre-row>:nth-child(6),.cre-row>:nth-child(7){display:none}}
+.cre-art{position:absolute;inset:0;width:100%;height:100%;display:block}
+.btn-danger{background:var(--bad);color:var(--on-bad)}
+.btn-danger:hover{filter:brightness(1.08)}
+.btn-good{background:var(--good);color:var(--on-good)}
+.btn-good:hover{filter:brightness(1.08)}
+.roasbar{position:relative;display:inline-block;width:84px;height:8px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line);flex:none}
+.roasbar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px}
+.roasbar u{position:absolute;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:var(--ink);border-radius:2px}
+.rec-why{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;white-space:normal;max-width:180px;line-height:1.35}
+.camp-tbl tr.off td{color:var(--muted)}
+.camp-tbl tr.off .cname{color:var(--muted-2)}
+.confirm-row td{background:var(--surface-2)!important;padding-top:8px;padding-bottom:10px}
+.confirm-inline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--ink)}
+.rec-card{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px 20px;flex-wrap:wrap;background:linear-gradient(90deg,var(--accent-soft),var(--surface) 70%)}
+.rec-head{display:flex;gap:10px;align-items:flex-start;min-width:0;flex:1 1 320px}
+.rec-head b{font-size:14px}
+.rec-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.rec-chips .pill{height:30px;padding:0 12px;font-size:12.5px;cursor:pointer;border:1px solid transparent}
+.rec-chips .pill.sel{border-color:currentColor;box-shadow:0 0 0 2px var(--surface) inset}
+.rec-chips .cnt{background:var(--surface);color:var(--ink);border-radius:99px;padding:0 6px;font-size:11px;line-height:17px;margin-left:2px}
+.cre-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:10px}
+.cre-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.cre-stats small{display:block;font-size:11px;color:var(--muted)}
+.cre-stats b{font-size:14px}
+
+/* admin */
+.admin{min-height:100%;display:flex;flex-direction:column}
+.admin-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));background:var(--surface);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.admin-body{padding:24px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px));max-width:1240px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{padding:10px 12px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tabs button.on{color:var(--ink);border-color:var(--ink)}
+.drawer-bg{position:fixed;inset:0;background:var(--overlay);z-index:40;animation:fade .15s}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:var(--surface);z-index:41;display:flex;flex-direction:column;box-shadow:var(--shadow);animation:slide .2s ease-out;padding-bottom:env(safe-area-inset-bottom,0px)}
+.drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px max(20px,env(safe-area-inset-right,0px)) 14px 20px;border-bottom:1px solid var(--line);padding-top:max(18px,env(safe-area-inset-top,0px))}
+.drawer-body{flex:1;overflow-y:auto;padding:18px max(20px,env(safe-area-inset-right,0px)) 18px 20px;display:flex;flex-direction:column;gap:18px}
+.drawer-foot{padding:12px max(20px,env(safe-area-inset-right,0px)) 12px 20px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+@keyframes fade{from{opacity:0}}
+@keyframes slide{from{transform:translateX(30px);opacity:0}}
+.mod-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.mod-row:last-child{border-bottom:0}
+.mod-row b{font-size:13.5px;font-weight:600;display:block}
+.mod-row small{font-size:12px;color:var(--muted)}
+.plan-card{display:flex;flex-direction:column;gap:12px;padding:18px}
+.plan-card .price{font-size:28px;font-weight:700;letter-spacing:-.02em}
+.plan-card ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;font-size:13px}
+.plan-card li{display:flex;gap:8px;align-items:center}
+.plan-card li.off{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line-2)}
+.matrix td,.matrix th{text-align:center}
+.matrix td:first-child,.matrix th:first-child{text-align:left}
+.secret{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:var(--good-soft);color:var(--good);font-size:13px;flex-wrap:wrap}
+.secret code{font-family:var(--f-mono);font-size:13px;user-select:all;color:var(--ink)}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:13.5px;font-weight:500;z-index:60;box-shadow:var(--shadow);animation:fade .2s;max-width:calc(100% - 32px)}
+.fab{display:none;position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;height:46px;padding:0 16px;border-radius:999px;background:var(--accent);color:var(--on-accent);align-items:center;gap:8px;font-weight:600;box-shadow:var(--shadow)}
+.fab.show{display:inline-flex}
+.dock-toggle.on{background:var(--accent-soft);color:var(--accent-ink);border-color:transparent}
+.locked{max-width:520px;margin:40px auto;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;padding:32px 24px}
+.lock-ico{width:52px;height:52px;border-radius:16px;background:var(--violet-soft);color:var(--violet);display:grid;place-items:center}
+
+/* responsive shell */
+@media (max-width:1180px){
+  .work,.work.home{grid-template-columns:minmax(0,1fr)}
+  .dock{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);z-index:41;box-shadow:var(--shadow);transform:translateX(105%);transition:transform .2s ease-out;padding-bottom:env(safe-area-inset-bottom,0px);padding-top:env(safe-area-inset-top,0px)}
+  .dock.open{transform:none}
+  .fab{display:inline-flex}
+  .work.home{display:flex;flex-direction:column;overflow-y:auto}
+  .work.home .home-chat{height:auto;flex:none;min-height:auto}
+  .work.home .insights-pane{flex:none}
+  .work.home .insights-pane{border-left:0;border-top:1px solid var(--line);overflow:visible}
+}
+@media (max-width:860px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .side{position:fixed;inset:0 auto 0 0;width:260px;z-index:42;transform:translateX(-105%);transition:transform .2s;padding-top:max(14px,env(safe-area-inset-top,0px));padding-left:max(10px,env(safe-area-inset-left,0px))}
+  .side.open{transform:none;box-shadow:var(--shadow)}
+  .menu-btn{display:inline-flex}
+  .topbar{padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px))}
+  .pane{padding:18px max(16px,env(safe-area-inset-right,0px)) 90px max(16px,env(safe-area-inset-left,0px))}
+  .hide-sm{display:none!important}
+  .hello h1{font-size:24px}
+}
+
+/* ---------- IA conectada ---------- */
+.prov-dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
+.ai-badge{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;border:1px solid var(--line-2);background:var(--surface);font-size:12px;font-weight:600;color:var(--ink);min-width:0;max-width:240px}
+.ai-badge:hover{background:var(--surface-2)}
+.ai-badge .mono{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.dock .ai-badge{max-width:170px}
+.ai-cta{margin:0 16px 16px;border:1px solid var(--line-2);border-radius:14px;background:var(--surface);padding:14px;display:flex;gap:12px;align-items:flex-start;box-shadow:var(--shadow)}
+.home-chat .ai-cta{margin:0 max(24px,4%) 20px}
+.ai-cta b{font-size:14px;display:block}
+.ai-cta p{color:var(--muted);font-size:13px;margin:2px 0 12px}
+.ai-cta-ico{width:32px;height:32px;border-radius:10px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;flex:none}
+.ai-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ai-tab{border:1px solid var(--line-2);border-radius:12px;padding:12px;text-align:left;display:flex;flex-direction:column;gap:3px;background:var(--surface)}
+.ai-tab:hover{background:var(--surface-2)}
+.ai-tab.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.ai-tab small{color:var(--muted);font-size:12px}
+.ai-note{font-size:12.5px;color:var(--muted-2);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start;line-height:1.5}
+.ai-note svg{margin-top:2px;color:var(--good)}
+</style>
+
+<div id="root"><div class="boot">Carregando ReadyAI…</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js"></script>
+<script>
+"use strict";
+const { useState, useEffect, useRef, useMemo, Fragment } = React;
+const html = htm.bind(React.createElement);
+
+/* ================= helpers ================= */
+const fmtInt = n => Math.round(n).toLocaleString("pt-BR");
+const brl = n => "R$ " + Math.round(n).toLocaleString("pt-BR");
+const brl2 = n => "R$ " + n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const dec = (n, d = 2) => n.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
+const pct = (n, d = 1) => dec(n * 100, d) + "%";
+const xroas = n => dec(n, 2) + "x";
+const kfmt = n => n >= 1e6 ? dec(n / 1e6, 2) + " mi" : n >= 1e3 ? dec(n / 1e3, 1) + " mil" : fmtInt(n);
+const delta = (a, b) => (a - b) / b;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+function seeded(seed) { let s = seed; return () => (s = (s * 9301 + 49297) % 233280) / 233280; }
+const tempPass = () => { const c = "abcdefghjkmnpqrstuvwxyz23456789"; let s = ""; for (let i = 0; i < 10; i++) s += c[Math.floor(Math.random() * c.length)]; return s; };
+
+/* ================= icons ================= */
+const ICONS = {
+  sparkles: ["M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.13-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.13a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.13 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.13a.5.5 0 0 1-.96 0z", "M20 3v4", "M22 5h-4"],
+  chart: ["M3 3v18h18", "M18 17V9", "M13 17V5", "M8 17v-3"],
+  megaphone: ["m3 11 18-5v12L3 14v-3z", "M11.6 16.8a3 3 0 1 1-5.8-1.6"],
+  zap: ["M13 2 3 14h9l-1 8 10-12h-9l1-8z"],
+  plug: ["M12 22v-5", "M9 8V2", "M15 8V2", "M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"],
+  lock: ["M5 11h14v10H5z", "M8 11V7a4 4 0 0 1 8 0v4"],
+  send: ["m22 2-7 20-4-9-9-4Z", "M22 2 11 13"],
+  logout: ["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", "m16 17 5-5-5-5", "M21 12H9"],
+  users: ["M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "M22 21v-2a4 4 0 0 0-3-3.87", "M16 3.13a4 4 0 0 1 0 7.75"],
+  alert: ["m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z", "M12 9v4", "M12 17h.01"],
+  up: ["m22 7-8.5 8.5-5-5L2 17", "M16 7h6v6"],
+  down: ["m22 17-8.5-8.5-5 5L2 7", "M16 17h6v-6"],
+  shield: ["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"],
+  x: ["M18 6 6 18", "m6 6 12 12"],
+  menu: ["M4 6h16", "M4 12h16", "M4 18h16"],
+  msg: ["M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"],
+  plus: ["M12 5v14", "M5 12h14"],
+  check: ["M20 6 9 17l-5-5"],
+  chevD: ["m6 9 6 6 6-6"],
+  chevR: ["m9 18 6-6-6-6"],
+  arrowR: ["M5 12h14", "m12 5 7 7-7 7"],
+  image: ["M3 5h18v14H3z", "m3 16 5-5 4 4 3-3 6 6", "M15 9h.01"],
+  file: ["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z", "M14 2v6h6", "M8 13h8", "M8 17h5"],
+  target: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z", "M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z", "M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"],
+  clock: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z", "M12 6v6l4 2"],
+  sliders: ["M4 21v-7", "M4 10V3", "M12 21v-9", "M12 8V3", "M20 21v-5", "M20 12V3", "M2 14h4", "M10 8h4", "M18 16h4"],
+  eyeOff: ["M10.7 5.1A10.4 10.4 0 0 1 12 5c7 0 10 7 10 7a13.2 13.2 0 0 1-1.7 2.7", "M6.6 6.6A13.5 13.5 0 0 0 2 12s3 7 10 7a9.7 9.7 0 0 0 5.4-1.6", "M9.9 9.9a3 3 0 1 0 4.2 4.2", "m2 2 20 20"],
+  eye: ["M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z", "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"],
+  key: ["m21 2-9.6 9.6", "M7.5 22a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11z", "m15.5 7.5 3 3L22 7l-3-3"],
+  pause: ["M7 4h3v16H7z", "M14 4h3v16h-3z"],
+  play: ["m7 4 13 8-13 8V4z"],
+  list: ["M8 6h13", "M8 12h13", "M8 18h13", "M3.5 6h.01", "M3.5 12h.01", "M3.5 18h.01"],
+  grid: ["M3 3h7v7H3z", "M14 3h7v7h-7z", "M14 14h7v7h-7z", "M3 14h7v7H3z"],
+  calendar: ["M3 5h18v16H3z", "M16 3v4", "M8 3v4", "M3 10h18"],
+  copy: ["M8 8h12v12H8z", "M4 16V4h12"],
+  wallet: ["M12 2v20", "M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"],
+  bulb: ["M9 18h6", "M10 22h4", "M12 2a7 7 0 0 0-4 12.7V16h8v-1.3A7 7 0 0 0 12 2z"],
+  sun: ["M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "M12 2v2", "M12 20v2", "m4.93 4.93 1.41 1.41", "m17.66 17.66 1.41 1.41", "M2 12h2", "M20 12h2", "m6.34 17.66-1.41 1.41", "m19.07 4.93-1.41 1.41"],
+  moon: ["M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"],
+  building: ["M4 21V3h11v18", "M15 9h5v12", "M8 7h3", "M8 11h3", "M8 15h3", "M2 21h20"],
+};
+function Icon({ n, s = 16, w = 2 }) {
+  return html`<svg width=${s} height=${s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth=${w} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style=${{ flex: "none" }}>
+    ${(ICONS[n] || []).map((d, i) => html`<path key=${i} d=${d} />`)}
+  </svg>`;
+}
+
+/* ================= produto: módulos, planos, navegação ================= */
+const MODULES = [
+  { key: "copilot", label: "Assistente de Marketing", desc: "Copilot conversacional + insights do dia", group: "Assistente de Marketing", core: true },
+  { key: "overview", label: "Visão geral", desc: "KPIs, receita x investimento, canais e funil", group: "Painel analítico" },
+  { key: "analytics", label: "Performance analítica", desc: "Horários, públicos, regiões e dispositivos", group: "Painel analítico" },
+  { key: "campaigns", label: "Campanhas multicanal", desc: "Meta, Google e TikTok numa tabela só", group: "Gerenciador de campanhas" },
+  { key: "creatives", label: "Criativos", desc: "Ranking e fadiga de criativos por canal", group: "Gerenciador de campanhas" },
+  { key: "report", label: "Relatórios", desc: "Envio e agendamento por e-mail, WhatsApp, Slack e Teams", group: "Gerenciador de campanhas" },
+  { key: "skills", label: "Habilidades do agente", desc: "Rotinas que o agente executa sozinho", group: "Inteligências do agente" },
+  { key: "insights", label: "Insights", desc: "Alertas e oportunidades priorizados", group: "Inteligências do agente" },
+  { key: "portfolio", label: "Carteira de clientes", desc: "Todas as contas dos clientes da agência num painel só", group: "Agência" },
+  { key: "whatsapp", label: "WhatsApp CRM", desc: "Conversas e visão híbrida. Oculto na plataforma por enquanto", group: "WhatsApp", hidden: true },
+];
+const PLANS = {
+  starter: { name: "Starter", price: 297, tag: "Para quem está começando", modules: ["copilot", "overview", "campaigns"] },
+  pro: { name: "Pro", price: 697, tag: "Mais vendido", modules: ["copilot", "overview", "analytics", "campaigns", "creatives", "report", "insights"] },
+  scale: { name: "Scale", price: 1497, tag: "Para agências", note: "Até 10 clientes incluídos · R$ 79 por cliente adicional", modules: ["portfolio", "copilot", "overview", "analytics", "campaigns", "creatives", "report", "insights", "skills"] },
+};
+const NAV = [
+  { id: "portfolio", label: "Carteira de clientes", icon: "users", key: "portfolio" },
+  { id: "copilot", label: "Assistente de Marketing", icon: "sparkles", key: "copilot", accent: true },
+  { id: "painel", label: "Painel analítico", icon: "chart", children: [{ key: "overview", label: "Visão geral" }, { key: "analytics", label: "Performance analítica" }] },
+  { id: "whatsapp", label: "WhatsApp", icon: "msg", hidden: true, children: [{ key: "whatsapp", label: "WhatsApp CRM" }] },
+  { id: "gerenciador", label: "Gerenciador de campanhas", icon: "megaphone", children: [{ key: "campaigns", label: "Campanhas" }, { key: "creatives", label: "Criativos" }, { key: "report", label: "Relatórios" }] },
+  { id: "inteligencias", label: "Inteligências do agente", icon: "zap", children: [{ key: "skills", label: "Habilidades" }, { key: "insights", label: "Insights" }] },
+];
+const FOOT_NAV = [{ id: "integracoes", label: "Integrações", icon: "plug", key: "integrations" }];
+function routeInfo(key) {
+  for (const g of [...NAV, ...FOOT_NAV]) {
+    if (g.key === key) return { group: g.label, label: g.label };
+    const c = (g.children || []).find(x => x.key === key);
+    if (c) return { group: g.label, label: c.label };
+  }
+  return { group: "", label: "" };
+}
+// Acesso da gestora: fica fora da tela de login. A senha não aparece no código, só o hash SHA-256 dela.
+const ADMIN = { email: "admin@readyai.com", passHash: "23268d8add1b0d5ea444ebd1c193c553f3bed9a6893066c962658876eb9df72c", name: "Sarah Machado" };
+async function sha256(t) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)); return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, "0")).join(""); }
+const SEED_CLIENTS = [
+  { id: "cl1", name: "Camila Rocha", company: "Loja Aurora", email: "camila@lojaaurora.com.br", password: "demo123", plan: "pro", modules: [...PLANS.pro.modules], status: "ativo", since: "2026-07-02", lastAccess: "hoje, 08:41", accounts: 3 },
+  { id: "cl2", name: "Marina Alves", company: "Studio Vitta", email: "marina@studiovitta.com.br", password: "demo123", plan: "starter", modules: [...PLANS.starter.modules], status: "ativo", since: "2026-09-15", lastAccess: "ontem, 19:02", accounts: 1 },
+  { id: "cl3", name: "Rafael Lima", company: "Grupo Nortex", email: "rafael@nortex.com.br", password: "demo123", plan: "scale", modules: [...PLANS.scale.modules], status: "ativo", since: "2026-05-20", lastAccess: "hoje, 07:15", accounts: 9 },
+  { id: "cl4", name: "Paulo Dias", company: "Café Serrano", email: "paulo@cafeserrano.com.br", password: "demo123", plan: "starter", modules: [...PLANS.starter.modules], status: "suspenso", since: "2026-06-11", lastAccess: "12 out", accounts: 1 },
+  { id: "cl5", name: "Júlia Martins", company: "Bella Pet", email: "julia@bellapet.com.br", password: "demo123", plan: "pro", modules: [...PLANS.pro.modules, "skills"], status: "convite", since: "2026-10-16", lastAccess: "nunca", accounts: 2 },
+];
+
+/* ================= dados de exemplo (últimos 30 dias) ================= */
+const CH = { meta: { label: "Meta Ads", color: "var(--c-meta)" }, google: { label: "Google Ads", color: "var(--c-google)" }, tiktok: { label: "TikTok Ads", color: "var(--c-tiktok)" } };
+const CAMPAIGNS0 = [
+  { id: "c1", name: "Advantage+ Shopping · Coleção Verão", ch: "meta", status: "ativa", budget: 650, spend: 17800, purchases: 540, revenue: 92300, clicks: 25400, impr: 1210000, freq: 2.1, d7: .08 },
+  { id: "c2", name: "Remarketing 30d · Carrinho abandonado", ch: "meta", status: "ativa", budget: 320, spend: 9400, purchases: 310, revenue: 51800, clicks: 9100, impr: 410000, freq: 4.8, d7: -.21 },
+  { id: "c3", name: "Prospecção · Lookalike compradores 3%", ch: "meta", status: "ativa", budget: 520, spend: 14900, purchases: 300, revenue: 52100, clicks: 21800, impr: 1080000, freq: 1.7, d7: .04 },
+  { id: "c4", name: "Tráfego · Guia de estilo (blog)", ch: "meta", status: "pausada", budget: 0, spend: 6800, purchases: 85, revenue: 29200, clicks: 14200, impr: 690000, freq: 1.9, d7: 0 },
+  { id: "c5", name: "PMax · Coleção Verão", ch: "google", status: "ativa", budget: 380, spend: 11200, purchases: 380, revenue: 69400, clicks: 8900, impr: 520000, freq: 0, d7: .12, limited: true },
+  { id: "c6", name: "Search · Marca", ch: "google", status: "ativa", budget: 150, spend: 4300, purchases: 150, revenue: 26900, clicks: 5200, impr: 61000, freq: 0, d7: .02 },
+  { id: "c7", name: "Search · Vestidos (genérico)", ch: "google", status: "ativa", budget: 290, spend: 8600, purchases: 110, revenue: 15800, clicks: 6400, impr: 188000, freq: 0, d7: -.14 },
+  { id: "c8", name: "Shopping · Acessórios", ch: "google", status: "ativa", budget: 110, spend: 3200, purchases: 40, revenue: 5800, clicks: 2300, impr: 97000, freq: 0, d7: -.05 },
+  { id: "c9", name: "Topo · Vídeos UGC", ch: "tiktok", status: "ativa", budget: 180, spend: 5200, purchases: 45, revenue: 5700, clicks: 1900, impr: 302000, freq: 2.6, d7: -.18 },
+  { id: "c10", name: "Spark Ads · Influenciadoras", ch: "tiktok", status: "ativa", budget: 110, spend: 2920, purchases: 188, revenue: 13580, clicks: 1200, impr: 129000, freq: 2.2, d7: .19 },
+];
+const PREV = { spend: 79100, revenue: 318400, purchases: 1880, clicks: 88900, impr: 4510000 };
+const TARGET_ROAS = 3;
+// conta aberta no momento (no plano Scale muda ao trocar de cliente)
+let ACTIVE = { prev: PREV, target: TARGET_ROAS, health: 78 };
+const MONTH_BUDGET = 90000, MONTH_SPENT = 50400, MONTH_ELAPSED = 18 / 31;
+
+const chPresent = camps => ["meta", "google", "tiktok"].filter(k => camps.some(c => c.ch === k));
+function totals(list) {
+  const t = list.reduce((a, c) => ({ spend: a.spend + c.spend, revenue: a.revenue + c.revenue, purchases: a.purchases + c.purchases, clicks: a.clicks + c.clicks, impr: a.impr + c.impr }), { spend: 0, revenue: 0, purchases: 0, clicks: 0, impr: 0 });
+  return { ...t, roas: t.revenue / t.spend, cpa: t.spend / t.purchases, ctr: t.clicks / t.impr, ticket: t.revenue / t.purchases };
+}
+const DAYS = (() => { const out = []; const end = new Date(2026, 9, 18); for (let i = 29; i >= 0; i--) { const d = new Date(end); d.setDate(end.getDate() - i); out.push(d); } return out; })();
+const dayLbl = d => String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0");
+function series(total, seed, growth, noise) {
+  const r = seeded(seed); const raw = DAYS.map((d, i) => { const wk = [0.92, 1.04, 1.02, 1, 1.03, 1.08, 0.91][d.getDay()]; return (1 + growth * i / 29) * wk * (1 + (r() - .5) * noise); });
+  const s = raw.reduce((a, b) => a + b, 0); return raw.map(v => v / s * total);
+}
+const CREATIVES = [
+  { id: "k1", name: "Vestido Lino · Reels provador", fmt: "Vídeo 9:16", ch: "meta", camp: "c1", spend: 6200, ctr: .031, roas: 6.4, hook: .41, status: "ok", bg: "linear-gradient(150deg,#e7a977,#b5543c)", hl: "Leveza que vai do café ao jantar" },
+  { id: "k2", name: "Carrossel · 5 looks de verão", fmt: "Carrossel", ch: "meta", camp: "c1", spend: 4900, ctr: .024, roas: 5.1, hook: null, status: "ok", bg: "linear-gradient(150deg,#7cc6c0,#2a7f86)", hl: "5 looks, 1 mala" },
+  { id: "k3", name: "Remarketing · Você esqueceu algo", fmt: "Imagem 1:1", ch: "meta", camp: "c2", spend: 5100, ctr: .009, roas: 4.2, hook: null, status: "fadiga", bg: "linear-gradient(150deg,#9aa0ad,#4e5563)", hl: "Seu carrinho ainda está aqui" },
+  { id: "k4", name: "UGC · Unboxing Ana", fmt: "Vídeo 9:16", ch: "tiktok", camp: "c10", spend: 1700, ctr: .012, roas: 5.3, hook: .38, status: "ok", bg: "linear-gradient(150deg,#f0a6c0,#a23d6b)", hl: "Abri meu pedido da Aurora" },
+  { id: "k5", name: "UGC · Antes e depois", fmt: "Vídeo 9:16", ch: "tiktok", camp: "c9", spend: 3100, ctr: .005, roas: .9, hook: .17, status: "ruim", bg: "linear-gradient(150deg,#c7b48a,#7a6338)", hl: "Do básico ao uau em 10s" },
+  { id: "k6", name: "PMax · Coleção Verão (asset group)", fmt: "Responsivo", ch: "google", camp: "c5", spend: 11200, ctr: .017, roas: 6.2, hook: null, status: "ok", bg: "linear-gradient(150deg,#f3c46b,#c27a12)", hl: "Coleção Verão 2027" },
+  { id: "k7", name: "Lookalike · Frete grátis", fmt: "Imagem 4:5", ch: "meta", camp: "c3", spend: 7600, ctr: .021, roas: 3.6, hook: null, status: "ok", bg: "linear-gradient(150deg,#8fa8f0,#3a55b8)", hl: "Frete grátis acima de R$ 199" },
+  { id: "k8", name: "Lookalike · Depoimentos", fmt: "Vídeo 4:5", ch: "meta", camp: "c3", spend: 7300, ctr: .016, roas: 3.4, hook: .29, status: "atencao", bg: "linear-gradient(150deg,#b9a2e6,#5f3fa8)", hl: "“Virei cliente fiel”" },
+];
+const HOURS = [12, 7, 4, 3, 2, 3, 8, 22, 51, 78, 96, 104, 118, 121, 109, 101, 98, 112, 139, 168, 186, 171, 132, 63];
+const AGES = [["18–24", .14], ["25–34", .38], ["35–44", .29], ["45–54", .13], ["55+", .06]];
+const REGIONS = [["São Paulo", 864, 27400], ["Rio de Janeiro", 318, 12100], ["Minas Gerais", 251, 9800], ["Paraná", 196, 7200], ["Rio Grande do Sul", 158, 6100], ["Santa Catarina", 142, 5300], ["Bahia", 98, 4600], ["Outros", 121, 11820]];
+const DEVICES = [["Celular", .78], ["Desktop", .19], ["Tablet", .03]];
+
+function buildInsights(camps) {
+  const g = id => camps.find(c => c.id === id);
+  const c9 = g("c9"), c2 = g("c2"), c5 = g("c5"), c7 = g("c7"), c10 = g("c10");
+  const t = totals(camps);
+  const extra = 150 * 30, est = extra * 4.5;
+  const list = [];
+  if (c9 && c9.status === "ativa") list.push({ id: "i1", sev: "bad", tag: "Atenção", icon: "alert", title: `TikTok “${c9.name}” está abaixo do ROAS mínimo`, body: `Gastou ${brl(c9.spend)} com ROAS de ${xroas(c9.revenue / c9.spend)}. Sua meta é ${xroas(ACTIVE.target)}. O criativo “Antes e depois” retém só 17% nos 3 primeiros segundos.`, metric: xroas(c9.revenue / c9.spend), ask: "O que faço com a campanha de vídeos UGC do TikTok?", goto: "campaigns" });
+  if (c2) list.push({ id: "i2", sev: "warn", tag: "Risco", icon: "eye", title: "Fadiga criativa no Remarketing 30d", body: `Frequência de ${dec(c2.freq, 1)} e CTR em queda de 32% nos últimos 7 dias. A receita da campanha caiu ${pct(Math.abs(c2.d7), 0)} na semana.`, metric: "freq. " + dec(c2.freq, 1), ask: "Como resolvo a fadiga do remarketing?", goto: "creatives" });
+  if (c5) list.push({ id: "i3", sev: "good", tag: "Melhoria de ROAS", icon: "up", title: `${c5 && c5.name} está limitada por orçamento`, body: `ROAS de ${xroas(c5.revenue / c5.spend)} e 38% das impressões perdidas por orçamento. Somar R$ 150/dia pode trazer cerca de ${brl(est)} a mais em 30 dias.`, metric: "+" + brl(est), ask: "Quanto posso escalar a PMax Coleção Verão?", goto: "campaigns" });
+  if (c7) list.push({ id: "i4", sev: "warn", tag: "Custo subindo", icon: "wallet", title: `CPC de ${c7 && c7.name} subiu 22%`, body: `ROAS de ${xroas(c7.revenue / c7.spend)}, abaixo da meta. Termos amplos concentram 41% do gasto sem nenhuma compra.`, metric: xroas(c7.revenue / c7.spend), ask: "Por que o Search de Vestidos está caro?", goto: "campaigns" });
+  if (c10) list.push({ id: "i5", sev: "info", tag: "Oportunidade", icon: "bulb", title: "Spark Ads de influenciadoras supera o resto do TikTok", body: `ROAS de ${xroas(c10.revenue / c10.spend)} com só ${brl(c10.spend)} investidos. Vale mover verba do Topo UGC para cá.`, metric: xroas(c10.revenue / c10.spend), ask: "Vale mover verba do TikTok UGC para Spark Ads?", goto: "creatives" });
+  list.push({ id: "i6", sev: "good", tag: "Tendência", icon: "target", title: "CPA geral caiu no período", body: `CPA de ${brl2(t.cpa)} contra ${brl2(ACTIVE.prev.spend / ACTIVE.prev.purchases)} nos 30 dias anteriores, puxado por Advantage+ e PMax.`, metric: pct(delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases), 0), ask: "O que fez meu CPA cair?", goto: "overview" });
+  return list;
+}
+const SEV = { bad: { c: "var(--bad)", pill: "pill-bad" }, warn: { c: "var(--warn)", pill: "pill-warn" }, good: { c: "var(--good)", pill: "pill-good" }, info: { c: "var(--accent)", pill: "pill-info" } };
+
+/* ================= carteira da agência (plano Scale) ================= */
+const PORTFOLIO = [
+  { id: "aurora", name: "Loja Aurora", seg: "Moda e acessórios", k: 1, rm: 1, target: 3, budget: 90000, spent: 50400, chs: ["meta", "google", "tiktok"], d7: .06, words: null,
+    issues: [{ t: "fatigue", ch: "meta", text: "2 criativos com frequência acima de 4", act: "Ver criativos", go: "creatives" }, { t: "report", text: "Relatório semanal sai hoje às 18h", act: "Revisar relatório", go: "report" }] },
+  { id: "bonacci", name: "Casa Bonacci", seg: "Móveis e decoração", k: 1.6, rm: .62, target: 3, budget: 140000, spent: 79800, chs: ["meta", "google"], d7: -.12, words: ["Linha Outono", "Sofás", "Decoração", "Guia de ambientes"],
+    issues: [{ t: "block", ch: "meta", text: "2 anúncios reprovados por política de preços", act: "Revisar anúncios", go: "campaigns" }, { t: "fatigue", ch: "meta", text: "1 criativo com CTR em queda de 30%", act: "Ver criativos", go: "creatives" }] },
+  { id: "vitalis", name: "Vitalis Suplementos", seg: "Saúde e bem-estar", k: .7, rm: 1.25, target: 3.5, budget: 62000, spent: 35100, chs: ["meta", "google", "tiktok"], d7: .14, words: ["Linha Whey", "Vitaminas", "Kits", "Guia de treino"],
+    issues: [{ t: "track", ch: "meta", text: "Pixel sem eventos de compra há 26 h", act: "Ver rastreamento", go: "integrations" }, { t: "opp", ch: "google", text: "PMax limitada por orçamento com ROAS acima de 7x", act: "Escalar", go: "campaigns" }] },
+  { id: "lumi", name: "Studio Lumi", seg: "Cosméticos", k: .9, rm: 1.05, target: 3.5, budget: 70000, spent: 64400, chs: ["meta", "tiktok"], d7: .03, words: ["Linha Glow", "Batons", "Kits presente", "Tutoriais"],
+    issues: [{ t: "pace", text: "92% da verba usada com 58% do mês: acaba por volta do dia 20", act: "Ajustar orçamento", go: "campaigns" }, { t: "fatigue", ch: "tiktok", text: "3 criativos com fadiga no TikTok", act: "Ver criativos", go: "creatives" }] },
+  { id: "rota", name: "AutoPeças Rota", seg: "Automotivo", k: 1.2, rm: .55, target: 3, budget: 110000, spent: 61200, chs: ["google", "meta"], d7: -.09, words: ["Revisão de Verão", "Pastilhas de freio", "Acessórios", "Guia de manutenção"],
+    issues: [{ t: "block", ch: "google", text: "Cartão recusado: campanhas paradas desde 06:10", act: "Ver faturamento", go: "integrations" }] },
+  { id: "petfeliz", name: "Pet Feliz", seg: "Pet shop e delivery", k: .45, rm: .8, target: 3, budget: 40000, spent: 15200, chs: ["meta", "google"], d7: .01, words: ["Linha Premium", "Rações", "Brinquedos", "Guia do tutor"],
+    issues: [{ t: "pace", text: "Só 38% da verba usada com 58% do mês: sobram cerca de R$ 8 mil", act: "Redistribuir verba", go: "campaigns" }, { t: "track", ch: "google", text: "Conversões offline sem importação há 3 dias", act: "Ver rastreamento", go: "integrations" }] },
+  { id: "prisma", name: "Escola Prisma", seg: "Cursos online", k: .5, rm: 1.1, target: 4, budget: 45000, spent: 24600, chs: ["meta", "google", "tiktok"], d7: .08, words: ["Turma de Novembro", "Cursos de inglês", "Trilhas", "Blog de carreira"],
+    issues: [{ t: "fatigue", ch: "meta", text: "2 criativos com frequência acima de 4", act: "Ver criativos", go: "creatives" }, { t: "report", text: "Relatório mensal vence hoje", act: "Revisar relatório", go: "report" }] },
+  { id: "serra", name: "Café Serra Alta", seg: "Alimentos e bebidas", k: .25, rm: .9, target: 3, budget: 20000, spent: 11300, chs: ["meta"], d7: -.02, words: ["Safra 2026", "Cafés especiais", "Kits", "Guia de preparo"],
+    issues: [{ t: "block", ch: "meta", text: "Limite de gastos da conta é atingido em 2 dias", act: "Ajustar limite", go: "integrations" }] },
+];
+const ISSUE = {
+  block: { label: "Entrega travada", short: "Bloqueios", icon: "alert", pill: "pill-bad", c: "var(--bad)", w: 20, rank: 0 },
+  waste: { label: "Verba em risco", short: "Verba em risco", icon: "wallet", pill: "pill-bad", c: "var(--bad)", w: 12, rank: 1 },
+  track: { label: "Rastreamento", short: "Rastreamento", icon: "target", pill: "pill-warn", c: "var(--warn)", w: 12, rank: 2 },
+  pace: { label: "Ritmo de verba", short: "Ritmo de verba", icon: "clock", pill: "pill-warn", c: "var(--warn)", w: 10, rank: 3 },
+  fatigue: { label: "Fadiga criativa", short: "Criativos em fadiga", icon: "eye", pill: "pill-violet", c: "var(--violet)", w: 4, rank: 4 },
+  opp: { label: "Oportunidade", short: "Oportunidades", icon: "up", pill: "pill-good", c: "var(--good)", w: 0, rank: 5 },
+  report: { label: "Relatório", short: "Relatórios", icon: "file", pill: "pill-info", c: "var(--accent)", w: 0, rank: 6 },
+};
+const ACC_IDS = { meta: n => "act_" + (2104387650 + n * 7919), google: n => (482 + n) + "-" + (193 + n * 3) + "-" + (5710 + n * 11), tiktok: n => "BC " + (7301928374 + n * 131) };
+function scaleCamps(p) {
+  const w = p.words;
+  return CAMPAIGNS0.map(c => {
+    let name = c.name;
+    if (w) name = name.replace("Coleção Verão", w[0]).replace("Vestidos", w[1]).replace("Acessórios", w[2]).replace("Guia de estilo (blog)", w[3]);
+    if (p.chs.indexOf(c.ch) < 0) return null;
+    return { ...c, name, spend: Math.round(c.spend * p.k), revenue: Math.round(c.revenue * p.k * p.rm), purchases: Math.max(1, Math.round(c.purchases * p.k * p.rm)), clicks: Math.round(c.clicks * p.k), impr: Math.round(c.impr * p.k), budget: Math.round(c.budget * p.k / 10) * 10 };
+  }).filter(Boolean);
+}
+function portfolioRows() {
+  return PORTFOLIO.map((p, pi) => {
+    const camps = scaleCamps(p); const t = totals(camps); const pace = p.spent / p.budget; const over = pace - MONTH_ELAPSED;
+    const bad = camps.filter(c => c.status === "ativa" && c.revenue / c.spend < 1.5).sort((a, b) => b.spend - a.spend);
+    const waste7 = bad.reduce((a, c) => a + c.spend * 7 / 30, 0);
+    const issues = [...p.issues];
+    if (bad.length && waste7 >= 1000) issues.push({ t: "waste", ch: bad[0].ch, text: (bad.length > 1 ? bad.length + " campanhas" : "“" + bad[0].name + "”") + " com ROAS abaixo de 1,5x: " + brl(waste7) + " em 7 dias", act: "Ver campanhas", go: "campaigns" });
+    issues.sort((a, b) => ISSUE[a.t].rank - ISSUE[b.t].rank);
+    let health = 96 - issues.reduce((a, i) => a + ISSUE[i.t].w, 0);
+    if (t.roas < p.target) health -= Math.round((p.target - t.roas) / p.target * 40);
+    health = Math.max(25, Math.min(96, health));
+    const accounts = p.chs.map((ch, i) => ({ ch, id: ACC_IDS[ch](pi * 3 + i), parent: ch === "meta" ? "BM " + p.name : ch === "google" ? "MCC Grupo Nortex" : "Business Center Nortex", issue: issues.find(x => x.ch === ch && (x.t === "block" || x.t === "track")) }));
+    return { ...p, t, pace, over, health, issues, waste7, accounts, yday: t.spend / 30 * (1 + (p.d7 * .6)), dayBudget: camps.filter(c => c.status === "ativa").reduce((a, c) => a + c.budget, 0) };
+  });
+}
+const healthCls = h => h >= 75 ? "good" : h >= 55 ? "warn" : "bad";
+
+/* ================= copilot conectado ao Claude ou ao ChatGPT ================= */
+// A conversa usa a chave de API da própria pessoa. A chave fica no localStorage deste navegador
+// e vai para /api/chat (função serverless na Vercel), que repassa para a Anthropic ou a OpenAI.
+const AI_PROVIDERS = {
+  anthropic: {
+    name: "Claude", vendor: "Anthropic", color: "#d97757", keyHint: "sk-ant-api03-…",
+    keyUrl: "https://console.anthropic.com/settings/keys", keyPlace: "Console da Anthropic",
+    defModel: "claude-sonnet-5-5", models: ["claude-sonnet-5-5", "claude-opus-5-5", "claude-haiku-5-5"],
+    prefer: ["claude-sonnet-5-5", "sonnet", "opus", "haiku"],
+  },
+  openai: {
+    name: "ChatGPT", vendor: "OpenAI", color: "#10a37f", keyHint: "sk-proj-…",
+    keyUrl: "https://platform.openai.com/api-keys", keyPlace: "painel da OpenAI Platform",
+    defModel: "gpt-6.1-sol", models: ["gpt-6.1-sol", "gpt-6-astra", "gpt-6-luna"],
+    prefer: ["gpt-6.1-sol", "gpt-6-sol", "gpt-6-astra", "gpt-6", "gpt-5"],
+  },
+};
+const AI_KEY = "readyai_ai_v1";
+const aiStore = (() => {
+  let state = { conn: store.get(AI_KEY, null), modal: null };
+  const subs = new Set();
+  const emit = () => subs.forEach(f => f());
+  const set = patch => { state = { ...state, ...patch }; emit(); };
+  return {
+    get: () => state,
+    subscribe: f => { subs.add(f); return () => subs.delete(f); },
+    connect: conn => { store.set(AI_KEY, conn); set({ conn, modal: null }); },
+    disconnect: () => { try { localStorage.removeItem(AI_KEY); } catch (e) {} set({ conn: null }); },
+    open: provider => set({ modal: provider || (state.conn && state.conn.provider) || "anthropic" }),
+    close: () => set({ modal: null }),
+  };
+})();
+function useAI() { return React.useSyncExternalStore(aiStore.subscribe, aiStore.get); }
+function pickModel(prov, list) {
+  const ids = (list || []).map(m => m.id);
+  for (const p of AI_PROVIDERS[prov].prefer) { const hit = ids.find(id => id === p) || ids.find(id => id.includes(p)); if (hit) return hit; }
+  return ids[0] || AI_PROVIDERS[prov].defModel;
+}
+async function aiCall(payload, key) {
+  let r;
+  try {
+    r = await fetch("/api/chat", { method: "POST", headers: { "content-type": "application/json", "x-ai-key": key }, body: JSON.stringify(payload) });
+  } catch (e) { throw new Error("Sem conexão com o servidor do copilot. Confira sua internet e tente de novo."); }
+  let j = {}; try { j = await r.json(); } catch (e) {}
+  if (!r.ok) throw new Error(j.error || (r.status === 404 || r.status === 405 ? "O servidor do copilot (/api/chat) não está disponível. Publique na Vercel ou rode localmente com “vercel dev”." : "Falha ao falar com a IA (" + r.status + ")."));
+  return j;
+}
+
+// Dados da conta aberta, enviados para a IA a cada pergunta
+function aiContext({ camps, screen, account, isAgency, rows, insights, budget, detail }) {
+  const t = totals(camps);
+  const r2 = n => Math.round(n * 100) / 100;
+  const data = {
+    conta: account,
+    tela_atual: routeInfo(screen).label || screen,
+    periodo: "últimos 30 dias (19/09 a 18/10/2026)",
+    moeda: "BRL",
+    meta_roas: ACTIVE.target,
+    saude_da_conta: ACTIVE.health,
+    totais: { investimento: Math.round(t.spend), receita: Math.round(t.revenue), compras: t.purchases, roas: r2(t.roas), cpa: r2(t.cpa), ctr_pct: r2(t.ctr * 100), ticket_medio: r2(t.ticket) },
+    periodo_anterior: { investimento: Math.round(ACTIVE.prev.spend), receita: Math.round(ACTIVE.prev.revenue), compras: Math.round(ACTIVE.prev.purchases) },
+    orcamento_do_mes: { total: budget.total, gasto_ate_agora: budget.spent, pct_do_mes_decorrido: Math.round(MONTH_ELAPSED * 100) },
+    campanhas: camps.map(c => ({
+      id: c.id, nome: c.name, canal: CH[c.ch].label, status: c.status, orcamento_diario: c.budget,
+      investimento: c.spend, receita: c.revenue, compras: c.purchases, roas: r2(c.revenue / c.spend), cpa: r2(c.spend / c.purchases),
+      ctr_pct: r2(c.clicks / c.impr * 100), frequencia: c.freq || null, variacao_receita_7d_pct: Math.round(c.d7 * 100), limitada_por_orcamento: !!c.limited,
+    })),
+    insights_do_dia: insights.map(i => ({ tipo: i.tag, titulo: i.title, detalhe: i.body })),
+  };
+  if (detail) {
+    data.criativos = CREATIVES.map(k => ({ nome: k.name, formato: k.fmt, canal: CH[k.ch].label, investimento: k.spend, ctr_pct: r2(k.ctr * 100), roas: k.roas, retencao_3s_pct: k.hook == null ? null : Math.round(k.hook * 100), status: k.status }));
+    data.publico = {
+      compras_por_hora_0_a_23h: HOURS,
+      faixas_etarias_pct_compras: AGES.map(([f, v]) => ({ faixa: f, pct: Math.round(v * 100) })),
+      regioes: REGIONS.map(([n, c, s]) => ({ regiao: n, compras: c, investimento: s })),
+      dispositivos_pct: DEVICES.map(([d, v]) => ({ dispositivo: d, pct: Math.round(v * 100) })),
+    };
+  }
+  if (isAgency) data.carteira_da_agencia = rows.map(r => ({
+    id: r.id, cliente: r.name, segmento: r.seg, roas: r2(r.t.roas), meta_roas: r.target, investimento_30d: Math.round(r.t.spend),
+    orcamento_mes: r.budget, gasto_mes: r.spent, saude: r.health, pendencias: r.issues.map(i => ISSUE[i.t].label + ": " + i.text),
+  }));
+  return data;
+}
+function aiSystem(data, screens, isAgency) {
+  return [
+    "Você é o Copilot de Marketing da ReadyAI, assistente de gestores de tráfego pago (Meta Ads, Google Ads e TikTok Ads).",
+    "Responda sempre em português do Brasil, de forma direta e prática, como um analista sênior de mídia paga.",
+    "Use SOMENTE os números em DADOS. Não invente métricas; se algo não estiver nos dados, diga que essa informação não está disponível.",
+    "Valores em reais. ROAS = receita / investimento. A meta de ROAS da conta está em meta_roas. Formate no padrão brasileiro (R$ 12.300, 3,45x, 12%).",
+    "",
+    "FORMATO: devolva APENAS um objeto JSON válido, sem markdown e sem texto fora dele, com os campos:",
+    '{"text": "resposta principal em 1 a 4 frases",',
+    ' "bullets": ["até 5 itens curtos"],',
+    ' "cards": [["rótulo curto", "valor formatado"]],',
+    ' "actions": [{"label": "Ver campanhas", "goto": "campaigns"}],',
+    ' "confirm": {"kind": "pause", "id": "c9"}}',
+    "Só \"text\" é obrigatório. Use cards (até 4) para números-chave e bullets para recomendações.",
+    "Telas válidas para \"goto\": " + screens.join(", ") + ".",
+    isAgency ? "Para abrir um cliente da carteira use {\"label\": \"Abrir <cliente>\", \"open\": \"<id do cliente>\", \"goto\": \"<tela>\"}." : "",
+    "Use \"confirm\" só quando recomendar UMA alteração concreta numa campanha: kind \"pause\" (pausar), \"activate\" (reativar uma pausada) ou \"budget\" com \"value\" = novo orçamento diário em reais. A alteração só acontece se a pessoa clicar em Confirmar; nunca diga que já alterou algo.",
+    "",
+    "DADOS:",
+    JSON.stringify(data),
+  ].filter(x => x !== "").join("\n");
+}
+function toAIMessage(m) {
+  if (m.role === "user") return { role: "user", content: m.text };
+  const o = { text: m.text };
+  ["bullets", "cards", "actions"].forEach(k => { if (m[k]) o[k] = m[k]; });
+  if (m.confirm) o.confirm = { kind: m.confirm.kind, id: m.confirm.id, value: m.confirm.value, situacao: m.resolved === "ok" ? "confirmada pela pessoa" : m.resolved === "no" ? "descartada pela pessoa" : "aguardando" };
+  return { role: "assistant", content: JSON.stringify(o) };
+}
+function parseAIReply(raw, ctx) {
+  const s = String(raw || "").trim();
+  let j = null;
+  const m = s.match(/\{[\s\S]*\}/);
+  if (m) { try { j = JSON.parse(m[0]); } catch (e) {} }
+  if (!j || typeof j.text !== "string") return { text: s.replace(/```(json)?/g, "").trim() || "Não consegui gerar uma resposta agora. Tente reformular a pergunta." };
+  const str = v => (typeof v === "string" || typeof v === "number") ? String(v).trim() : "";
+  const out = { text: j.text.trim() };
+  if (Array.isArray(j.bullets)) { const b = j.bullets.map(str).filter(Boolean).slice(0, 6); if (b.length) out.bullets = b; }
+  if (Array.isArray(j.cards)) {
+    const c = j.cards.map(x => Array.isArray(x) ? [str(x[0]), str(x[1])] : x && typeof x === "object" ? [str(x.label), str(x.value)] : null).filter(x => x && x[0] && x[1]).slice(0, 4);
+    if (c.length) out.cards = c;
+  }
+  if (Array.isArray(j.actions)) {
+    const a = j.actions.map(x => {
+      if (!x || typeof x !== "object" || !str(x.label)) return null;
+      if (x.open && ctx.clientIds.includes(x.open)) return { label: str(x.label), open: x.open, go: ctx.screens.includes(x.goto) ? x.goto : "copilot" };
+      if (ctx.screens.includes(x.goto)) return { label: str(x.label), goto: x.goto };
+      return null;
+    }).filter(Boolean).slice(0, 3);
+    if (a.length) out.actions = a;
+  }
+  const cf = j.confirm;
+  if (cf && typeof cf === "object") {
+    const c = ctx.camps.find(x => x.id === cf.id);
+    if (c) {
+      const chl = CH[c.ch].label;
+      if (cf.kind === "pause" && c.status === "ativa") out.confirm = { kind: "pause", id: c.id, label: `Pausar “${c.name}” no ${chl}` };
+      else if (cf.kind === "activate" && c.status !== "ativa") out.confirm = { kind: "activate", id: c.id, label: `Reativar “${c.name}” no ${chl}` };
+      else if (cf.kind === "budget") {
+        const v = Math.round(Number(cf.value));
+        if (v > 0 && v < 1e6 && v !== c.budget) out.confirm = { kind: "budget", id: c.id, value: v, label: `Alterar o orçamento de “${c.name}” de ${brl(c.budget)} para ${brl(v)}/dia` };
+      }
+    }
+  }
+  return out;
+}
+
+function AIBadge() {
+  const { conn } = useAI();
+  if (!conn) return null;
+  const P = AI_PROVIDERS[conn.provider];
+  return html`<button className="ai-badge" onClick=${() => aiStore.open(conn.provider)} title="Trocar IA ou modelo"><span className="prov-dot" style=${{ background: P.color }}></span>${P.name}<span className="mono">${conn.model}</span></button>`;
+}
+function AIConnectPrompt() {
+  return html`<div className="ai-cta" role="region" aria-label="Conectar IA">
+    <div className="ai-cta-ico"><${Icon} n="sparkles" s=${16} /></div>
+    <div style=${{ minWidth: 0 }}>
+      <b>Conecte uma IA para conversar</b>
+      <p>O copilot conversa usando o Claude ou o ChatGPT com a sua chave de API. Ela fica salva só neste navegador.</p>
+      <div className="msg-actions">
+        <button className="btn btn-sm btn-primary" onClick=${() => aiStore.open("anthropic")}><span className="prov-dot" style=${{ background: AI_PROVIDERS.anthropic.color }}></span>Conectar Claude</button>
+        <button className="btn btn-sm btn-line" onClick=${() => aiStore.open("openai")}><span className="prov-dot" style=${{ background: AI_PROVIDERS.openai.color }}></span>Conectar ChatGPT</button>
+      </div>
+    </div>
+  </div>`;
+}
+function AIConnectDrawer({ toast }) {
+  const { conn, modal } = useAI();
+  const [prov, setProv] = useState("anthropic");
+  const [key, setKey] = useState(""); const [show, setShow] = useState(false);
+  const [models, setModels] = useState(null); const [model, setModel] = useState("");
+  const [busy, setBusy] = useState(false); const [err, setErr] = useState(null);
+  const load = p => {
+    const mine = conn && conn.provider === p;
+    setProv(p); setErr(null); setModels(null); setShow(false);
+    setKey(mine ? conn.key : ""); setModel(mine ? conn.model : AI_PROVIDERS[p].defModel);
+  };
+  useEffect(() => { if (modal) load(modal); }, [modal]);
+  if (!modal) return null;
+  const P = AI_PROVIDERS[prov];
+  const isCurrent = conn && conn.provider === prov;
+  const options = models ? models.map(m => m.id) : Array.from(new Set([model, ...P.models].filter(Boolean)));
+  const close = () => aiStore.close();
+  const submit = async e => {
+    e.preventDefault();
+    const k = key.trim(); if (!k || busy) return;
+    setBusy(true); setErr(null);
+    try {
+      const j = await aiCall({ action: "verify", provider: prov }, k);
+      const list = j.models || [];
+      const ids = list.map(m => m.id);
+      if (!list.length || ids.includes(model)) {
+        aiStore.connect({ provider: prov, key: k, model: model || P.defModel });
+        toast && toast(P.name + " conectado ao copilot");
+      } else {
+        // a chave é válida, mas o modelo escolhido não está na conta: mostra a lista real para escolher
+        setModels(list); setModel(pickModel(prov, list));
+        setErr("Chave válida. O modelo escolhido não está disponível nessa conta; escolhi o mais próximo na lista abaixo. Confira e clique em Conectar de novo.");
+      }
+    } catch (e2) { setErr(e2.message); } finally { setBusy(false); }
+  };
+  return html`<${Fragment}><div className="drawer-bg" style=${{ zIndex: 60 }} onClick=${close}></div>
+    <aside className="drawer" style=${{ zIndex: 61 }} role="dialog" aria-modal="true" aria-label="Conectar IA ao copilot"><form onSubmit=${submit} style=${{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <div className="drawer-head"><div><div className="eyebrow">Inteligência artificial</div><h2 style=${{ fontSize: 20, fontWeight: 700 }}>Conectar IA ao copilot</h2>
+        <div className="card-sub">Escolha quem vai responder no chat. Os painéis continuam funcionando sem IA.</div></div>
+        <button type="button" className="btn btn-ghost btn-sm" onClick=${close} aria-label="Fechar"><${Icon} n="x" /></button></div>
+      <div className="drawer-body">
+        <div className="ai-tabs" role="radiogroup" aria-label="Provedor de IA">${Object.entries(AI_PROVIDERS).map(([id, p]) => html`
+          <button type="button" key=${id} role="radio" aria-checked=${prov === id} className=${"ai-tab" + (prov === id ? " on" : "")} onClick=${() => load(id)}>
+            <span style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="prov-dot" style=${{ background: p.color }}></span><b>${p.name}</b>${conn && conn.provider === id ? html`<span className="pill pill-good" style=${{ marginLeft: "auto" }}><span className="dot"></span>Ativo</span>` : null}</span>
+            <small>API da ${p.vendor}</small></button>`)}</div>
+        <div className="field"><label htmlFor="ai-key">Chave de API da ${P.vendor}</label>
+          <div className="pass-wrap"><input id="ai-key" className="input mono" style=${{ fontSize: 13 }} type=${show ? "text" : "password"} autoComplete="off" spellCheck="false" placeholder=${P.keyHint} value=${key} onInput=${e => { setKey(e.target.value); setModels(null); }} />
+            <button type="button" className="pass-eye" onClick=${() => setShow(!show)} aria-label=${show ? "Ocultar chave" : "Mostrar chave"}><${Icon} n=${show ? "eyeOff" : "eye"} s=${16} /></button></div>
+          <span className="card-sub">Crie uma no <a href=${P.keyUrl} target="_blank" rel="noopener noreferrer" style=${{ color: "var(--accent-ink)", fontWeight: 600 }}>${P.keyPlace}</a>.</span></div>
+        <div className="field"><label htmlFor="ai-model">Modelo</label>
+          <select id="ai-model" className="input" value=${model} onChange=${e => setModel(e.target.value)}>${options.map(id => html`<option key=${id} value=${id}>${id}</option>`)}</select>
+          ${models ? html`<span className="card-sub">${models.length} modelos disponíveis na sua conta.</span>` : null}</div>
+        ${err ? html`<div className=${"err"} role="alert">${err}</div>` : null}
+        <div className="ai-note"><${Icon} n="shield" s=${15} /><div>A chave fica salva só neste navegador. A cada pergunta ela passa pelo servidor do ReadyAI direto para a ${P.vendor}, sem ser gravada. O uso é cobrado na sua conta de API da ${P.vendor}, separado de assinaturas como ${prov === "anthropic" ? "Claude Pro" : "ChatGPT Plus"}.</div></div>
+      </div>
+      <div className="drawer-foot">
+        ${isCurrent ? html`<button type="button" className="btn btn-line" onClick=${() => { aiStore.disconnect(); aiStore.close(); toast && toast(P.name + " desconectado"); }}>Desconectar</button>` : html`<button type="button" className="btn btn-line" onClick=${close}>Cancelar</button>`}
+        <button className="btn btn-primary" type="submit" disabled=${!key.trim() || busy}>${busy ? "Validando chave…" : isCurrent ? "Salvar" : "Conectar " + P.name}</button>
+      </div>
+    </form></aside><//>`;
+}
+
+const SUGGESTIONS = {
+  portfolio: ["O que preciso resolver hoje?", "Quais contas estão com entrega travada?", "Quem vai estourar ou sobrar verba?"],
+  copilot: ["Resuma minhas campanhas", "Onde estou perdendo dinheiro?", "Quanto posso escalar no Google?"],
+  overview: ["Explique a variação da receita", "Qual canal tem melhor ROAS?"],
+  analytics: ["Qual o melhor horário para anunciar?", "Qual público converte mais?"],
+  campaigns: ["Quais campanhas devo pausar?", "Redistribua o orçamento"],
+  creatives: ["Quais criativos estão com fadiga?", "Vale mover verba para Spark Ads?"],
+  report: ["Monte o relatório semanal", "Resuma minhas campanhas"],
+  skills: ["Crie um alerta de CPA alto", "Quais rotinas você recomenda?"],
+  insights: ["Onde estou perdendo dinheiro?", "Quanto posso escalar no Google?"],
+  integrations: ["Resuma minhas campanhas"],
+};
+
+/* ================= charts ================= */
+function niceMax(v) { const p = Math.pow(10, Math.floor(Math.log10(v))); const n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p; }
+function LineChart({ sets, labels, height = 230, fmt = kfmt }) {
+  const W = 640, H = height, L = 52, R = 12, T = 12, B = 28;
+  const max = niceMax(Math.max(...sets.flatMap(s => s.values)));
+  const x = i => L + (W - L - R) * i / (labels.length - 1);
+  const y = v => T + (H - T - B) * (1 - v / max);
+  const ticks = [0, .25, .5, .75, 1].map(f => f * max);
+  return html`<svg viewBox=${`0 0 ${W} ${H}`} width="100%" role="img" style=${{ display: "block", maxWidth: "100%" }}>
+    ${ticks.map((tk, i) => html`<g key=${"t" + i}><line x1=${L} x2=${W - R} y1=${y(tk)} y2=${y(tk)} stroke="var(--line)" strokeWidth="1" />
+      <text x=${L - 8} y=${y(tk) + 4} textAnchor="end" fill="var(--muted)" style=${{ fontSize: 11 }}>${fmt(tk)}</text></g>`)}
+    ${labels.map((lb, i) => i % 5 === 0 || i === labels.length - 1 ? html`<text key=${"l" + i} x=${x(i)} y=${H - 8} textAnchor="middle" fill="var(--muted)" style=${{ fontSize: 11 }}>${lb}</text>` : null)}
+    ${sets.map((s, si) => {
+      const pts = s.values.map((v, i) => `${x(i)},${y(v)}`).join(" ");
+      return html`<g key=${"s" + si}>
+        ${s.area ? html`<polygon points=${`${x(0)},${y(0)} ${pts} ${x(s.values.length - 1)},${y(0)}`} fill=${s.color} opacity="0.1" />` : null}
+        <polyline points=${pts} fill="none" stroke=${s.color} strokeWidth=${s.area ? 2.2 : 1.6} strokeDasharray=${s.dash ? "4 4" : "none"} strokeLinejoin="round" />
+        <circle cx=${x(s.values.length - 1)} cy=${y(s.values[s.values.length - 1])} r="3.5" fill=${s.color} />
+      </g>`;
+    })}
+  </svg>`;
+}
+function Spark({ values, color = "var(--accent)", w = 80, h = 24 }) {
+  const mx = Math.max(...values), mn = Math.min(...values);
+  const pts = values.map((v, i) => `${(w - 4) * i / (values.length - 1) + 2},${h - 3 - (h - 6) * (v - mn) / ((mx - mn) || 1)}`).join(" ");
+  return html`<svg width=${w} height=${h} viewBox=${`0 0 ${w} ${h}`} aria-hidden="true"><polyline points=${pts} fill="none" stroke=${color} strokeWidth="1.6" strokeLinejoin="round" /></svg>`;
+}
+function Columns({ values, labels, height = 170, highlight }) {
+  const W = 640, H = height, L = 8, R = 8, T = 10, B = 24; const max = Math.max(...values);
+  const bw = (W - L - R) / values.length;
+  return html`<svg viewBox=${`0 0 ${W} ${H}`} width="100%" style=${{ display: "block", maxWidth: "100%" }} role="img">
+    <line x1=${L} x2=${W - R} y1=${H - B} y2=${H - B} stroke="var(--line)" />
+    ${values.map((v, i) => { const h = (H - T - B) * v / max; return html`<g key=${i}>
+      <rect x=${L + i * bw + 3} y=${H - B - h} width=${bw - 6} height=${h} rx="3" fill=${highlight && highlight(i) ? "var(--accent)" : "var(--line-2)"} />
+      ${i % 3 === 0 ? html`<text x=${L + i * bw + bw / 2} y=${H - 7} textAnchor="middle" fill="var(--muted)" style=${{ fontSize: 11 }}>${labels[i]}</text>` : null}
+    </g>`; })}
+  </svg>`;
+}
+function Gauge({ value }) {
+  const col = value >= 75 ? "var(--good)" : value >= 60 ? "var(--warn)" : "var(--bad)";
+  const r = 26, c = 2 * Math.PI * r, f = value / 100;
+  return html`<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
+    <circle cx="32" cy="32" r=${r} fill="none" stroke="var(--line)" strokeWidth="6" />
+    <circle cx="32" cy="32" r=${r} fill="none" stroke=${col} strokeWidth="6" strokeLinecap="round" strokeDasharray=${`${c * f} ${c}`} transform="rotate(-90 32 32)" />
+    <text x="32" y="37" textAnchor="middle" fill="var(--ink)" style=${{ fontSize: 16, fontWeight: 700 }}>${value}</text>
+  </svg>`;
+}
+
+/* ================= logo ================= */
+// Marca: bloco azul com uma linha de crescimento que termina numa faísca (IA pronta para agir).
+function Logo({ s = 30 }) {
+  return html`<svg width=${s} height=${s} viewBox="0 0 32 32" aria-hidden="true" style=${{ flex: "none", display: "block" }}>
+    <rect width="32" height="32" rx="9" fill="var(--accent)" />
+    <polyline points="7,22.5 12,17.5 16,20.5 21.5,14.5" fill="none" stroke="var(--on-accent)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M24.5 5.5 L25.6 8.4 L28.5 9.5 L25.6 10.6 L24.5 13.5 L23.4 10.6 L20.5 9.5 L23.4 8.4 Z" fill="var(--on-accent)" />
+  </svg>`;
+}
+function Wordmark() { return html`<b style=${{ letterSpacing: "-.02em" }}>Ready<span style=${{ color: "var(--accent)" }}>AI</span></b>`; }
+
+/* ================= tema ================= */
+const THEME_KEY = "readyai_theme";
+function applyTheme(t) { document.documentElement.classList.toggle("rdy-dark", t === "dark"); document.documentElement.style.colorScheme = t === "dark" ? "dark" : "light"; }
+applyTheme(store.get(THEME_KEY, "light"));
+function ThemeToggle({ withLabel }) {
+  const [t, setT] = useState(() => store.get(THEME_KEY, "light"));
+  const flip = () => { const n = t === "dark" ? "light" : "dark"; setT(n); applyTheme(n); store.set(THEME_KEY, n); };
+  const label = t === "dark" ? "Usar tema claro" : "Usar tema escuro";
+  return html`<button type="button" className=${"btn btn-ghost btn-sm"} onClick=${flip} aria-label=${label} title=${label}><${Icon} n=${t === "dark" ? "sun" : "moon"} s=${15} />${withLabel ? (t === "dark" ? "Tema claro" : "Tema escuro") : null}</button>`;
+}
+
+/* ================= UI bits ================= */
+function Delta({ v, invert }) {
+  const good = invert ? v < 0 : v > 0;
+  return html`<span className=${"delta " + (good ? "up" : "down")}><${Icon} n=${v > 0 ? "up" : "down"} s=${13} />${pct(Math.abs(v), 1)}</span>`;
+}
+function Kpi({ label, value, d, invert, hint }) {
+  return html`<div className="card kpi"><div className="kpi-l"><span>${label}</span>${d !== undefined ? html`<${Delta} v=${d} invert=${invert} />` : null}</div>
+    <div className="kpi-v num">${value}</div>${hint ? html`<div className="card-sub">${hint}</div>` : null}</div>`;
+}
+function ChTag({ ch }) { return html`<span style=${{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "var(--muted-2)" }}><span className="ch-dot" style=${{ background: CH[ch].color }}></span>${CH[ch].label}</span>`; }
+function StatusPill({ s }) {
+  const m = { ativa: ["pill-good", "Ativa"], pausada: ["pill-mute", "Pausada"] }[s] || ["pill-mute", s];
+  return html`<span className=${"pill " + m[0]}><span className="dot"></span>${m[1]}</span>`;
+}
+function Toggle({ on, onChange, disabled, label }) {
+  return html`<button type="button" role="switch" aria-checked=${on} aria-label=${label} disabled=${disabled} className=${"toggle" + (on ? " on" : "")} onClick=${() => !disabled && onChange(!on)}></button>`;
+}
+function PageHead({ title, sub, right }) {
+  return html`<div className="page-head"><div><h1>${title}</h1>${sub ? html`<p>${sub}</p>` : null}</div>${right || null}</div>`;
+}
+
+/* ================= chat ================= */
+function ChatMessages({ msgs, typing, onAction, onConfirm, endRef }) {
+  return html`<${Fragment}>
+    ${msgs.map(m => m.role === "user"
+      ? html`<div key=${m.id} className="msg user">${m.text}</div>`
+      : html`<div key=${m.id} className="msg bot"><div className="bot-ico"><${Icon} n="sparkles" s=${14} /></div>
+          <div className="bot-body">
+            <p style=${{ whiteSpace: "pre-wrap", color: m.error ? "var(--bad)" : undefined }}>${m.text}</p>
+            ${m.cards ? html`<div className="mini-cards">${m.cards.map(([l, v], i) => html`<div key=${i} className="mini"><small>${l}</small><b className="num">${v}</b></div>`)}</div>` : null}
+            ${m.bullets ? html`<ul>${m.bullets.map((b, i) => html`<li key=${i}>${b}</li>`)}</ul>` : null}
+            ${m.confirm && !m.resolved ? html`<div className="confirm-box"><b>Alteração proposta</b><span>${m.confirm.label}</span>
+              <div className="msg-actions"><button className="btn btn-sm btn-primary" onClick=${() => onConfirm(m, true)}>Confirmar alteração</button>
+              <button className="btn btn-sm btn-line" onClick=${() => onConfirm(m, false)}>Descartar</button></div></div>` : null}
+            ${m.resolved ? html`<span className=${"pill " + (m.resolved === "ok" ? "pill-good" : "pill-mute")}>${m.resolved === "ok" ? "Alteração aplicada" : "Descartada"}</span>` : null}
+            ${m.actions ? html`<div className="msg-actions">${m.actions.map((a, i) => html`<button key=${i} className="btn btn-sm btn-line" onClick=${() => onAction(a)}>${a.label}<${Icon} n="arrowR" s=${13} /></button>`)}</div>` : null}
+          </div></div>`)}
+    ${typing ? html`<div className="msg bot"><div className="bot-ico"><${Icon} n="sparkles" s=${14} /></div><div className="typing"><i></i><i></i><i></i></div></div>` : null}
+    <div ref=${endRef}></div>
+  <//>`;
+}
+function Composer({ onSend, disabled, autoFocus, placeholder }) {
+  const [v, setV] = useState("");
+  const submit = e => { e.preventDefault(); if (!v.trim() || disabled) return; onSend(v.trim()); setV(""); };
+  return html`<div className="composer"><form onSubmit=${submit}>
+    <label htmlFor="chat-input" style=${{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>Mensagem para o assistente</label>
+    <textarea id="chat-input" rows="1" value=${v} placeholder=${placeholder || "Pergunte sobre suas campanhas…"} autoFocus=${autoFocus}
+      onInput=${e => setV(e.target.value)} onKeyDown=${e => { if (e.key === "Enter" && !e.shiftKey) submit(e); }}></textarea>
+    <button className="send" type="submit" disabled=${!v.trim() || disabled} aria-label="Enviar"><${Icon} n="send" s=${15} /></button>
+  </form></div>`;
+}
+function DockChat({ chat, screen, onClose }) {
+  const end = useRef(null);
+  useEffect(() => { end.current && end.current.scrollIntoView({ block: "end" }); }, [chat.msgs.length, chat.typing]);
+  const info = routeInfo(screen);
+  return html`<div className="chat">
+    <div className="chat-head"><div><b><span className="bot-ico" style=${{ width: 22, height: 22, borderRadius: 7 }}><${Icon} n="sparkles" s=${12} /></span>Copilot de Marketing</b>
+      <div className="ctx">Contexto: ${info.label}</div></div>
+      <div style=${{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}><${AIBadge} />
+      ${onClose ? html`<button className="btn btn-ghost btn-sm" onClick=${onClose} aria-label="Fechar copilot"><${Icon} n="x" /></button>` : null}</div></div>
+    <div className="msgs">
+      ${chat.msgs.length === 0 ? html`<p style=${{ color: "var(--muted)", fontSize: 13 }}>Pergunte qualquer coisa sobre ${info.label.toLowerCase()}. O copilot responde com os dados desta tela e pode propor alterações, que só acontecem quando você confirma.</p>` : null}
+      <${ChatMessages} msgs=${chat.msgs} typing=${chat.typing} onAction=${chat.onAction} onConfirm=${chat.onConfirm} endRef=${end} />
+    </div>
+    ${chat.ai ? html`<${Fragment}><div className="sugs">${(SUGGESTIONS[screen] || []).map(s => html`<button key=${s} className="sug" onClick=${() => chat.send(s)}>${s}</button>`)}</div>
+    <${Composer} onSend=${chat.send} disabled=${chat.typing} /><//>` : html`<${AIConnectPrompt} />`}
+  </div>`;
+}
+
+/* ================= telas ================= */
+function HomeCopilot({ user, client, chat, camps, insights, go }) {
+  const end = useRef(null);
+  useEffect(() => { if (chat.msgs.length) end.current && end.current.scrollIntoView({ block: "end", behavior: "smooth" }); }, [chat.msgs.length, chat.typing]);
+  const t = totals(camps);
+  const byCh = chPresent(camps).map(k => [k, totals(camps.filter(c => c.ch === k))]);
+  const maxR = Math.max(...byCh.map(([, v]) => v.roas));
+  const hour = 9;
+  const first = (user.name || "").split(" ")[0];
+  const pace = MONTH_SPENT / MONTH_BUDGET;
+  return html`<${Fragment}>
+    <section className="home-chat" aria-label="Conversa com o copilot">
+      <div className="msgs" style=${{ paddingTop: 0 }}>
+        <div className="hello" style=${{ padding: "28px 0 6px" }}>
+          <div style=${{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}><span className="badge-co" style=${{ marginBottom: 0 }}><${Icon} n="sparkles" s=${13} />Copilot de Marketing · ${client.company}</span><${AIBadge} /></div>
+          <h1>${hour < 12 ? "Bom dia" : "Boa tarde"}, ${first}. O que vamos fazer pelas suas campanhas hoje?</h1>
+          <p>Analisei ${camps.length} campanhas em ${(l => l.length > 1 ? l.slice(0, -1).join(", ") + " e " + l[l.length - 1] : l[0])(chPresent(camps).map(k => CH[k].label.replace(" Ads", "")))}. Os pontos de atenção estão no painel de insights; clique em qualquer um para conversar sobre ele.</p>
+        </div>
+        <${ChatMessages} msgs=${chat.msgs} typing=${chat.typing} onAction=${chat.onAction} onConfirm=${chat.onConfirm} endRef=${end} />
+      </div>
+      ${chat.ai ? html`<${Fragment}><div className="sugs">${SUGGESTIONS.copilot.map(s => html`<button key=${s} className="sug" onClick=${() => chat.send(s)}>${s}</button>`)}</div>
+      <${Composer} onSend=${chat.send} disabled=${chat.typing} placeholder="Pergunte, peça uma análise ou uma alteração…" /><//>` : html`<${AIConnectPrompt} />`}
+    </section>
+    <aside className="insights-pane" aria-label="Insights do dia">
+      <div className="health"><${Gauge} value=${ACTIVE.health} /><div><div className="eyebrow">Saúde da conta</div>
+        <b style=${{ fontSize: 15 }}>${ACTIVE.health >= 75 ? "Boa, com pontos de atenção" : ACTIVE.health >= 60 ? "Regular, pede ajustes" : "Precisa de atenção"}</b><div className="card-sub">ROAS ${xroas(t.roas)} · meta ${xroas(ACTIVE.target)}</div></div></div>
+      <div className="mini-kpis">
+        <div><small>Investimento 30d</small><b className="num">${brl(t.spend)}</b><br /><${Delta} v=${delta(t.spend, ACTIVE.prev.spend)} invert /></div>
+        <div><small>Receita 30d</small><b className="num">${brl(t.revenue)}</b><br /><${Delta} v=${delta(t.revenue, ACTIVE.prev.revenue)} /></div>
+        <div><small>ROAS</small><b className="num">${xroas(t.roas)}</b><br /><${Delta} v=${delta(t.roas, ACTIVE.prev.revenue / ACTIVE.prev.spend)} /></div>
+        <div><small>CPA</small><b className="num">${brl2(t.cpa)}</b><br /><${Delta} v=${delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases)} invert /></div>
+      </div>
+      <div><div className="ins-top" style=${{ marginBottom: 10 }}><div className="eyebrow">Precisa da sua atenção</div><button className="link-btn" onClick=${() => go("insights")}>Ver todos</button></div>
+        <div className="stack" style=${{ gap: 10 }}>${insights.slice(0, 4).map(i => html`<${InsightCard} key=${i.id} i=${i} chat=${chat} go=${go} />`)}</div></div>
+      <div className="card card-pad"><div className="card-head"><div><div className="card-title">ROAS por canal</div><div className="card-sub">Linha tracejada = meta ${xroas(ACTIVE.target)}</div></div></div>
+        <div className="stack" style=${{ gap: 10 }}>${byCh.map(([k, v]) => html`<div key=${k} className="bar-row" style=${{ gridTemplateColumns: "84px minmax(0,1fr) 52px" }}>
+          <span style=${{ color: "var(--muted-2)" }}>${CH[k].label.replace(" Ads", "")}</span>
+          <div className="bar-track" style=${{ position: "relative" }}><div className="bar-fill" style=${{ width: (v.roas / (maxR * 1.1) * 100) + "%", background: CH[k].color }}></div>
+            <span style=${{ position: "absolute", top: -3, bottom: -3, left: (ACTIVE.target / (maxR * 1.1) * 100) + "%", borderLeft: "1.5px dashed var(--ink)" }}></span></div>
+          <b className="num" style=${{ textAlign: "right" }}>${xroas(v.roas)}</b></div>`)}</div></div>
+      <div className="card card-pad"><div className="card-head"><div><div className="card-title">Ritmo do orçamento de outubro</div><div className="card-sub">${brl(MONTH_SPENT)} de ${brl(MONTH_BUDGET)} · ${pct(MONTH_ELAPSED, 0)} do mês</div></div>
+        <span className="pill pill-good">No ritmo</span></div>
+        <div className="bar-track" style=${{ height: 12, position: "relative" }}><div className="bar-fill" style=${{ width: pct(pace, 1).replace(",", "."), background: "var(--accent)" }}></div>
+          <span style=${{ position: "absolute", top: -3, bottom: -3, left: (MONTH_ELAPSED * 100) + "%", borderLeft: "1.5px dashed var(--ink)" }}></span></div></div>
+      <span className="demo-note"><${Icon} n="eye" s=${13} />Dados de exemplo · últimos 30 dias (19/09 a 18/10)</span>
+    </aside>
+  <//>`;
+}
+function InsightCard({ i, chat, go, full }) {
+  return html`<article className="ins" style=${{ "--sev": SEV[i.sev].c }}>
+    <div className="ins-top"><span className=${"pill " + SEV[i.sev].pill}><${Icon} n=${i.icon} s=${12} />${i.tag}</span><b className="num" style=${{ fontSize: 13 }}>${i.metric}</b></div>
+    <h3>${i.title}</h3>${full || true ? html`<p>${i.body}</p>` : null}
+    <div className="ins-acts"><button className="btn btn-sm btn-line" onClick=${() => chat.send(i.ask, true)}><${Icon} n="sparkles" s=${13} />Perguntar ao copilot</button>
+      <button className="link-btn" onClick=${() => go(i.goto)}>Ver dados<${Icon} n="arrowR" s=${13} /></button></div>
+  </article>`;
+}
+
+function Overview({ camps }) {
+  const t = totals(camps);
+  const rev = useMemo(() => series(t.revenue, 7, .18, .22), [t.revenue]);
+  const spend = useMemo(() => series(t.spend, 11, .1, .12), [t.spend]);
+  const byCh = chPresent(camps).map(k => [k, totals(camps.filter(c => c.ch === k))]);
+  const top = [...camps].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+  const funnel = [["Impressões", t.impr], ["Cliques", t.clicks], ["Adições ao carrinho", 8640], ["Checkouts iniciados", 3910], ["Compras", t.purchases]];
+  return html`<div className="stack">
+    <${PageHead} title="Visão geral" sub="Todos os canais somados nos últimos 30 dias, comparados com os 30 dias anteriores." right=${html`<span className="demo-note"><${Icon} n="eye" s=${13} />Dados de exemplo</span>`} />
+    <div className="grid g4">
+      <${Kpi} label="Investimento" value=${brl(t.spend)} d=${delta(t.spend, ACTIVE.prev.spend)} invert />
+      <${Kpi} label="Receita" value=${brl(t.revenue)} d=${delta(t.revenue, ACTIVE.prev.revenue)} />
+      <${Kpi} label="ROAS" value=${xroas(t.roas)} d=${delta(t.roas, ACTIVE.prev.revenue / ACTIVE.prev.spend)} hint=${"Meta da conta: " + xroas(ACTIVE.target)} />
+      <${Kpi} label="CPA" value=${brl2(t.cpa)} d=${delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases)} invert hint=${fmtInt(t.purchases) + " compras · ticket " + brl(t.ticket)} />
+    </div>
+    <div className="grid g-21">
+      <div className="card card-pad"><div className="card-head"><div><div className="card-title">Receita x investimento por dia</div><div className="card-sub">Soma de Meta, Google e TikTok</div></div>
+        <div style=${{ display: "flex", gap: 14, fontSize: 12.5, color: "var(--muted-2)" }}><span style=${{ display: "inline-flex", gap: 6, alignItems: "center" }}><span className="ch-dot" style=${{ background: "var(--accent)" }}></span>Receita</span><span style=${{ display: "inline-flex", gap: 6, alignItems: "center" }}><span className="ch-dot" style=${{ background: "var(--c-spend)" }}></span>Investimento</span></div></div>
+        <${LineChart} labels=${DAYS.map(dayLbl)} sets=${[{ values: rev, color: "var(--accent)", area: true }, { values: spend, color: "var(--c-spend)", dash: true }]} />
+      </div>
+      <div className="card card-pad"><div className="card-head"><div><div className="card-title">Investimento por canal</div><div className="card-sub">Participação e ROAS</div></div></div>
+        <div className="stack" style=${{ gap: 14 }}>${byCh.map(([k, v]) => html`<div key=${k} className="stack" style=${{ gap: 6 }}>
+          <div style=${{ display: "flex", justifyContent: "space-between", gap: 8 }}><${ChTag} ch=${k} /><span className="num" style=${{ fontSize: 13 }}><b>${brl(v.spend)}</b> · ${pct(v.spend / t.spend, 0)}</span></div>
+          <div className="bar-track"><div className="bar-fill" style=${{ width: (v.spend / t.spend * 100) + "%", background: CH[k].color }}></div></div>
+          <div className="card-sub num">Receita ${brl(v.revenue)} · ROAS <b style=${{ color: v.roas >= ACTIVE.target ? "var(--good)" : "var(--bad)" }}>${xroas(v.roas)}</b></div></div>`)}</div>
+      </div>
+    </div>
+    <div className="grid g-21">
+      <div className="card card-pad"><div className="card-head"><div><div className="card-title">Campanhas com mais receita</div></div></div>
+        <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Campanha</th><th>Canal</th><th className="r">Investido</th><th className="r">Receita</th><th className="r">ROAS</th></tr></thead>
+        <tbody>${top.map(c => html`<tr key=${c.id}><td><span className="cname">${c.name}</span></td><td><${ChTag} ch=${c.ch} /></td><td className="r num">${brl(c.spend)}</td><td className="r num">${brl(c.revenue)}</td><td className="r num"><b style=${{ color: "var(--ink)" }}>${xroas(c.revenue / c.spend)}</b></td></tr>`)}</tbody></table></div>
+      </div>
+      <div className="card card-pad"><div className="card-head"><div><div className="card-title">Funil de tráfego</div><div className="card-sub">Taxa em relação à etapa anterior</div></div></div>
+        <div className="stack" style=${{ gap: 10 }}>${funnel.map(([l, v], i) => html`<div key=${l} className="stack" style=${{ gap: 4 }}>
+          <div style=${{ display: "flex", justifyContent: "space-between", fontSize: 13 }}><span style=${{ color: "var(--muted-2)" }}>${l}</span><span className="num"><b>${kfmt(v)}</b>${i > 0 ? html` <span style=${{ color: "var(--muted)" }}>· ${pct(v / funnel[i - 1][1], i === 1 ? 1 : 0)}</span>` : null}</span></div>
+          <div className="bar-track" style=${{ height: 8 }}><div className="bar-fill" style=${{ width: Math.max(4, Math.pow(v / funnel[0][1], .28) * 100) + "%", background: "var(--accent)", opacity: 1 - i * .14 }}></div></div></div>`)}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function Analytics({ camps }) {
+  const t = totals(camps);
+  return html`<div className="stack">
+    <${PageHead} title="Performance analítica" sub="Quando, onde e para quem suas campanhas vendem." right=${html`<span className="demo-note"><${Icon} n="eye" s=${13} />Dados de exemplo</span>`} />
+    <div className="grid g4">
+      <${Kpi} label="CTR médio" value=${pct(t.ctr, 2)} d=${delta(t.ctr, ACTIVE.prev.clicks / ACTIVE.prev.impr)} />
+      <${Kpi} label="CPC médio" value=${brl2(t.spend / t.clicks)} d=${delta(t.spend / t.clicks, ACTIVE.prev.spend / ACTIVE.prev.clicks)} invert />
+      <${Kpi} label="Taxa de conversão" value=${pct(t.purchases / t.clicks, 2)} d=${delta(t.purchases / t.clicks, ACTIVE.prev.purchases / ACTIVE.prev.clicks)} />
+      <${Kpi} label="Ticket médio" value=${brl(t.ticket)} d=${delta(t.ticket, ACTIVE.prev.revenue / ACTIVE.prev.purchases)} />
+    </div>
+    <div className="card card-pad"><div className="card-head"><div><div className="card-title">Compras por hora do dia</div><div className="card-sub">Pico às 20h. Em destaque, a janela de 18h a 22h, com 33% das compras.</div></div></div>
+      <${Columns} values=${HOURS} labels=${HOURS.map((_, i) => i + "h")} highlight=${i => i >= 18 && i <= 22} /></div>
+    <div className="grid g3">
+      <div className="card card-pad"><div className="card-head"><div className="card-title">Faixa etária</div></div>
+        <div className="stack" style=${{ gap: 10 }}>${AGES.map(([l, v]) => html`<div key=${l} className="bar-row" style=${{ gridTemplateColumns: "54px minmax(0,1fr) 44px" }}><span>${l}</span><div className="bar-track"><div className="bar-fill" style=${{ width: (v / .38 * 100) + "%", background: "var(--accent)" }}></div></div><b className="num" style=${{ textAlign: "right" }}>${pct(v, 0)}</b></div>`)}</div></div>
+      <div className="card card-pad"><div className="card-head"><div className="card-title">Dispositivos</div></div>
+        <div className="stack" style=${{ gap: 10 }}>${DEVICES.map(([l, v]) => html`<div key=${l} className="bar-row" style=${{ gridTemplateColumns: "64px minmax(0,1fr) 44px" }}><span>${l}</span><div className="bar-track"><div className="bar-fill" style=${{ width: (v * 100) + "%", background: "var(--c-tiktok)" }}></div></div><b className="num" style=${{ textAlign: "right" }}>${pct(v, 0)}</b></div>`)}</div></div>
+      <div className="card card-pad"><div className="card-head"><div><div className="card-title">ROAS por canal</div></div></div>
+        <div className="stack" style=${{ gap: 10 }}>${chPresent(camps).map(k => { const v = totals(camps.filter(c => c.ch === k)); return html`<div key=${k} style=${{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><${ChTag} ch=${k} /><span className=${"pill " + (v.roas >= ACTIVE.target ? "pill-good" : "pill-bad")}>${xroas(v.roas)}</span></div>`; })}</div></div>
+    </div>
+    <div className="card card-pad"><div className="card-head"><div><div className="card-title">Compras e investimento por região</div></div></div>
+      <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Região</th><th className="r">Compras</th><th className="r">Investimento</th><th className="r">Participação</th></tr></thead>
+      <tbody>${REGIONS.map(([r, p, s]) => html`<tr key=${r}><td style=${{ color: "var(--ink)", fontWeight: 600 }}>${r}</td><td className="r num">${fmtInt(p)}</td><td className="r num">${brl(s)}</td><td className="r num">${pct(p / t.purchases, 0)}</td></tr>`)}</tbody></table></div></div>
+  </div>`;
+}
+
+function recFor(c) {
+  const roas = c.revenue / c.spend;
+  if (c.status !== "ativa") return roas >= ACTIVE.target
+    ? { k: "reactivate", label: "Reativar", pill: "pill-info", icon: "play", why: "ROAS de " + xroas(roas) + " quando estava ativa" }
+    : { k: "keep", label: "Manter pausada", pill: "pill-mute", icon: "pause", why: "Estava abaixo da meta" };
+  if (roas < 1.5) return { k: "pause", label: "Pausar", pill: "pill-bad", icon: "pause", why: "ROAS de " + xroas(roas) + ", menos da metade da meta" };
+  if (roas < ACTIVE.target) return { k: "review", label: "Revisar", pill: "pill-warn", icon: "alert", why: "ROAS abaixo da meta de " + xroas(ACTIVE.target) };
+  if (c.d7 <= -0.15) return { k: "review", label: "Revisar", pill: "pill-warn", icon: "alert", why: "Receita caiu " + pct(-c.d7, 0) + " em 7 dias" };
+  if (c.limited || (roas >= 1.5 * ACTIVE.target && c.d7 >= 0.05)) return { k: "scale", label: "Escalar", pill: "pill-good", icon: "up", why: c.limited ? "Perde impressões por falta de orçamento" : "ROAS alto e crescendo" };
+  return { k: "keep", label: "Manter", pill: "pill-mute", icon: "check", why: "Dentro da meta" };
+}
+const REC_ORDER = { pause: 0, review: 1, scale: 2, reactivate: 3, keep: 4 };
+function RoasBar({ roas, target = ACTIVE.target }) {
+  const max = 7, ok = roas >= target;
+  return html`<span className="roasbar" title=${"ROAS " + xroas(roas) + " · meta " + xroas(target)}>
+    <i style=${{ width: Math.min(roas / max, 1) * 100 + "%", background: ok ? "var(--good)" : roas < 1.5 ? "var(--bad)" : "var(--warn)" }}></i>
+    <u style=${{ left: (target / max * 100) + "%" }}></u></span>`;
+}
+function Campaigns({ camps, setCamps, toast, chat }) {
+  const [ch, setCh] = useState("all"); const [st, setSt] = useState("all"); const [sort, setSort] = useState("rec"); const [rf, setRf] = useState("all");
+  const [pending, setPending] = useState(null);
+  const withRec = camps.map(c => ({ ...c, rec: recFor(c) }));
+  const list = withRec.filter(c => (ch === "all" || c.ch === ch) && (st === "all" || c.status === st) && (rf === "all" || c.rec.k === rf))
+    .sort((a, b) => sort === "rec" ? (REC_ORDER[a.rec.k] - REC_ORDER[b.rec.k]) || (b.spend - a.spend) : sort === "roas" ? b.revenue / b.spend - a.revenue / a.spend : b.spend - a.spend);
+  const t = totals(list.length ? list : camps);
+  const count = k => withRec.filter(c => c.rec.k === k).length;
+  const freed = withRec.filter(c => c.rec.k === "pause").reduce((a, c) => a + c.budget, 0);
+  const setStatus = (c, on) => {
+    setCamps(cs => cs.map(x => x.id === c.id ? { ...x, status: on ? "ativa" : "pausada", budget: on && !x.budget ? (x.prevBudget || 200) : x.budget, prevBudget: x.budget || x.prevBudget } : x));
+    toast((on ? "Ativada: " : "Pausada: ") + c.name + " (simulação)");
+  };
+  const apply = (c, kind) => {
+    if (kind === "pause") setStatus(c, false);
+    if (kind === "reactivate") setStatus(c, true);
+    if (kind === "scale") { const nb = Math.round(c.budget * 1.2 / 10) * 10; setCamps(cs => cs.map(x => x.id === c.id ? { ...x, budget: nb, limited: false } : x)); toast("Orçamento de " + c.name + " agora em " + brl(nb) + "/dia (simulação)"); }
+    setPending(null);
+  };
+  const act = c => {
+    const r = c.rec;
+    if (r.k === "pause") return html`<button className="btn btn-sm btn-danger" onClick=${() => setPending({ id: c.id, kind: "pause" })}><${Icon} n="pause" s=${13} />Pausar</button>`;
+    if (r.k === "scale") return html`<button className="btn btn-sm btn-good" onClick=${() => setPending({ id: c.id, kind: "scale" })}><${Icon} n="up" s=${13} />Escalar +20%</button>`;
+    if (r.k === "reactivate") return html`<button className="btn btn-sm btn-line" onClick=${() => setPending({ id: c.id, kind: "reactivate" })}><${Icon} n="play" s=${13} />Reativar</button>`;
+    if (r.k === "review") return html`<button className="btn btn-sm btn-line" onClick=${() => chat.send("Por que a campanha " + c.name + " está com ROAS de " + xroas(c.revenue / c.spend) + "?", true)}><${Icon} n="sparkles" s=${13} />Analisar</button>`;
+    return html`<span style=${{ color: "var(--muted)", fontSize: 12.5 }}>Nada a fazer</span>`;
+  };
+  const confirmText = (c, kind) => kind === "pause" ? "Pausar “" + c.name + "”? Isso libera " + brl(c.budget) + "/dia de orçamento."
+    : kind === "scale" ? "Aumentar o orçamento de “" + c.name + "” de " + brl(c.budget) + " para " + brl(Math.round(c.budget * 1.2 / 10) * 10) + " por dia?"
+    : "Reativar “" + c.name + "” com " + brl(c.prevBudget || 200) + "/dia?";
+  const chips = [["pause", "Pausar", "pill-bad", "pause"], ["review", "Revisar", "pill-warn", "alert"], ["scale", "Escalar", "pill-good", "up"], ["reactivate", "Reativar", "pill-info", "play"], ["keep", "Manter", "pill-mute", "check"]];
+  return html`<div className="stack">
+    <${PageHead} title="Campanhas" sub="Meta, Google e TikTok numa tabela só. O copilot indica o que pausar, revisar ou escalar." right=${html`<span className="demo-note"><${Icon} n="eye" s=${13} />Alterações são simuladas</span>`} />
+    <div className="card rec-card">
+      <div className="rec-head"><span className="bot-ico"><${Icon} n="sparkles" s=${14} /></span>
+        <div style=${{ minWidth: 0 }}><b>Recomendações do copilot</b><div className="card-sub">${count("pause") ? "Pausar " + count("pause") + (count("pause") === 1 ? " campanha libera " : " campanhas libera ") + brl(freed) + "/dia. " : ""}${count("scale")} ${count("scale") === 1 ? "campanha pode" : "campanhas podem"} receber mais verba. Clique para filtrar.</div></div></div>
+      <div className="rec-chips">${chips.filter(([k]) => count(k) > 0).map(([k, l, cl, ic]) => html`<button key=${k} type="button" className=${"pill " + cl + (rf === k ? " sel" : "")} aria-pressed=${rf === k} onClick=${() => setRf(rf === k ? "all" : k)}><${Icon} n=${ic} s=${12} />${l}<span className="cnt">${count(k)}</span></button>`)}
+        ${rf !== "all" ? html`<button type="button" className="link-btn" onClick=${() => setRf("all")}>Ver todas</button>` : null}</div>
+    </div>
+    <div style=${{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+      <div className="seg" role="tablist" aria-label="Canal">${[["all", "Todos os canais"], ["meta", "Meta"], ["google", "Google"], ["tiktok", "TikTok"]].filter(([k]) => k === "all" || camps.some(c => c.ch === k)).map(([k, l]) => html`<button key=${k} className=${ch === k ? "on" : ""} onClick=${() => setCh(k)}>${l}</button>`)}</div>
+      <div style=${{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <select id="f-status" className="input" style=${{ height: 34, width: "auto" }} value=${st} onChange=${e => setSt(e.target.value)} aria-label="Status"><option value="all">Todos os status</option><option value="ativa">Ativas</option><option value="pausada">Pausadas</option></select>
+        <select id="f-sort" className="input" style=${{ height: 34, width: "auto" }} value=${sort} onChange=${e => setSort(e.target.value)} aria-label="Ordenar"><option value="rec">Ordenar: prioridade</option><option value="spend">Ordenar: investimento</option><option value="roas">Ordenar: ROAS</option></select>
+      </div>
+    </div>
+    <div className="grid g4">
+      <${Kpi} label="Investido" value=${brl(t.spend)} /><${Kpi} label="Receita" value=${brl(t.revenue)} /><${Kpi} label="ROAS" value=${xroas(t.roas)} hint=${"Meta da conta: " + xroas(ACTIVE.target)} /><${Kpi} label="Compras" value=${fmtInt(t.purchases)} />
+    </div>
+    <div className="card card-pad"><div className="tbl-wrap" style=${{ marginTop: -18 }}><table className="tbl camp-tbl">
+      <thead><tr><th>Campanha</th><th>Ligada</th><th className="r">Orçamento/dia</th><th className="r">Investido</th><th className="r">CPA</th><th>ROAS x meta</th><th>7 dias</th><th>Recomendação</th><th>Ação</th></tr></thead>
+      <tbody>${list.map(c => { const roas = c.revenue / c.spend; const sp = series(c.revenue, c.id.length * 13 + c.spend % 97, c.d7 * 2, .3).slice(-14); const on = c.status === "ativa";
+        const sev = { pause: "var(--bad)", review: "var(--warn)", scale: "var(--good)", reactivate: "var(--accent)" }[c.rec.k];
+        return html`<${Fragment} key=${c.id}><tr className=${on ? "" : "off"}>
+          <td style=${{ boxShadow: sev ? "inset 3px 0 0 " + sev : "none" }}><span className="cname" title=${c.name}>${c.name}</span><span style=${{ display: "flex", gap: 8, alignItems: "center", marginTop: 3 }}><${ChTag} ch=${c.ch} />${c.limited ? html`<span className="pill pill-info" style=${{ height: 19, fontSize: 11 }}>Limitada pelo orçamento</span>` : null}</span></td>
+          <td><span style=${{ display: "inline-flex", alignItems: "center", gap: 8 }}><${Toggle} on=${on} onChange=${v => setStatus(c, v)} label=${(on ? "Pausar " : "Ativar ") + c.name} /><span style=${{ fontSize: 12.5, fontWeight: 600, color: on ? "var(--good)" : "var(--muted)" }}>${on ? "Ativa" : "Pausada"}</span></span></td>
+          <td className="r num">${on ? brl(c.budget) : "—"}</td><td className="r num">${brl(c.spend)}</td>
+          <td className="r num">${brl2(c.spend / c.purchases)}</td>
+          <td><span style=${{ display: "inline-flex", alignItems: "center", gap: 8 }}><${RoasBar} roas=${roas} /><b className="num" style=${{ color: roas >= ACTIVE.target ? "var(--good)" : "var(--bad)", minWidth: 44 }}>${xroas(roas)}</b></span></td>
+          <td><span style=${{ display: "inline-flex", alignItems: "center", gap: 6 }}><${Spark} values=${sp} color=${c.d7 >= 0 ? "var(--good)" : "var(--bad)"} /><span className=${"delta " + (c.d7 >= 0 ? "up" : "down")}>${c.d7 >= 0 ? "+" : "−"}${pct(Math.abs(c.d7), 0)}</span></span></td>
+          <td><span className=${"pill " + c.rec.pill}><${Icon} n=${c.rec.icon} s=${12} />${c.rec.label}</span><span className="rec-why">${c.rec.why}</span></td>
+          <td>${act(c)}</td>
+        </tr>
+        ${pending && pending.id === c.id ? html`<tr className="confirm-row"><td colSpan="9"><div className="confirm-inline"><span className="bot-ico" style=${{ width: 24, height: 24, borderRadius: 7 }}><${Icon} n="sparkles" s=${12} /></span><span style=${{ flex: 1, minWidth: 200, whiteSpace: "normal" }}>${confirmText(c, pending.kind)}</span>
+          <button className=${"btn btn-sm " + (pending.kind === "pause" ? "btn-danger" : pending.kind === "scale" ? "btn-good" : "btn-primary")} onClick=${() => apply(c, pending.kind)}>Confirmar</button><button className="btn btn-sm btn-line" onClick=${() => setPending(null)}>Cancelar</button></div></td></tr>` : null}
+        <//>`; })}
+        ${list.length === 0 ? html`<tr><td colSpan="9" style=${{ textAlign: "center", padding: 28 }}>Nenhuma campanha com esses filtros.</td></tr>` : null}
+      </tbody></table></div></div>
+  </div>`;
+}
+
+/* ilustrações dos criativos (desenhadas em SVG, sem imagens externas) */
+function CreativeArt({ id }) {
+  const W = "#ffffff";
+  const play = html`<g><circle cx="338" cy="58" r="22" fill="rgba(0,0,0,.28)" /><path d="M332 47 L350 58 L332 69 Z" fill=${W} /></g>`;
+  const dress = (x, y, s, o = 0.95) => html`<g transform=${`translate(${x} ${y}) scale(${s})`} opacity=${o}>
+    <path d="M-16 0 Q0 -8 16 0 L22 48 Q46 120 62 176 L-62 176 Q-46 120 -22 48 Z" fill=${W} />
+    <path d="M-12 0 L-8 -22 M12 0 L8 -22" stroke=${W} strokeWidth="4" strokeLinecap="round" />
+    <rect x="-24" y="44" width="48" height="9" rx="4" fill="rgba(0,0,0,.14)" /></g>`;
+  const tee = (x, y, s, o = 0.9) => html`<g transform=${`translate(${x} ${y}) scale(${s})`} opacity=${o}>
+    <path d="M-30 0 L-12 -8 Q0 4 12 -8 L30 0 L48 26 L32 36 L26 28 L26 96 L-26 96 L-26 28 L-32 36 L-48 26 Z" fill=${W} /></g>`;
+  const arts = {
+    k1: html`<${Fragment}><circle cx="300" cy="80" r="70" fill="rgba(255,255,255,.16)" /><path d="M200 38 q0 -14 12 -14" fill="none" stroke=${W} strokeWidth="4" strokeLinecap="round" />${dress(200, 62, 0.95)}${play}<//>`,
+    k2: html`<${Fragment}>
+      <rect x="40" y="56" width="100" height="140" rx="12" fill="rgba(255,255,255,.22)" />${tee(90, 92, 0.75)}
+      <rect x="150" y="38" width="110" height="160" rx="12" fill="rgba(255,255,255,.32)" />${dress(205, 66, 0.62)}
+      <rect x="270" y="56" width="100" height="140" rx="12" fill="rgba(255,255,255,.22)" />
+      <path d="M296 90 h48 l8 90 h-64 Z" fill=${W} opacity=".9" /><rect x="296" y="86" width="48" height="10" rx="4" fill="rgba(0,0,0,.12)" />
+      <g fill=${W}><circle cx="184" cy="214" r="4" /><circle cx="198" cy="214" r="4" opacity=".5" /><circle cx="212" cy="214" r="4" opacity=".5" /><circle cx="226" cy="214" r="4" opacity=".5" /></g><//>`,
+    k3: html`<${Fragment}>
+      <rect x="86" y="54" width="228" height="128" rx="18" fill=${W} opacity=".95" />
+      <rect x="104" y="74" width="66" height="66" rx="12" fill="rgba(0,0,0,.08)" />${dress(137, 84, 0.27, 0.9)}
+      <rect x="184" y="80" width="104" height="12" rx="6" fill="rgba(0,0,0,.18)" /><rect x="184" y="102" width="74" height="10" rx="5" fill="rgba(0,0,0,.1)" />
+      <rect x="184" y="146" width="96" height="24" rx="12" fill="rgba(0,0,0,.6)" />
+      <circle cx="306" cy="58" r="16" fill="#ef4444" /><text x="306" y="64" textAnchor="middle" fill=${W} style=${{ fontSize: 16, fontWeight: 700, fontFamily: "sans-serif" }}>1</text><//>`,
+    k4: html`<${Fragment}>
+      <path d="M130 110 L200 86 L270 110 L270 196 L200 220 L130 196 Z" fill=${W} opacity=".95" />
+      <path d="M130 110 L200 134 L270 110" fill="none" stroke="rgba(0,0,0,.14)" strokeWidth="3" /><path d="M200 134 L200 220" stroke="rgba(0,0,0,.12)" strokeWidth="3" />
+      <path d="M130 110 L92 84 L162 62 L200 86 Z" fill=${W} opacity=".75" /><path d="M270 110 L308 84 L238 62 L200 86 Z" fill=${W} opacity=".75" />
+      <path d="M176 92 Q190 50 204 88 Q214 56 228 92" fill="rgba(255,255,255,.6)" />
+      <g fill=${W}><path d="M96 46 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4 l10 -4 Z" /><path d="M300 150 l3 7 l7 3 l-7 3 l-3 7 l-3 -7 l-7 -3 l7 -3 Z" /></g>${play}<//>`,
+    k5: html`<${Fragment}>
+      <rect x="0" y="0" width="200" height="300" fill="rgba(0,0,0,.18)" /><line x1="200" y1="0" x2="200" y2="300" stroke=${W} strokeWidth="3" />
+      ${tee(100, 96, 0.85, 0.7)}${dress(300, 92, 0.62)}
+      <text x="100" y="78" textAnchor="middle" fill=${W} style=${{ fontSize: 15, fontWeight: 700, fontFamily: "sans-serif", letterSpacing: 2 }}>ANTES</text>
+      <text x="300" y="78" textAnchor="middle" fill=${W} style=${{ fontSize: 15, fontWeight: 700, fontFamily: "sans-serif", letterSpacing: 2 }}>DEPOIS</text>
+      <circle cx="200" cy="150" r="16" fill=${W} /><path d="M193 150 h12 m-5 -5 l5 5 l-5 5" stroke="#7a6338" strokeWidth="3" fill="none" strokeLinecap="round" /><//>`,
+    k6: html`<${Fragment}>
+      <rect x="54" y="70" width="190" height="104" rx="10" fill=${W} opacity=".95" /><rect x="64" y="80" width="80" height="84" rx="6" fill="rgba(0,0,0,.1)" />${dress(104, 88, 0.36, 0.95)}
+      <rect x="154" y="88" width="76" height="10" rx="5" fill="rgba(0,0,0,.2)" /><rect x="154" y="106" width="56" height="8" rx="4" fill="rgba(0,0,0,.1)" /><rect x="154" y="142" width="62" height="20" rx="10" fill="rgba(0,0,0,.55)" />
+      <rect x="262" y="40" width="96" height="96" rx="10" fill=${W} opacity=".9" /><rect x="272" y="50" width="76" height="50" rx="6" fill="rgba(0,0,0,.1)" /><rect x="272" y="110" width="56" height="8" rx="4" fill="rgba(0,0,0,.2)" />
+      <rect x="262" y="150" width="96" height="60" rx="10" fill=${W} opacity=".8" /><rect x="272" y="162" width="76" height="8" rx="4" fill="rgba(0,0,0,.2)" /><rect x="272" y="178" width="50" height="8" rx="4" fill="rgba(0,0,0,.1)" /><//>`,
+    k7: html`<${Fragment}>
+      <g stroke=${W} strokeWidth="4" strokeLinecap="round" opacity=".6"><line x1="40" y1="120" x2="90" y2="120" /><line x1="56" y1="140" x2="96" y2="140" /><line x1="48" y1="160" x2="84" y2="160" /></g>
+      <rect x="110" y="92" width="150" height="92" rx="8" fill=${W} opacity=".95" />
+      <path d="M260 118 h46 l28 34 v32 h-74 Z" fill=${W} opacity=".85" /><rect x="272" y="126" width="34" height="22" rx="4" fill="rgba(0,0,0,.14)" />
+      <circle cx="150" cy="190" r="17" fill="#1f2a5c" /><circle cx="150" cy="190" r="7" fill=${W} /><circle cx="300" cy="190" r="17" fill="#1f2a5c" /><circle cx="300" cy="190" r="7" fill=${W} />
+      <rect x="160" y="116" width="50" height="40" rx="4" fill="rgba(0,0,0,.12)" /><line x1="185" y1="116" x2="185" y2="156" stroke="rgba(0,0,0,.18)" strokeWidth="3" /><//>`,
+    k8: html`<${Fragment}>
+      <path d="M84 60 h232 a16 16 0 0 1 16 16 v86 a16 16 0 0 1 -16 16 h-150 l-34 28 v-28 h-48 a16 16 0 0 1 -16 -16 v-86 a16 16 0 0 1 16 -16 Z" fill=${W} opacity=".95" />
+      <g fill="#f5b301">${[0, 1, 2, 3, 4].map(i => html`<path key=${i} transform=${`translate(${120 + i * 30} 92)`} d="M0 -11 L3.2 -3.5 L11 -3.4 L5 1.8 L7 9.5 L0 5.2 L-7 9.5 L-5 1.8 L-11 -3.4 L-3.2 -3.5 Z" />`)}</g>
+      <rect x="110" y="118" width="180" height="10" rx="5" fill="rgba(0,0,0,.16)" /><rect x="110" y="138" width="140" height="10" rx="5" fill="rgba(0,0,0,.1)" />
+      <circle cx="334" cy="208" r="26" fill=${W} opacity=".9" /><circle cx="334" cy="200" r="9" fill="rgba(0,0,0,.18)" /><path d="M318 224 q16 -18 32 0" fill="rgba(0,0,0,.18)" />${play}<//>`,
+  };
+  return html`<svg className="cre-art" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g transform="translate(60 32) scale(0.7)">${arts[id] || null}</g></svg>`;
+}
+
+function Creatives({ camps }) {
+  const [ch, setCh] = useState("all");
+  const [view, setViewS] = useState(() => store.get("readyai_cre_view", "grid"));
+  const setView = v => { setViewS(v); store.set("readyai_cre_view", v); };
+  const list = CREATIVES.filter(k => ch === "all" || k.ch === ch).sort((a, b) => b.roas - a.roas);
+  const st = { ok: ["pill-good", "Saudável"], fadiga: ["pill-warn", "Fadiga"], ruim: ["pill-bad", "Abaixo da meta"], atencao: ["pill-warn", "CTR caindo"] };
+  return html`<div className="stack">
+    <${PageHead} title="Criativos" sub="Ranking por ROAS com sinais de fadiga. O ganho dos 3 primeiros segundos aparece em vídeos." right=${html`<div style=${{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}><div className="seg">${[["all", "Todos"], ["meta", "Meta"], ["google", "Google"], ["tiktok", "TikTok"]].map(([k, l]) => html`<button key=${k} className=${ch === k ? "on" : ""} onClick=${() => setCh(k)}>${l}</button>`)}</div>
+      <div className="seg view-seg" role="group" aria-label="Visualização"><button className=${view === "grid" ? "on" : ""} onClick=${() => setView("grid")} aria-label="Ver em grade" aria-pressed=${view === "grid"} title="Grade"><${Icon} n="grid" s=${15} /></button><button className=${view === "list" ? "on" : ""} onClick=${() => setView("list")} aria-label="Ver em lista" aria-pressed=${view === "list"} title="Lista"><${Icon} n="list" s=${15} /></button></div></div>`} />
+    ${view === "list" ? html`<div className="card cre-list">
+      <div className="cre-row cre-row-head"><span></span><span>Criativo</span><span>Status</span><span className="r">ROAS</span><span className="r">CTR</span><span className="r">Retenção 3s</span><span className="r">Investido</span></div>
+      ${list.map((k, idx) => html`<div key=${k.id} className="cre-row">
+        <span className="mini-thumb" style=${{ background: k.bg }}><${CreativeArt} id=${k.id} /></span>
+        <span style=${{ minWidth: 0 }}><b className="cname" style=${{ fontSize: 13.5 }}>#${idx + 1} · ${k.name}</b><span style=${{ display: "flex", gap: 8, alignItems: "center", marginTop: 2, flexWrap: "wrap" }}><${ChTag} ch=${k.ch} /><span style=${{ fontSize: 12, color: "var(--muted)" }}>${k.fmt}</span></span></span>
+        <span><span className=${"pill " + st[k.status][0]}>${st[k.status][1]}</span></span>
+        <span className="r num"><b style=${{ color: k.roas >= ACTIVE.target ? "var(--good)" : "var(--bad)" }}>${xroas(k.roas)}</b></span>
+        <span className="r num">${pct(k.ctr, 1)}</span>
+        <span className="r num">${k.hook != null ? pct(k.hook, 0) : "—"}</span>
+        <span className="r num">${brl(k.spend)}</span>
+      </div>`)}
+    </div>` : html`<div className="cre-grid">${list.map((k, idx) => html`<article key=${k.id} className="card cre">
+      <div className="thumb" style=${{ background: k.bg }}><${CreativeArt} id=${k.id} /><span className="fmt">${k.fmt}</span><span className="hl">${k.hl}</span></div>
+      <div className="cre-body">
+        <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><b style=${{ fontSize: 13.5, lineHeight: 1.3 }}>${k.name}</b><span className="mono" style=${{ color: "var(--muted)" }}>#${idx + 1}</span></div>
+        <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, flexWrap: "wrap" }}><${ChTag} ch=${k.ch} /><span className=${"pill " + st[k.status][0]}>${st[k.status][1]}</span></div>
+        <div className="cre-stats"><div><small>ROAS</small><b className="num">${xroas(k.roas)}</b></div><div><small>CTR</small><b className="num">${pct(k.ctr, 1)}</b></div><div><small>${k.hook != null ? "Retenção 3s" : "Investido"}</small><b className="num">${k.hook != null ? pct(k.hook, 0) : brl(k.spend)}</b></div></div>
+      </div></article>`)}</div>`}
+    <p className="demo-note"><${Icon} n="image" s=${13} />Ilustrações de exemplo. Com as contas conectadas, aparecem as imagens e vídeos reais dos anúncios.</p>
+  </div>`;
+}
+
+function PaceBar({ pace }) {
+  const over = pace - MONTH_ELAPSED;
+  return html`<span className="roasbar" title=${pct(pace, 0) + " do orçamento usado · " + pct(MONTH_ELAPSED, 0) + " do mês"}>
+    <i style=${{ width: Math.min(pace, 1) * 100 + "%", background: Math.abs(over) > .2 ? "var(--warn)" : "var(--accent)" }}></i><u style=${{ left: MONTH_ELAPSED * 100 + "%" }}></u></span>`;
+}
+function Portfolio({ chat, openClient, toast, agency, rows }) {
+  const [f, setF] = useState("all"); const [sort, setSort] = useState("prio"); const [done, setDone] = useState({}); const [exp, setExp] = useState({}); const [more, setMore] = useState(false);
+  const all = rows.flatMap(r => r.issues.map((i, k) => ({ ...i, client: r.name, cid: r.id, key: r.id + k })));
+  const count = t => all.filter(i => i.t === t).length;
+  const waste = rows.reduce((a, r) => a + r.waste7, 0);
+  const nAcc = rows.reduce((a, r) => a + r.accounts.length, 0);
+  const tiles = [
+    { t: "block", n: count("block"), unit: count("block") === 1 ? "conta travada" : "contas travadas", d: "Anúncio reprovado, pagamento ou limite de gasto" },
+    { t: "waste", n: brl(waste), unit: "em 7 dias", d: "Gasto em campanhas com ROAS abaixo de 1,5x" },
+    { t: "pace", n: count("pace"), unit: "fora do ritmo", d: "Vão estourar ou sobrar verba no mês" },
+    { t: "track", n: count("track"), unit: count("track") === 1 ? "falha" : "falhas", d: "Pixel ou conversões sem dados" },
+    { t: "fatigue", n: rows.reduce((a, r) => a + r.issues.filter(i => i.t === "fatigue").reduce((x, i) => x + (parseInt(i.text) || 1), 0), 0), unit: "criativos", d: "Frequência alta ou CTR caindo" },
+  ];
+  const queue = all.filter(i => f === "all" || i.t === f).sort((a, b) => (done[a.key] ? 1 : 0) - (done[b.key] ? 1 : 0) || ISSUE[a.t].rank - ISSUE[b.t].rank);
+  const left = all.filter(i => !done[i.key]).length;
+  const list = rows.filter(r => f === "all" || r.issues.some(i => i.t === f))
+    .sort((a, b) => sort === "spend" ? b.t.spend - a.t.spend : sort === "roas" ? b.t.roas / b.target - a.t.roas / a.target : a.health - b.health);
+  const chIcon = ch => html`<span className="ch-dot" style=${{ background: CH[ch].color }}></span>`;
+  return html`<div className="stack">
+    <${PageHead} title="Carteira de clientes" sub=${agency + " · " + rows.length + " clientes e " + nAcc + " contas de anúncio conectadas pelos Business Managers, pela conta MCC do Google e pelo Business Center do TikTok."}
+      right=${html`<button className="btn btn-primary" onClick=${() => toast(rows.length + " relatórios agendados com a marca da " + agency + " (simulação)")}><${Icon} n="send" s=${14} />Enviar relatórios da carteira</button>`} />
+    <div className="ops">${tiles.map(x => { const I = ISSUE[x.t]; const on = f === x.t; return html`<button key=${x.t} type="button" className=${"op" + (on ? " on" : "")} style=${{ "--sev": I.c }} onClick=${() => setF(on ? "all" : x.t)} aria-pressed=${on}>
+      <span className="op-top"><span className="op-ico"><${Icon} n=${I.icon} s=${15} /></span>${I.short}</span>
+      <span className="op-n num">${x.n} <small>${x.unit}</small></span><span className="op-d">${x.d}</span></button>`; })}</div>
+    <div className="card queue">
+      <div className="queue-head"><div><div className="card-title">Fila de hoje</div><div className="card-sub">${left} ${left === 1 ? "item pendente" : "itens pendentes"}${f !== "all" ? " · filtrando por " + ISSUE[f].short.toLowerCase() : ""}. O que trava entrega e queima verba vem primeiro.</div></div>
+        ${f !== "all" ? html`<button className="link-btn" onClick=${() => setF("all")}>Ver tudo</button>` : null}</div>
+      ${queue.slice(0, more || f !== "all" ? 99 : 7).map(i => { const I = ISSUE[i.t]; const ok = done[i.key]; return html`<div key=${i.key} className=${"q-row" + (ok ? " done" : "")} style=${{ "--sev": I.c }}>
+        <button type="button" className=${"q-check" + (ok ? " on" : "")} onClick=${() => setDone({ ...done, [i.key]: !ok })} aria-label=${ok ? "Marcar como pendente" : "Marcar como feito"}>${ok ? html`<${Icon} n="check" s=${13} />` : null}</button>
+        <span className=${"pill " + I.pill}><${Icon} n=${I.icon} s=${12} />${I.label}</span>
+        <span className="q-client">${i.client}</span>
+        <span className="q-text">${i.ch ? chIcon(i.ch) : null}${i.text}</span>
+        <span className="q-acts"><button className="btn btn-sm btn-line" onClick=${() => openClient(i.cid, i.go)}>${i.act}<${Icon} n="arrowR" s=${13} /></button></span>
+      </div>`; })}
+      ${f === "all" && queue.length > 7 ? html`<button className="q-more" onClick=${() => setMore(!more)}>${more ? "Mostrar menos" : "Mostrar mais " + (queue.length - 7) + " itens"}<span style=${{ display: "grid", transform: more ? "rotate(180deg)" : "none" }}><${Icon} n="chevD" s=${13} /></span></button>` : null}
+    </div>
+    <div style=${{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+      <div className="card-title">Clientes</div>
+      <select id="pf-sort" className="input" style=${{ height: 34, width: "auto" }} value=${sort} onChange=${e => setSort(e.target.value)} aria-label="Ordenar"><option value="prio">Ordenar: menor saúde primeiro</option><option value="spend">Ordenar: investimento</option><option value="roas">Ordenar: ROAS x meta</option></select>
+    </div>
+    <div className="card card-pad"><div className="tbl-wrap" style=${{ marginTop: -18 }}><table className="tbl camp-tbl">
+      <thead><tr><th>Cliente</th><th>Contas de anúncio</th><th className="r">Gasto ontem</th><th>ROAS 30d x meta</th><th>Ritmo do mês</th><th>Saúde</th><th>Pendências</th><th></th></tr></thead>
+      <tbody>${list.map(r => html`<${Fragment} key=${r.id}><tr>
+          <td style=${{ boxShadow: "inset 3px 0 0 var(--" + healthCls(r.health) + ")" }}><span className="cname">${r.name}</span><span className="rec-why">${r.seg}</span></td>
+          <td><button type="button" className="acc-btn" onClick=${() => setExp({ ...exp, [r.id]: !exp[r.id] })} aria-expanded=${!!exp[r.id]}>
+            ${r.chs.map(c => html`<span key=${c} className="acc-chip">${chIcon(c)}${CH[c].label.replace(" Ads", "")}${r.accounts.find(a => a.ch === c).issue ? html`<span className="acc-alert" title="Conta com problema"></span>` : null}</span>`)}
+            <span style=${{ display: "grid", transform: exp[r.id] ? "rotate(180deg)" : "none" }}><${Icon} n="chevD" s=${13} /></span></button></td>
+          <td className="r num">${brl(r.yday)}<span className="rec-why" style=${{ textAlign: "right" }}>de ${brl(r.dayBudget)}/dia</span></td>
+          <td><span style=${{ display: "inline-flex", alignItems: "center", gap: 8 }}><${RoasBar} roas=${r.t.roas} target=${r.target} /><b className="num" style=${{ color: r.t.roas >= r.target ? "var(--good)" : "var(--bad)" }}>${xroas(r.t.roas)}</b></span><span className="rec-why">meta ${xroas(r.target)}</span></td>
+          <td><span style=${{ display: "inline-flex", alignItems: "center", gap: 8 }}><${PaceBar} pace=${r.pace} /><span className="num" style=${{ fontWeight: 600, color: Math.abs(r.over) > .2 ? "var(--warn)" : "var(--ink)" }}>${pct(r.pace, 0)}</span></span><span className="rec-why">${kfmt(r.spent)} de ${kfmt(r.budget)}</span></td>
+          <td><span className=${"pill pill-" + healthCls(r.health)}>${r.health}</span></td>
+          <td><span className="pend">${Object.keys(ISSUE).filter(t => r.issues.some(i => i.t === t)).map(t => html`<span key=${t} className=${"pill " + ISSUE[t].pill} title=${r.issues.filter(i => i.t === t).map(i => i.text).join(" · ")}><${Icon} n=${ISSUE[t].icon} s=${11} />${r.issues.filter(i => i.t === t).length}</span>`)}</span></td>
+          <td><button className="btn btn-sm btn-primary" onClick=${() => openClient(r.id)}>Entrar<${Icon} n="arrowR" s=${13} /></button></td>
+        </tr>
+        ${exp[r.id] ? html`<tr className="confirm-row"><td colSpan="8"><div className="acc-list">${r.accounts.map(a => html`<div key=${a.ch} className="acc-item">${chIcon(a.ch)}<b>${CH[a.ch].label}</b><span className="mono" style=${{ color: "var(--muted)" }}>${a.id}</span><span style=${{ color: "var(--muted)", fontSize: 12 }}>via ${a.parent}</span>
+          ${a.issue ? html`<span className=${"pill " + ISSUE[a.issue.t].pill}>${a.issue.text}</span>` : html`<span className="pill pill-good"><span className="dot"></span>Entregando</span>`}</div>`)}</div></td></tr>` : null}
+      <//>`)}</tbody></table></div></div>
+    <p className="demo-note"><${Icon} n="eye" s=${13} />Carteira de exemplo. Na versão real, a lista vem das contas que a agência acessa pelos Business Managers, pela MCC e pelo Business Center.</p>
+  </div>`;
+}
+
+function ClientSwitcher({ rows, activeId, onPick, onPortfolio, inClient }) {
+  const [open, setOpen] = useState(false); const [q, setQ] = useState(""); const ref = useRef(null);
+  useEffect(() => { if (!open) return; const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }; const k = e => { if (e.key === "Escape") setOpen(false); }; document.addEventListener("mousedown", h); document.addEventListener("keydown", k); return () => { document.removeEventListener("mousedown", h); document.removeEventListener("keydown", k); }; }, [open]);
+  const act = rows.find(r => r.id === activeId);
+  const list = rows.filter(r => r.name.toLowerCase().includes(q.toLowerCase()));
+  return html`<div className="switcher" ref=${ref}>
+    <button type="button" className="chip-sel client-switch" onClick=${() => setOpen(!open)} aria-expanded=${open} aria-haspopup="listbox">
+      ${inClient ? html`<span className="c-av sm">${act.name[0]}</span><b style=${{ fontWeight: 600 }}>${act.name}</b>` : html`<${Icon} n="building" s=${14} /><b style=${{ fontWeight: 600 }}>Trocar de cliente</b>`}<${Icon} n="chevD" s=${13} /></button>
+    ${open ? html`<div className="sw-pop" role="listbox">
+      <input id="sw-q" className="input" placeholder="Buscar cliente" value=${q} onInput=${e => setQ(e.target.value)} autoFocus=${true} />
+      <button type="button" className=${"sw-item" + (!inClient ? " on" : "")} onClick=${() => { setOpen(false); onPortfolio(); }}><span className="c-av sm" style=${{ background: "var(--surface-2)", color: "var(--ink)" }}><${Icon} n="users" s=${12} /></span><span style=${{ flex: 1 }}><b>Toda a carteira</b><small>${rows.length} clientes</small></span></button>
+      <div className="sw-sep"></div>
+      ${list.map(r => html`<button key=${r.id} type="button" role="option" aria-selected=${inClient && r.id === activeId} className=${"sw-item" + (inClient && r.id === activeId ? " on" : "")} onClick=${() => { setOpen(false); setQ(""); onPick(r.id); }}>
+        <span className="c-av sm">${r.name[0]}</span><span style=${{ flex: 1, minWidth: 0 }}><b>${r.name}</b><small>${r.accounts.length} ${r.accounts.length === 1 ? "conta" : "contas"} · ${r.issues.length} pendências</small></span>
+        <span className=${"pill pill-" + healthCls(r.health)}>${r.health}</span></button>`)}
+      ${list.length === 0 ? html`<p style=${{ padding: 10, color: "var(--muted)", fontSize: 13 }}>Nenhum cliente com esse nome.</p>` : null}
+    </div>` : null}
+  </div>`;
+}
+
+function Report({ camps, toast, user, account, agency }) {
+  const [chs, setChs] = useState({ email: true, whatsapp: true, slack: false, teams: false });
+  const [freq, setFreq] = useState("weekly");
+  const [secs, setSecs] = useState({ kpis: true, channels: true, top: true, insights: true });
+  const [note, setNote] = useState("Semana forte no Google. Vamos escalar a PMax e pausar o UGC do TikTok.");
+  const t = totals(camps); const top = [...camps].sort((a, b) => b.spend - a.spend).slice(0, 3);
+  const CHN = [["email", "E-mail", "camila@lojaaurora.com.br, diretoria@lojaaurora.com.br"], ["whatsapp", "WhatsApp", "+55 11 98765-4321"], ["slack", "Slack", "#marketing-performance"], ["teams", "Microsoft Teams", "Canal Growth"]];
+  const n = Object.values(chs).filter(Boolean).length;
+  return html`<div className="stack">
+    <${PageHead} title="Relatórios" sub="Monte o relatório uma vez e envie para todos os canais que o seu time usa." right=${html`<span className="demo-note"><${Icon} n="eye" s=${13} />Envio simulado na demo</span>`} />
+    <div className="grid g2" style=${{ alignItems: "start" }}>
+      <div className="card card-pad stack">
+        <div><div className="card-title">Canais de envio</div><div className="card-sub">Escolha um ou mais</div></div>
+        ${CHN.map(([k, l, d]) => html`<div key=${k} className="mod-row"><div><b>${l}</b><small>${d}</small></div><${Toggle} on=${chs[k]} onChange=${v => setChs({ ...chs, [k]: v })} label=${l} /></div>`)}
+        <div className="field"><label htmlFor="r-freq">Frequência</label><select id="r-freq" className="input" value=${freq} onChange=${e => setFreq(e.target.value)}><option value="now">Só agora</option><option value="daily">Todo dia às 8h</option><option value="weekly">Toda segunda às 8h</option><option value="monthly">Todo dia 1º às 8h</option></select></div>
+        <div className="field"><label>Seções</label><div style=${{ display: "flex", flexWrap: "wrap", gap: 6 }}>${[["kpis", "KPIs"], ["channels", "Por canal"], ["top", "Top 3 campanhas"], ["insights", "Insights do copilot"]].map(([k, l]) => html`<button key=${k} type="button" className=${"pill " + (secs[k] ? "pill-info" : "pill-mute")} style=${{ height: 28, cursor: "pointer" }} onClick=${() => setSecs({ ...secs, [k]: !secs[k] })} aria-pressed=${secs[k]}>${secs[k] ? html`<${Icon} n="check" s=${12} />` : null}${l}</button>`)}</div></div>
+        <div className="field"><label htmlFor="r-note">Observação do gestor <span style=${{ fontWeight: 400, color: "var(--muted)" }}>opcional</span></label><textarea id="r-note" className="input" rows="3" value=${note} onInput=${e => setNote(e.target.value)}></textarea></div>
+        <div style=${{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button className="btn btn-primary" disabled=${!n} onClick=${() => toast(freq === "now" ? `Relatório enviado para ${n} ${n === 1 ? "canal" : "canais"} (simulação)` : `Relatório agendado em ${n} ${n === 1 ? "canal" : "canais"} (simulação)`)}><${Icon} n="send" s=${14} />${freq === "now" ? "Enviar agora" : "Agendar envio"}</button>
+          <button className="btn btn-line" disabled=${!n} onClick=${() => toast("Relatório de teste enviado para " + user.email + " (simulação)")}>Enviar teste para mim</button>
+        </div>
+      </div>
+      <div className="card card-pad stack" style=${{ background: "var(--surface-2)" }}>
+        <div className="eyebrow">Pré-visualização</div>
+        <div><b style=${{ fontSize: 17 }}>${account || "Loja Aurora"} · Performance semanal</b><div className="card-sub">19/09 a 18/10 · Meta, Google e TikTok${agency ? " · enviado por " + agency : ""}</div></div>
+        ${secs.kpis ? html`<div className="mini-cards"><div className="mini"><small>Investimento</small><b className="num">${brl(t.spend)}</b></div><div className="mini"><small>Receita</small><b className="num">${brl(t.revenue)}</b></div><div className="mini"><small>ROAS</small><b className="num">${xroas(t.roas)}</b></div><div className="mini"><small>CPA</small><b className="num">${brl2(t.cpa)}</b></div></div>` : null}
+        ${secs.channels ? html`<div className="stack" style=${{ gap: 6 }}>${chPresent(camps).map(k => { const v = totals(camps.filter(c => c.ch === k)); return html`<div key=${k} style=${{ display: "flex", justifyContent: "space-between", fontSize: 13 }}><${ChTag} ch=${k} /><span className="num">${brl(v.spend)} · ROAS <b>${xroas(v.roas)}</b></span></div>`; })}</div>` : null}
+        ${secs.top ? html`<div><div className="eyebrow" style=${{ marginBottom: 6 }}>3 campanhas com maior investimento</div><ol style=${{ margin: 0, paddingLeft: 18, fontSize: 13, display: "flex", flexDirection: "column", gap: 3 }}>${top.map(c => html`<li key=${c.id}>${c.name} · <span className="num">${brl(c.spend)}</span></li>`)}</ol></div>` : null}
+        ${secs.insights ? html`<div style=${{ fontSize: 13, color: "var(--muted-2)" }}><b style=${{ color: "var(--ink)" }}>Copilot:</b> PMax Coleção Verão pode escalar; TikTok Topo UGC segue abaixo da meta.</div>` : null}
+        ${note ? html`<div style=${{ fontSize: 13, borderLeft: "2px solid var(--line-2)", paddingLeft: 10, color: "var(--muted-2)" }}>${note}</div>` : null}
+      </div>
+    </div>
+  </div>`;
+}
+
+const SKILLS0 = [
+  { id: "s1", name: "Resumo diário das campanhas", desc: "Todo dia às 8h envia investimento, receita, ROAS e os 3 alertas do dia.", freq: "Todo dia, 8h", on: true, last: "hoje, 08:00", ask: "Resuma minhas campanhas" },
+  { id: "s2", name: "Alerta de CPA alto", desc: "Avisa quando o CPA de uma campanha passar de R$ 60 por 2 dias seguidos.", freq: "A cada 2 horas", on: true, last: "hoje, 08:00", ask: "Crie um alerta de CPA alto" },
+  { id: "s3", name: "Pausar quem queima verba", desc: "Propõe pausar campanhas com ROAS abaixo de 1,2 e mais de R$ 1.000 gastos. Sempre pede sua confirmação.", freq: "Todo dia, 7h", on: false, last: "nunca", ask: "Quais campanhas devo pausar?" },
+  { id: "s4", name: "Realocação semanal de orçamento", desc: "Toda segunda simula mover verba das campanhas abaixo da meta para as limitadas por orçamento.", freq: "Toda segunda, 9h", on: true, last: "13 out, 09:00", ask: "Redistribua o orçamento" },
+  { id: "s5", name: "Detector de fadiga criativa", desc: "Sinaliza criativos com frequência acima de 4 ou CTR em queda de 25% na semana.", freq: "Todo dia, 10h", on: true, last: "ontem, 10:00", ask: "Quais criativos estão com fadiga?" },
+];
+function Skills({ chat, toast }) {
+  const [skills, setSkills] = useState(SKILLS0); const [adding, setAdding] = useState(false);
+  const [nn, setNn] = useState(""); const [np, setNp] = useState(""); const [nf, setNf] = useState("Todo dia, 8h");
+  return html`<div className="stack">
+    <${PageHead} title="Habilidades do agente" sub="Rotinas que o copilot executa sozinho. Toda alteração em conta de anúncio pede sua confirmação antes." right=${html`<button className="btn btn-primary" onClick=${() => setAdding(true)}><${Icon} n="plus" s=${15} />Nova habilidade</button>`} />
+    ${adding ? html`<form className="card card-pad stack" onSubmit=${e => { e.preventDefault(); if (!nn.trim()) return; setSkills([{ id: "s" + Date.now(), name: nn, desc: np || "Instrução personalizada", freq: nf, on: true, last: "nunca", ask: np || nn }, ...skills]); setAdding(false); setNn(""); setNp(""); toast("Habilidade criada"); }}>
+      <div className="card-title">Nova habilidade</div>
+      <div className="grid g2"><div className="field"><label htmlFor="sk-n">Nome</label><input id="sk-n" className="input" value=${nn} onInput=${e => setNn(e.target.value)} placeholder="Ex.: Alerta de ROAS no TikTok" /></div>
+        <div className="field"><label htmlFor="sk-f">Frequência</label><select id="sk-f" className="input" value=${nf} onChange=${e => setNf(e.target.value)}><option>Todo dia, 8h</option><option>A cada 2 horas</option><option>Toda segunda, 9h</option><option>Sob demanda</option></select></div></div>
+      <div className="field"><label htmlFor="sk-p">O que o agente deve fazer</label><textarea id="sk-p" className="input" rows="3" value=${np} onInput=${e => setNp(e.target.value)} placeholder="Ex.: Se o ROAS do TikTok ficar abaixo de 2 por 3 dias, me avise e sugira para onde mover a verba."></textarea></div>
+      <div style=${{ display: "flex", gap: 8 }}><button className="btn btn-primary" type="submit">Salvar habilidade</button><button className="btn btn-line" type="button" onClick=${() => setAdding(false)}>Cancelar</button></div>
+    </form>` : null}
+    <div className="card" style=${{ padding: "4px 18px" }}>${skills.map(s => html`<div key=${s.id} className="mod-row" style=${{ alignItems: "flex-start", padding: "14px 0", flexWrap: "wrap" }}>
+      <div style=${{ display: "flex", gap: 12, minWidth: 0, flex: "1 1 280px" }}><span className="ico-wrap" style=${{ background: s.on ? "var(--accent-soft)" : "var(--surface-2)", color: s.on ? "var(--accent-ink)" : "var(--muted)", width: 32, height: 32, borderRadius: 9 }}><${Icon} n="zap" s=${15} /></span>
+        <div style=${{ minWidth: 0 }}><b>${s.name}</b><small style=${{ display: "block", marginTop: 2, maxWidth: "62ch" }}>${s.desc}</small>
+          <div style=${{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}><span className="pill pill-mute"><${Icon} n="clock" s=${11} />${s.freq}</span><span className="pill pill-mute">Última execução: ${s.last}</span></div></div></div>
+      <div style=${{ display: "flex", alignItems: "center", gap: 10 }}><button className="btn btn-sm btn-line" onClick=${() => chat.send(s.ask, true)}><${Icon} n="play" s=${12} />Executar agora</button><${Toggle} on=${s.on} onChange=${v => setSkills(skills.map(x => x.id === s.id ? { ...x, on: v } : x))} label=${"Ativar " + s.name} /></div>
+    </div>`)}</div>
+  </div>`;
+}
+function Insights({ insights, chat, go }) {
+  const [f, setF] = useState("all");
+  const list = insights.filter(i => f === "all" || i.sev === f);
+  return html`<div className="stack">
+    <${PageHead} title="Insights" sub="O que o agente encontrou nas suas contas, do mais urgente ao mais promissor." right=${html`<div className="seg">${[["all", "Todos"], ["bad", "Atenção"], ["warn", "Risco"], ["good", "Ganhos"], ["info", "Oportunidades"]].map(([k, l]) => html`<button key=${k} className=${f === k ? "on" : ""} onClick=${() => setF(k)}>${l}</button>`)}</div>`} />
+    <div className="grid g2">${list.map(i => html`<${InsightCard} key=${i.id} i=${i} chat=${chat} go=${go} full />`)}</div>
+    ${list.length === 0 ? html`<p style=${{ color: "var(--muted)" }}>Nenhum insight nessa categoria agora.</p>` : null}
+  </div>`;
+}
+function Integrations() {
+  const items = [
+    ["Meta Ads", "Campanhas, conjuntos, anúncios e criativos", "on", "Conta 1029384756 · Loja Aurora"],
+    ["Google Ads", "Search, PMax, Shopping e YouTube", "on", "Customer ID 482-193-0571"],
+    ["TikTok Ads", "Campanhas e Spark Ads", "on", "Advertiser 7301928374"],
+    // Canais preparados, mas ocultos e desabilitados por enquanto
+    ["LinkedIn Ads", "Campanhas B2B e Lead Gen Forms", "off", "Não conectado", true],
+    ["Pinterest Ads", "Pins promovidos e catálogo", "off", "Não conectado", true],
+    ["Kwai Ads", "Campanhas de vídeo curto", "off", "Não conectado", true],
+    ["Google Analytics 4", "Sessões, receita e atribuição do site", "off", "Não conectado"],
+    ["WhatsApp Business", "Conversas e CRM de vendas", "soon", "Disponível em breve"],
+  ];
+  return html`<div className="stack">
+    <${PageHead} title="Integrações" sub="Contas que o painel, o copilot e as inteligências do agente usam. Alterações nas contas sempre pedem sua confirmação." />
+    <${AIIntegrations} />
+    <div className="eyebrow" style=${{ marginTop: 6 }}>Plataformas de anúncio e dados</div>
+    <div className="grid g2">${items.filter(x => !x[4]).map(([n, d, s, a]) => html`<article key=${n} className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title">${n}</div><div className="card-sub">${d}</div></div>
+        <span className=${"pill " + (s === "on" ? "pill-good" : s === "soon" ? "pill-violet" : "pill-mute")}>${s === "on" ? html`<span className="dot"></span>Conectado` : s === "soon" ? "Em breve" : "Não conectado"}</span></div>
+      <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}><span className="mono" style=${{ color: "var(--muted)" }}>${a}</span>
+        ${s === "soon" ? null : html`<button className="btn btn-sm btn-line">${s === "on" ? "Gerenciar" : "Conectar"}</button>`}</div>
+    </article>`)}</div>
+  </div>`;
+}
+function AIIntegrations() {
+  const { conn } = useAI();
+  return html`<div className="stack" style=${{ gap: 10 }}><div className="eyebrow">Inteligência artificial do copilot</div>
+    <div className="grid g2">${Object.entries(AI_PROVIDERS).map(([id, p]) => { const on = conn && conn.provider === id; return html`<article key=${id} className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title" style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="prov-dot" style=${{ background: p.color }}></span>${p.name}</div><div className="card-sub">Conversa do copilot pela API da ${p.vendor}</div></div>
+        <span className=${"pill " + (on ? "pill-good" : "pill-mute")}>${on ? html`<span className="dot"></span>Conectado` : "Não conectado"}</span></div>
+      <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}><span className="mono" style=${{ color: "var(--muted)" }}>${on ? conn.model : "Chave de API própria"}</span>
+        <button className="btn btn-sm btn-line" onClick=${() => aiStore.open(id)}>${on ? "Gerenciar" : "Conectar"}</button></div>
+    </article>`; })}</div></div>`;
+}
+function Locked({ mod, plan }) {
+  const m = MODULES.find(x => x.key === mod); const needs = Object.entries(PLANS).find(([, p]) => p.modules.includes(mod));
+  return html`<div className="card locked"><div className="lock-ico"><${Icon} n="lock" s=${24} /></div>
+    <h2 style=${{ fontSize: 20, fontWeight: 700 }}>${m ? m.label : "Este módulo"} não está no seu plano</h2>
+    <p style=${{ color: "var(--muted)" }}>${m ? m.desc + "." : ""} Seu plano atual é ${PLANS[plan] ? PLANS[plan].name : "personalizado"}${needs ? html`; esse módulo está incluído a partir do plano <b>${needs[1].name}</b>` : ""}.</p>
+    <p style=${{ fontSize: 13, color: "var(--muted)" }}>Para liberar, fale com seu gestor de conta: <span className="mono" style=${{ userSelect: "all", color: "var(--ink)" }}>comercial@readyai.com</span></p></div>`;
+}
+
+/* ================= app do cliente ================= */
+function ClientApp({ client, onLogout, impersonating, onBackToConsole }) {
+  const allowed = new Set([...client.modules, "integrations"]);
+  const isAgency = allowed.has("portfolio");
+  const [screen, setScreen] = useState(isAgency ? "portfolio" : allowed.has("copilot") ? "copilot" : "overview");
+  const [activeId, setActiveId] = useState("aurora");
+  const activeAcc = PORTFOLIO.find(p => p.id === activeId);
+  const pfRows = useMemo(() => isAgency ? portfolioRows() : [], [isAgency]);
+  const activeRow = pfRows.find(r => r.id === activeId);
+  const accountName = isAgency ? activeAcc.name : client.company;
+  if (isAgency) {
+    const row = activeRow;
+    const f = 1 - activeAcc.d7;
+    ACTIVE = { target: activeAcc.target, health: row.health, prev: { spend: PREV.spend * activeAcc.k, revenue: PREV.revenue * activeAcc.k * activeAcc.rm * f, purchases: PREV.purchases * activeAcc.k * activeAcc.rm * f, clicks: PREV.clicks * activeAcc.k, impr: PREV.impr * activeAcc.k } };
+  } else ACTIVE = { prev: PREV, target: TARGET_ROAS, health: 78 };
+  const [open, setOpen] = useState(() => ({ painel: true, gerenciador: true, inteligencias: true }));
+  const [sideOpen, setSideOpen] = useState(false); const [dockOpen, setDockOpen] = useState(false);
+  const [dockHidden, setDockHiddenS] = useState(() => store.get("readyai_dock_hidden", false));
+  const setDockHidden = v => { setDockHiddenS(v); store.set("readyai_dock_hidden", v); };
+  const isNarrow = () => { try { return window.matchMedia("(max-width:1180px)").matches; } catch (e) { return false; } };
+  const openCopilot = () => { if (isNarrow()) setDockOpen(true); else setDockHidden(false); };
+  const closeCopilot = () => { if (dockOpen) setDockOpen(false); else setDockHidden(true); };
+  const [camps, setCamps] = useState(CAMPAIGNS0);
+  const [msgs, setMsgs] = useState([]); const [typing, setTyping] = useState(false);
+  const [toastMsg, setToastMsg] = useState(null);
+  const toast = m => { setToastMsg(m); clearTimeout(toast.t); toast.t = setTimeout(() => setToastMsg(null), 2600); };
+  const insights = useMemo(() => buildInsights(camps), [camps]);
+  const go = key => { setScreen(key); setSideOpen(false); setDockOpen(false); const g = NAV.find(n => (n.children || []).some(c => c.key === key)); if (g) setOpen(o => ({ ...o, [g.id]: true })); };
+  const ai = useAI();
+  const send = async (text, openDock) => {
+    if (openDock && screen !== "copilot") openCopilot();
+    if (!ai.conn) { aiStore.open(); return; }
+    if (typing) return;
+    const id = Date.now();
+    const history = [...msgs, { id, role: "user", text }];
+    setMsgs(history); setTyping(true);
+    const screens = [...allowed].filter(k => k !== "whatsapp");
+    const budget = isAgency ? { total: activeAcc.budget, spent: activeAcc.spent } : { total: MONTH_BUDGET, spent: MONTH_SPENT };
+    const data = aiContext({ camps, screen, account: accountName, isAgency, rows: pfRows, insights, budget, detail: !isAgency || activeId === "aurora" });
+    try {
+      const j = await aiCall({ provider: ai.conn.provider, model: ai.conn.model, system: aiSystem(data, screens, isAgency), messages: history.filter(m => !m.error).map(toAIMessage) }, ai.conn.key);
+      setMsgs(m => [...m, { id: id + 1, role: "bot", ...parseAIReply(j.text, { camps, screens, clientIds: isAgency ? PORTFOLIO.map(x => x.id) : [] }) }]);
+    } catch (e) {
+      setMsgs(m => [...m, { id: id + 1, role: "bot", error: true, text: e.message, actions: [{ label: "Revisar conexão da IA", connect: true }] }]);
+    } finally { setTyping(false); }
+  };
+  const onConfirm = (msg, ok) => {
+    setMsgs(ms => ms.map(m => m.id === msg.id ? { ...m, resolved: ok ? "ok" : "no" } : m));
+    if (!ok) return;
+    const c = msg.confirm;
+    if (c.kind === "pause") { setCamps(cs => cs.map(x => x.id === c.id ? { ...x, status: "pausada" } : x)); }
+    if (c.kind === "activate") { setCamps(cs => cs.map(x => x.id === c.id ? { ...x, status: "ativa" } : x)); }
+    if (c.kind === "budget") { setCamps(cs => cs.map(x => x.id === c.id ? { ...x, budget: c.value || x.budget, limited: false } : x)); }
+    const nm = (camps.find(x => x.id === c.id) || {}).name || "campanha";
+    const done = c.kind === "pause" ? `Pronto, “${nm}” foi pausada. Atualizei a tabela de campanhas e os insights.` : c.kind === "activate" ? `Pronto, “${nm}” foi reativada.` : `Orçamento de “${nm}” atualizado para ${brl(c.value)}/dia.`;
+    setTimeout(() => setMsgs(m => [...m, { id: Date.now(), role: "bot", text: done, actions: [{ label: "Ver campanhas", goto: "campaigns" }] }]), 400);
+    toast("Alteração aplicada (simulação)");
+  };
+  const openClient = (id, to) => { const p = PORTFOLIO.find(x => x.id === id); setActiveId(id); setCamps(scaleCamps(p)); setMsgs([]); go(to || "copilot"); toast("Você entrou no ambiente de " + p.name); };
+  const toPortfolio = () => { setMsgs([]); go("portfolio"); };
+  const chat = { msgs, typing, send, onConfirm, ai: !!ai.conn, onAction: a => { if (a.connect) aiStore.open(); else if (a.open) openClient(a.open, a.go); else if (a.goto) go(a.goto); } };
+  const info = routeInfo(screen);
+  const isHome = screen === "copilot";
+  const inClient = !isAgency || screen !== "portfolio";
+  const can = allowed.has(screen);
+  const navGroup = g => {
+    const active = (g.children || []).some(c => c.key === screen);
+    return html`<div key=${g.id}>
+      <button className=${"nav-item" + (active ? " on" : "")} onClick=${() => { setOpen(o => ({ ...o, [g.id]: true })); go(g.children[0].key); }} aria-expanded=${!!open[g.id]}>
+        <span className="ico-wrap"><${Icon} n=${g.icon} s=${16} /></span><span style=${{ flex: 1 }}>${g.label}</span>
+        <span role="button" aria-label="Expandir" onClick=${e => { e.stopPropagation(); setOpen(o => ({ ...o, [g.id]: !o[g.id] })); }} style=${{ display: "grid", transform: open[g.id] ? "none" : "rotate(-90deg)", transition: "transform .15s" }}><${Icon} n="chevD" s=${14} /></span></button>
+      ${open[g.id] ? html`<div className="nav-sub">${g.children.map(c => html`<button key=${c.key} className=${screen === c.key ? "on" : ""} onClick=${() => go(c.key)}><span>${c.label}</span>${allowed.has(c.key) ? null : html`<${Icon} n="lock" s=${12} />`}</button>`)}</div>` : null}
+    </div>`;
+  };
+  let body;
+  if (!can) body = html`<${Locked} mod=${screen} plan=${client.plan} />`;
+  else if (screen === "overview") body = html`<${Overview} camps=${camps} />`;
+  else if (screen === "analytics") body = html`<${Analytics} camps=${camps} />`;
+  else if (screen === "campaigns") body = html`<${Campaigns} camps=${camps} setCamps=${setCamps} toast=${toast} chat=${chat} />`;
+  else if (screen === "creatives") body = html`<${Creatives} camps=${camps} />`;
+  else if (screen === "report") body = html`<${Report} camps=${camps} toast=${toast} user=${client} account=${accountName} agency=${isAgency ? client.company : null} />`;
+  else if (screen === "portfolio") body = html`<${Portfolio} chat=${chat} openClient=${openClient} toast=${toast} agency=${client.company} rows=${pfRows} />`;
+  else if (screen === "skills") body = html`<${Skills} chat=${chat} toast=${toast} />`;
+  else if (screen === "insights") body = html`<${Insights} insights=${insights} chat=${chat} go=${go} />`;
+  else if (screen === "integrations") body = html`<${Integrations} />`;
+  const showDock = !isHome && allowed.has("copilot");
+  return html`<div style=${{ display: "flex", flexDirection: "column", height: "100%" }}>
+    ${impersonating ? html`<div className="imp-banner"><span>Você está vendo como ${client.name} (${client.company}) · plano ${PLANS[client.plan].name}</span><button onClick=${onBackToConsole}>Voltar ao console</button></div>` : null}
+    <div className="shell" style=${{ flex: 1, minHeight: 0 }}>
+      <aside className=${"side" + (sideOpen ? " open" : "")} aria-label="Navegação">
+        <div className="brand"><${Logo} /><div><${Wordmark} /><small>${isAgency ? client.company : "Assistente de Marketing"}</small></div></div>
+        ${isAgency && !inClient ? html`<nav className="nav">
+          <button className="nav-item on" onClick=${toPortfolio}><span className="ico-wrap"><${Icon} n="users" s=${16} /></span>Carteira de clientes</button>
+          <div className="nav-label">Clientes</div>
+          ${[...pfRows].sort((a, b) => a.name.localeCompare(b.name)).map(r => html`<button key=${r.id} className="nav-item" onClick=${() => openClient(r.id)}><span className="c-av sm">${r.name[0]}</span><span style=${{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>${r.name}</span><span className=${"hdot " + healthCls(r.health)} title=${"Saúde " + r.health}></span></button>`)}
+          <div className="nav-sep"></div>
+          ${FOOT_NAV.map(g => html`<button key=${g.id} className=${"nav-item" + (screen === g.key ? " on" : "")} onClick=${() => go(g.key)}><span className="ico-wrap"><${Icon} n=${g.icon} s=${16} /></span>Integrações da agência</button>`)}
+        </nav>` : html`
+        ${isAgency ? html`<div className="client-card"><button className="back-link" onClick=${toPortfolio}><${Icon} n="chevR" s=${13} />Voltar para a carteira</button>
+          <div style=${{ display: "flex", gap: 10, alignItems: "center" }}><span className="c-av">${activeAcc.name[0]}</span><div style=${{ minWidth: 0 }}><div className="eyebrow" style=${{ fontSize: 10 }}>Ambiente do cliente</div><b style=${{ fontSize: 14, display: "block", lineHeight: 1.25 }}>${activeAcc.name}</b></div></div></div>` : null}
+        <nav className="nav">
+          ${NAV.filter(g => !g.hidden && g.key !== "portfolio").map(g => g.children ? navGroup(g) : html`<button key=${g.id} className=${"nav-item" + (g.accent ? " accent" : "") + (screen === g.key ? " on" : "")} onClick=${() => go(g.key)}>
+            <span className="ico-wrap"><${Icon} n=${g.icon} s=${14} /></span><span style=${{ flex: 1 }}>${g.label}</span>${allowed.has(g.key) ? null : html`<${Icon} n="lock" s=${12} />`}</button>`)}
+          <div className="nav-sep"></div>
+          ${FOOT_NAV.map(g => html`<button key=${g.id} className=${"nav-item" + (screen === g.key ? " on" : "")} onClick=${() => go(g.key)}><span className="ico-wrap"><${Icon} n=${g.icon} s=${16} /></span>${g.label}</button>`)}
+        </nav>`}
+        <div className="side-foot"><div className="who"><span className="avatar">${client.name.split(" ").map(x => x[0]).slice(0, 2).join("")}</span><div style=${{ minWidth: 0, flex: 1 }}><b>${client.name}</b><small>${client.company} · ${PLANS[client.plan] ? PLANS[client.plan].name : ""}</small></div>
+          <${ThemeToggle} /><button className="btn btn-ghost btn-sm" onClick=${onLogout} aria-label="Sair" title="Sair"><${Icon} n="logout" s=${15} /></button></div></div>
+      </aside>
+      ${sideOpen ? html`<div className="drawer-bg" style=${{ zIndex: 41 }} onClick=${() => setSideOpen(false)}></div>` : null}
+      <main className="main">
+        <header className="topbar">
+          <div className="crumb"><button className="btn btn-ghost btn-sm menu-btn" onClick=${() => setSideOpen(true)} aria-label="Abrir menu"><${Icon} n="menu" /></button>
+            ${isAgency && inClient ? html`<button className="crumb-link hide-sm" onClick=${toPortfolio}>Carteira</button><span className="hide-sm" style=${{ color: "var(--line-2)" }}>/</span><span className="crumb-client"><span className="c-av sm">${activeAcc.name[0]}</span>${activeAcc.name}</span><span style=${{ color: "var(--line-2)" }}>/</span>` : null}
+            ${info.group !== info.label && !(isAgency && inClient) ? html`<span className="hide-sm">${info.group}</span><span className="hide-sm" style=${{ color: "var(--line-2)" }}>/</span>` : null}<b>${info.label}</b></div>
+          <div className="top-actions">${!isHome && allowed.has("copilot") ? html`<button className=${"btn btn-line btn-sm dock-toggle hide-md" + (dockHidden ? "" : " on")} onClick=${() => (dockHidden ? openCopilot() : closeCopilot())} aria-pressed=${!dockHidden}><${Icon} n="sparkles" s=${14} />${dockHidden ? "Abrir copilot" : "Fechar copilot"}</button>` : null}<span className="chip-sel hide-sm"><${Icon} n="calendar" s=${14} />Últimos 30 dias</span>${isAgency ? html`<${ClientSwitcher} rows=${pfRows} activeId=${activeId} inClient=${inClient} onPick=${id => openClient(id, screen === "portfolio" ? "copilot" : screen)} onPortfolio=${toPortfolio} />` : html`<span className="chip-sel hide-sm"><span className="ch-dot" style=${{ background: "var(--c-meta)" }}></span><span className="ch-dot" style=${{ background: "var(--c-google)" }}></span><span className="ch-dot" style=${{ background: "var(--c-tiktok)" }}></span>3 contas</span>`}</div>
+        </header>
+        ${isAgency && inClient ? html`<div className="client-band"><span className="c-av sm">${activeAcc.name[0]}</span><span>Você está no ambiente de <b>${activeAcc.name}</b></span>
+          <span className="band-accs hide-sm">${activeRow.accounts.map(a => html`<span key=${a.ch} className="acc-chip">${html`<span className="ch-dot" style=${{ background: CH[a.ch].color }}></span>`}<span className="mono">${a.id}</span></span>`)}</span>
+          <span className="band-note hide-sm">Ações e relatórios valem só para este cliente</span>
+          <button className="btn btn-sm btn-line" onClick=${toPortfolio}><${Icon} n="users" s=${13} />Voltar para a carteira</button></div>` : null}
+        <div className=${"work" + (isHome ? " home" : showDock && !dockHidden ? "" : " no-dock")}>
+          ${isHome && can ? html`<${HomeCopilot} user=${client} client=${{ ...client, company: accountName }} chat=${chat} camps=${camps} insights=${insights} go=${go} />` : html`<div className="pane">${body}</div>`}
+          ${showDock && (!dockHidden || dockOpen) ? html`<aside className=${"dock" + (dockOpen ? " open" : "")} aria-label="Copilot"><${DockChat} chat=${chat} screen=${screen} onClose=${closeCopilot} /></aside>` : null}
+        </div>
+      </main>
+    </div>
+    ${showDock && !dockOpen ? html`<button className=${"fab" + (dockHidden ? " show" : "")} onClick=${openCopilot}><${Icon} n="sparkles" s=${16} />Copilot</button>` : null}
+    ${dockOpen ? html`<div className="drawer-bg fab-bg" onClick=${() => setDockOpen(false)} style=${{ zIndex: 40 }}></div>` : null}
+    ${toastMsg ? html`<div className="toast" role="status">${toastMsg}</div>` : null}
+    <${AIConnectDrawer} toast=${toast} />
+  </div>`;
+}
+
+/* ================= console de gestão (admin) ================= */
+function AdminConsole({ clients, setClients, onLogout, onImpersonate }) {
+  const [tab, setTab] = useState("clients"); const [sel, setSel] = useState(null); const [adding, setAdding] = useState(false);
+  const [q, setQ] = useState(""); const [toastMsg, setToastMsg] = useState(null);
+  const toast = m => { setToastMsg(m); clearTimeout(toast.t); toast.t = setTimeout(() => setToastMsg(null), 2600); };
+  const active = clients.filter(c => c.status === "ativo");
+  const mrr = clients.filter(c => c.status !== "suspenso").reduce((a, c) => a + PLANS[c.plan].price, 0);
+  const list = clients.filter(c => (c.name + c.company + c.email).toLowerCase().includes(q.toLowerCase()));
+  const upd = (id, patch) => setClients(cs => cs.map(c => c.id === id ? { ...c, ...patch } : c));
+  const cur = sel ? clients.find(c => c.id === sel) : null;
+  const statusPill = s => ({ ativo: html`<span className="pill pill-good"><span className="dot"></span>Ativo</span>`, suspenso: html`<span className="pill pill-bad">Suspenso</span>`, convite: html`<span className="pill pill-warn">Convite enviado</span>` })[s];
+  const visibleMods = MODULES.filter(m => !m.hidden);
+  return html`<div className="admin">
+    <header className="admin-top"><div className="brand" style=${{ padding: 0 }}><${Logo} /><div><b><${Wordmark} /> Console</b><small>Gestão de clientes e acessos</small></div></div>
+      <div style=${{ display: "flex", alignItems: "center", gap: 10 }}><span className="avatar">SM</span><span className="hide-sm" style=${{ fontSize: 13, fontWeight: 600 }}>${ADMIN.name}</span><${ThemeToggle} /><button className="btn btn-line btn-sm" onClick=${onLogout}><${Icon} n="logout" s=${14} />Sair</button></div></header>
+    <div className="admin-body">
+      <div className="grid g4">
+        <${Kpi} label="Clientes ativos" value=${active.length} hint=${clients.length + " cadastrados"} />
+        <${Kpi} label="MRR" value=${brl(mrr)} hint="Ativos + convites" />
+        <${Kpi} label="Ticket médio" value=${brl(mrr / Math.max(1, clients.filter(c => c.status !== "suspenso").length))} />
+        <${Kpi} label="Acessos suspensos" value=${clients.filter(c => c.status === "suspenso").length} hint="Pagamento pendente" />
+      </div>
+      <div className="tabs" role="tablist">${[["clients", "Clientes"], ["plans", "Planos e módulos"]].map(([k, l]) => html`<button key=${k} role="tab" aria-selected=${tab === k} className=${tab === k ? "on" : ""} onClick=${() => setTab(k)}>${l}</button>`)}</div>
+      ${tab === "clients" ? html`<div className="stack">
+        <div style=${{ display: "flex", gap: 10, justifyContent: "space-between", flexWrap: "wrap" }}>
+          <input id="adm-q" className="input" style=${{ maxWidth: 320 }} placeholder="Buscar cliente, empresa ou e-mail" value=${q} onInput=${e => setQ(e.target.value)} aria-label="Buscar cliente" />
+          <button className="btn btn-primary" onClick=${() => setAdding(true)}><${Icon} n="plus" s=${15} />Novo cliente</button></div>
+        <div className="card card-pad"><div className="tbl-wrap" style=${{ marginTop: -18 }}><table className="tbl"><thead><tr><th>Cliente</th><th>Plano</th><th>Módulos</th><th>Status</th><th>Último acesso</th><th className="r">Mensalidade</th><th></th></tr></thead>
+          <tbody>${list.map(c => { const custom = c.modules.slice().sort().join() !== PLANS[c.plan].modules.slice().sort().join();
+            return html`<tr key=${c.id} style=${{ cursor: "pointer" }} onClick=${() => setSel(c.id)}>
+              <td><b style=${{ color: "var(--ink)", display: "block" }}>${c.company}</b><span style=${{ fontSize: 12 }}>${c.name} · ${c.email}</span></td>
+              <td><span className="pill pill-info">${PLANS[c.plan].name}</span>${custom ? html` <span className="pill pill-violet">Personalizado</span>` : null}</td>
+              <td className="num">${c.modules.filter(m => MODULES.find(x => x.key === m && !x.hidden)).length} de ${visibleMods.length}</td>
+              <td>${statusPill(c.status)}</td><td>${c.lastAccess}</td><td className="r num">${brl(PLANS[c.plan].price)}</td>
+              <td><button className="btn btn-sm btn-ghost" onClick=${e => { e.stopPropagation(); setSel(c.id); }}>Gerenciar<${Icon} n="chevR" s=${13} /></button></td></tr>`; })}</tbody></table></div></div>
+      </div>` : html`<div className="stack">
+        <div className="grid g3">${Object.entries(PLANS).map(([k, p]) => html`<div key=${k} className="card plan-card" style=${k === "pro" ? { borderColor: "var(--accent)" } : null}>
+          <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><b style=${{ fontSize: 17 }}>${p.name}</b><span className=${"pill " + (k === "pro" ? "pill-info" : "pill-mute")}>${p.tag}</span></div>
+          <div><span className="price num">${brl(p.price)}</span><span style=${{ color: "var(--muted)" }}> /mês</span>${p.note ? html`<div className="card-sub" style=${{ marginTop: 4 }}>${p.note}</div>` : null}</div>
+          <ul>${visibleMods.map(m => html`<li key=${m.key} className=${p.modules.includes(m.key) ? "" : "off"}><span style=${{ color: p.modules.includes(m.key) ? "var(--good)" : "var(--muted)" }}><${Icon} n=${p.modules.includes(m.key) ? "check" : "x"} s=${14} /></span>${m.label}</li>`)}</ul>
+          <div className="card-sub">${clients.filter(c => c.plan === k).length} clientes neste plano</div></div>`)}</div>
+        <div className="card card-pad"><div className="card-head"><div><div className="card-title">Catálogo de módulos</div><div className="card-sub">Cada módulo vira um item de menu na plataforma do cliente. Módulos ocultos não aparecem para ninguém.</div></div></div>
+          <div>${MODULES.map(m => html`<div key=${m.key} className="mod-row"><div><b>${m.label} <span style=${{ fontWeight: 400, color: "var(--muted)", fontSize: 12 }}>· ${m.group}</span></b><small>${m.desc}</small></div>
+            ${m.hidden ? html`<span className="pill pill-violet">Oculto · em breve</span>` : m.core ? html`<span className="pill pill-mute">Base de todos os planos</span>` : html`<span className="mono" style=${{ color: "var(--muted)" }}>${m.key}</span>`}</div>`)}</div></div>
+      </div>`}
+    </div>
+    ${cur ? html`<${ClientDrawer} c=${cur} upd=${upd} onClose=${() => setSel(null)} onImpersonate=${onImpersonate} toast=${toast} visibleMods=${visibleMods} />` : null}
+    ${adding ? html`<${NewClient} onClose=${() => setAdding(false)} onCreate=${c => { setClients(cs => [c, ...cs]); setAdding(false); setSel(c.id); toast("Cliente criado. Envie a senha temporária para " + c.email); }} />` : null}
+    ${toastMsg ? html`<div className="toast" role="status">${toastMsg}</div>` : null}
+  </div>`;
+}
+function ClientDrawer({ c, upd, onClose, onImpersonate, toast, visibleMods }) {
+  const [secret, setSecret] = useState(c.newPass || null);
+  useEffect(() => setSecret(c.newPass || null), [c.id]);
+  const toggleMod = (k, v) => upd(c.id, { modules: v ? [...new Set([...c.modules, k])] : c.modules.filter(x => x !== k) });
+  const setPlan = p => upd(c.id, { plan: p, modules: [...PLANS[p].modules] });
+  const copy = txt => { try { navigator.clipboard.writeText(txt).then(() => toast("Senha copiada"), () => toast("Selecione a senha e copie")); } catch (e) { toast("Selecione a senha e copie"); } };
+  return html`<${Fragment}><div className="drawer-bg" onClick=${onClose}></div>
+    <aside className="drawer" role="dialog" aria-label=${"Gerenciar " + c.company}>
+      <div className="drawer-head"><div><div className="eyebrow">Cliente</div><h2 style=${{ fontSize: 20, fontWeight: 700 }}>${c.company}</h2><div className="card-sub">${c.name} · ${c.email} · cliente desde ${c.since.split("-").reverse().join("/")}</div></div>
+        <button className="btn btn-ghost btn-sm" onClick=${onClose} aria-label="Fechar"><${Icon} n="x" /></button></div>
+      <div className="drawer-body">
+        <section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Plano</div>
+          <div className="seg">${Object.entries(PLANS).map(([k, p]) => html`<button key=${k} className=${c.plan === k ? "on" : ""} onClick=${() => setPlan(k)}>${p.name} · ${brl(p.price)}</button>`)}</div>
+          <div className="card-sub">Trocar o plano redefine os módulos para o pacote padrão. Depois você pode ajustar um a um.</div></section>
+        <section><div className="eyebrow" style=${{ marginBottom: 4 }}>Módulos liberados</div>
+          ${visibleMods.map(m => html`<div key=${m.key} className="mod-row"><div><b>${m.label}</b><small>${m.group}${PLANS[c.plan].modules.includes(m.key) ? " · incluso no plano" : " · adicional"}</small></div>
+            <${Toggle} on=${c.modules.includes(m.key)} disabled=${m.core} onChange=${v => toggleMod(m.key, v)} label=${m.label} /></div>`)}
+          <div className="mod-row"><div><b>WhatsApp CRM</b><small>Oculto na plataforma por enquanto</small></div><${Toggle} on=${false} disabled=${true} label="WhatsApp CRM" /></div>
+        </section>
+        <section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Acesso</div>
+          <div className="mod-row"><div><b>Acesso à plataforma</b><small>${c.status === "suspenso" ? "Bloqueado: o cliente não consegue entrar" : "Liberado"}</small></div>
+            <${Toggle} on=${c.status !== "suspenso"} onChange=${v => { upd(c.id, { status: v ? "ativo" : "suspenso" }); toast(v ? "Acesso liberado" : "Acesso suspenso"); }} label="Acesso à plataforma" /></div>
+          <div style=${{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="btn btn-line btn-sm" onClick=${() => { const p = tempPass(); upd(c.id, { password: p, newPass: p }); setSecret(p); }}><${Icon} n="key" s=${14} />Gerar nova senha</button></div>
+          ${secret ? html`<div className="secret"><span>Senha temporária:</span><code>${secret}</code><button className="btn btn-sm btn-line" onClick=${() => copy(secret)}><${Icon} n="copy" s=${13} />Copiar</button><span style=${{ flexBasis: "100%", fontSize: 12, color: "var(--muted-2)" }}>Ela aparece só agora. Envie para ${c.email}.</span></div>` : null}
+        </section>
+      </div>
+      <div className="drawer-foot"><span className="card-sub" style=${{ alignSelf: "center" }}>Alterações salvas automaticamente</span>
+        <button className="btn btn-primary" disabled=${c.status === "suspenso"} onClick=${() => onImpersonate(c.id)}><${Icon} n="eye" s=${15} />Ver como este cliente</button></div>
+    </aside><//>`;
+}
+function NewClient({ onClose, onCreate }) {
+  const [f, setF] = useState({ company: "", name: "", email: "", plan: "pro" }); const [err, setErr] = useState("");
+  const set = k => e => setF({ ...f, [k]: e.target.value });
+  const submit = e => { e.preventDefault(); if (!f.company || !f.name || !/.+@.+\..+/.test(f.email)) { setErr("Preencha empresa, nome e um e-mail válido."); return; }
+    const p = tempPass(); onCreate({ id: "cl" + Date.now(), ...f, password: p, newPass: p, modules: [...PLANS[f.plan].modules], status: "convite", since: new Date().toISOString().slice(0, 10), lastAccess: "nunca", accounts: 0 }); };
+  return html`<${Fragment}><div className="drawer-bg" onClick=${onClose}></div>
+    <aside className="drawer" role="dialog" aria-label="Novo cliente"><form onSubmit=${submit} style=${{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <div className="drawer-head"><div><div className="eyebrow">Novo cliente</div><h2 style=${{ fontSize: 20, fontWeight: 700 }}>Liberar acesso</h2><div className="card-sub">Uma senha temporária é gerada ao salvar.</div></div><button type="button" className="btn btn-ghost btn-sm" onClick=${onClose} aria-label="Fechar"><${Icon} n="x" /></button></div>
+      <div className="drawer-body">
+        <div className="field"><label htmlFor="nc-co">Empresa</label><input id="nc-co" className="input" value=${f.company} onInput=${set("company")} placeholder="Ex.: Ótica Lumière" /></div>
+        <div className="field"><label htmlFor="nc-n">Gestor de marketing</label><input id="nc-n" className="input" value=${f.name} onInput=${set("name")} placeholder="Nome completo" /></div>
+        <div className="field"><label htmlFor="nc-e">E-mail de login</label><input id="nc-e" type="email" className="input" value=${f.email} onInput=${set("email")} placeholder="nome@empresa.com.br" /></div>
+        <div className="field"><label htmlFor="nc-p">Plano</label><select id="nc-p" className="input" value=${f.plan} onChange=${set("plan")}>${Object.entries(PLANS).map(([k, p]) => html`<option key=${k} value=${k}>${p.name} · ${brl(p.price)}/mês</option>`)}</select></div>
+        ${err ? html`<div className="err">${err}</div>` : null}
+      </div>
+      <div className="drawer-foot"><button type="button" className="btn btn-line" onClick=${onClose}>Cancelar</button><button className="btn btn-primary" type="submit">Criar cliente</button></div>
+    </form></aside><//>`;
+}
+
+function LoginStage() {
+  const vals = useMemo(() => series(362580, 7, .18, .22), []);
+  const W = 420, H = 92, mx = Math.max(...vals) * 1.05, mn = Math.min(...vals) * .8;
+  const pts = vals.map((v, i) => [W * i / (vals.length - 1), H - (H - 6) * (v - mn) / (mx - mn)]);
+  const line = pts.map(p => p.join(",")).join(" ");
+  const rows = [["meta", 4.61], ["google", 4.32], ["tiktok", 2.37]];
+  return html`<div className="stage" aria-hidden="true">
+    <div className="card st-main">
+      <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+        <div><div className="eyebrow">Receita · últimos 30 dias</div><div className="num" style=${{ fontSize: 28, fontWeight: 700, letterSpacing: "-.02em", lineHeight: 1.15 }}>R$ 362.580</div></div>
+        <span className="pill pill-good"><${Icon} n="up" s=${12} />13,9%</span></div>
+      <svg viewBox=${`0 0 ${W} ${H}`} width="100%" style=${{ display: "block", maxWidth: "100%" }}>
+        <polygon points=${`0,${H} ${line} ${W},${H}`} fill="var(--accent)" opacity="0.12" />
+        <polyline points=${line} fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinejoin="round" />
+        <circle cx=${pts[pts.length - 1][0] - 4} cy=${pts[pts.length - 1][1]} r="4" fill="var(--accent)" />
+      </svg>
+      <div className="stack" style=${{ gap: 8 }}>${rows.map(([k, r]) => html`<div key=${k} className="bar-row" style=${{ gridTemplateColumns: "92px minmax(0,1fr) 50px", fontSize: 12.5 }}>
+        <span style=${{ color: "var(--muted-2)" }}>${CH[k].label}</span><div className="bar-track" style=${{ height: 8 }}><div className="bar-fill" style=${{ width: (r / 5.2 * 100) + "%", background: CH[k].color }}></div></div>
+        <b className="num" style=${{ textAlign: "right", color: r >= ACTIVE.target ? "var(--good)" : "var(--bad)" }}>${xroas(r)}</b></div>`)}</div>
+    </div>
+    <div className="st-float st-alert"><span className="pill pill-bad"><${Icon} n="alert" s=${12} />Atenção</span><span>TikTok Topo UGC · ROAS <b>1,10x</b></span></div>
+    <div className="st-float st-report"><span className="ok"><${Icon} n="check" s=${15} /></span>
+      <div><b>Relatório semanal enviado</b><small>Seg, 08:00 · 4 pessoas</small>
+        <div className="chs"><span>E-mail</span><span>WhatsApp</span><span>Slack</span></div></div></div>
+    <div className="st-float st-chat"><div className="bot-ico"><${Icon} n="sparkles" s=${14} /></div>
+      <div className="stack" style=${{ gap: 8 }}><span>A PMax Coleção Verão pode render <b>+R$ 20.250</b> com R$ 150/dia a mais. Quer que eu aplique?</span>
+        <div style=${{ display: "flex", gap: 6 }}><span className="btn btn-sm btn-primary" style=${{ cursor: "default" }}>Confirmar</span><span className="btn btn-sm btn-line" style=${{ cursor: "default" }}>Ver dados</span></div></div></div>
+  </div>`;
+}
+
+/* ================= login ================= */
+function Login({ clients, onLogin }) {
+  const [email, setEmail] = useState(""); const [pass, setPass] = useState(""); const [err, setErr] = useState(""); const [showPass, setShowPass] = useState(false);
+  const submit = async e => {
+    e.preventDefault(); setErr("");
+    const em = email.trim().toLowerCase();
+    if (em === ADMIN.email) { let ok = false; try { ok = (await sha256(pass)) === ADMIN.passHash; } catch (x) {} if (ok) return onLogin({ role: "admin" }); return setErr("E-mail ou senha incorretos. Confira os dados e tente de novo."); }
+    const c = clients.find(x => x.email.toLowerCase() === em);
+    if (!c || c.password !== pass) return setErr("E-mail ou senha incorretos. Confira os dados e tente de novo.");
+    if (c.status === "suspenso") return setErr("Seu acesso está suspenso. Fale com comercial@readyai.com para reativar.");
+    onLogin({ role: "client", clientId: c.id });
+  };
+  const fill = (e, p) => { setEmail(e); setPass(p); setErr(""); };
+  return html`<div className="login">
+    <section className="login-side">
+      <div className="login-inner">
+      <div className="brand" style=${{ padding: 0 }}><${Logo} s=${34} /><span style=${{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", fontSize: 17 }}><${Wordmark} /><span style=${{ color: "var(--line-2)" }}>|</span><span style=${{ fontWeight: 500, color: "var(--muted-2)" }}>Assistente de Marketing</span></span></div>
+      <div><h1>Seu copilot de marketing para <em>todas as campanhas</em>.</h1>
+        <p className="lead"><b style=${{ color: "var(--ink)", fontWeight: 600 }}>Sua gestão de mídia multicanal em uma única plataforma.</b> Um agente acompanha todos os canais lado a lado, aponta o que fazer e só mexe nas contas quando você confirma.</p>
+        <div className="ch-chips">${[["Meta Ads", "var(--c-meta)"], ["Google Ads", "var(--c-google)"], ["TikTok Ads", "var(--c-tiktok)"]].map(([l, c]) => html`<span key=${l}><span className="ch-dot" style=${{ background: c }}></span>${l}</span>`)}</div></div>
+      <${LoginStage} />
+      <div className="trust"><span><${Icon} n="shield" s=${14} />Mudanças só com sua confirmação</span><span><${Icon} n="lock" s=${14} />Acesso por senha</span><span><${Icon} n="clock" s=${14} />Insights diários</span></div>
+      </div>
+    </section>
+    <section className="login-main" style=${{ position: "relative" }}><span style=${{ position: "absolute", top: 16, right: "max(16px, env(safe-area-inset-right, 0px))" }}><${ThemeToggle} withLabel /></span><form className="login-box" onSubmit=${submit}>
+      <div><h2>Entrar</h2><p style=${{ color: "var(--muted)", marginTop: 4 }}>Use o e-mail e a senha enviados pelo seu gestor de conta.</p></div>
+      <div className="field"><label htmlFor="lg-e">E-mail</label><input id="lg-e" className="input" type="email" autoComplete="username" value=${email} onInput=${e => setEmail(e.target.value)} placeholder="voce@empresa.com.br" /></div>
+      <div className="field"><label htmlFor="lg-p">Senha</label><div className="pass-wrap"><input id="lg-p" className="input" type=${showPass ? "text" : "password"} autoComplete="current-password" value=${pass} onInput=${e => setPass(e.target.value)} placeholder="••••••••" />
+        <button type="button" className="pass-eye" onClick=${() => setShowPass(v => !v)} aria-label=${showPass ? "Ocultar senha" : "Mostrar senha"} aria-pressed=${showPass} title=${showPass ? "Ocultar senha" : "Mostrar senha"}><${Icon} n=${showPass ? "eyeOff" : "eye"} s=${17} /></button></div></div>
+      ${err ? html`<div className="err" role="alert">${err}</div>` : null}
+      <button className="btn btn-primary" style=${{ height: 42 }} type="submit">Entrar</button>
+      <div className="demo-creds"><div className="eyebrow">Acessos da demonstração</div>
+        ${[["camila@lojaaurora.com.br", "demo123", "Loja Aurora", "Plano Pro"], ["rafael@nortex.com.br", "demo123", "Grupo Nortex", "Plano Scale, com todos os módulos"], ["marina@studiovitta.com.br", "demo123", "Studio Vitta", "Plano Starter, com módulos bloqueados"]].map(([e, p, l, d]) => html`<button key=${e} type="button" className="cred" onClick=${() => fill(e, p)}><span><b style=${{ fontSize: 13 }}>${l}</b><small>${d}</small></span><span className="mono" style=${{ color: "var(--muted)" }}>${p}</span></button>`)}
+      </div>
+    </form></section>
+  </div>`;
+}
+
+/* ================= raiz ================= */
+const KEY = "readyai_demo_v3";
+function App() {
+  const saved = store.get(KEY, null);
+  const [clients, setClients] = useState(saved && saved.clients ? saved.clients : SEED_CLIENTS);
+  const [session, setSession] = useState(saved && saved.session ? saved.session : null);
+  useEffect(() => store.set(KEY, { clients, session }), [clients, session]);
+  if (!session) return html`<${Login} clients=${clients} onLogin=${s => { setSession(s); if (s.role === "client") setClients(cs => cs.map(c => c.id === s.clientId ? { ...c, lastAccess: "agora", status: c.status === "convite" ? "ativo" : c.status } : c)); }} />`;
+  const logout = () => setSession(null);
+  if (session.role === "admin" && !session.as) return html`<${AdminConsole} clients=${clients} setClients=${setClients} onLogout=${logout} onImpersonate=${id => setSession({ ...session, as: id })} />`;
+  const cid = session.as || session.clientId; const client = clients.find(c => c.id === cid);
+  if (!client) { return html`<${Login} clients=${clients} onLogin=${setSession} />`; }
+  return html`<${ClientApp} key=${client.id + client.modules.join()} client=${client} onLogout=${logout} impersonating=${!!session.as} onBackToConsole=${() => setSession({ role: "admin" })} />`;
+}
+ReactDOM.createRoot(document.getElementById("root")).render(html`<${App} />`);
+</script>
+
+</body></html>

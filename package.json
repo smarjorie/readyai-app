@@ -1,0 +1,13 @@
+{
+  "name": "readyai-assistente-de-marketing",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "ReadyAI: painel de marketing multicanal com copilot conectado ao Claude ou ao ChatGPT.",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
