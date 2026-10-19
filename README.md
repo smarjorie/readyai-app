@@ -3,14 +3,14 @@
 Painel de marketing multicanal com um copilot conversacional.
 
 - **Dados reais:** Meta Ads pela Marketing API (token de acesso) e Google Ads pelo MCP do Google Ads.
-- **Copilot:** conversa usando Claude (Anthropic) ou ChatGPT (OpenAI) com a chave de API da própria pessoa.
+- **Copilot:** conversa usando Claude (Anthropic), ChatGPT (OpenAI) ou Groq com a chave de API da própria pessoa.
 - Sem contas conectadas, o painel mostra dados de exemplo, com um aviso no topo.
 
 ## Estrutura
 
 ```
 public/index.html   app completo (React via CDN, sem build)
-api/chat.js         conversa do copilot -> Anthropic ou OpenAI
+api/chat.js         conversa do copilot -> Anthropic, OpenAI ou Groq
 api/meta.js         Meta Ads -> Graph API v25 (contas, campanhas, 30 dias, semana, período anterior)
 api/google.js       Google Ads -> MCP do Google Ads (autorização, contas, campanhas)
 vercel.json         config da Vercel (pasta public + timeout das funções)
@@ -52,9 +52,9 @@ Não há dependências para instalar.
 
 Use um token de usuário do sistema do Business Manager da agência, com acesso a todas as contas dos clientes.
 
-## Copilot (Claude ou ChatGPT)
+## Copilot (Claude, ChatGPT ou Groq)
 
-Em Integrações (ou no próprio chat), clique em **Conectar Claude** ou **Conectar ChatGPT** e cole a chave de API.
+Em Integrações (ou no próprio chat), clique em **Conectar Claude**, **Conectar ChatGPT** ou **Conectar Groq** e cole a chave de API.
 
 - A chave fica salva só no navegador.
 - A cada pergunta, o app envia a conversa e os dados da conta aberta para `/api/chat`, que repassa ao provedor.
@@ -63,6 +63,7 @@ Em Integrações (ou no próprio chat), clique em **Conectar Claude** ou **Conec
 Onde criar as chaves:
 - Claude: https://console.anthropic.com/settings/keys
 - ChatGPT: https://platform.openai.com/api-keys
+- Groq: https://console.groq.com/keys (modelo padrão `openai/gpt-oss-120b`; o plano gratuito tem limite de requisições por minuto e por dia)
 
 ## O que já é real e o que ainda é exemplo
 

@@ -476,7 +476,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .ai-cta b{font-size:14px;display:block}
 .ai-cta p{color:var(--muted);font-size:13px;margin:2px 0 12px}
 .ai-cta-ico{width:32px;height:32px;border-radius:10px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;flex:none}
-.ai-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ai-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .ai-tab{border:1px solid var(--line-2);border-radius:12px;padding:12px;text-align:left;display:flex;flex-direction:column;gap:3px;background:var(--surface)}
 .ai-tab:hover{background:var(--surface-2)}
 .ai-tab.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
@@ -744,6 +744,12 @@ const AI_PROVIDERS = {
     defModel: "gpt-6.1-sol", models: ["gpt-6.1-sol", "gpt-6-astra", "gpt-6-luna"],
     prefer: ["gpt-6.1-sol", "gpt-6-sol", "gpt-6-astra", "gpt-6", "gpt-5"],
   },
+  groq: {
+    name: "Groq", vendor: "Groq", color: "#f55036", keyHint: "gsk_…",
+    keyUrl: "https://console.groq.com/keys", keyPlace: "console do Groq",
+    defModel: "openai/gpt-oss-120b", models: ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "llama-3.1-8b-instant"],
+    prefer: ["openai/gpt-oss-120b", "gpt-oss-120b", "gpt-oss", "llama"],
+  },
 };
 const AI_KEY = "readyai_ai_v1";
 const aiStore = (() => {
@@ -892,10 +898,11 @@ function AIConnectPrompt() {
     <div className="ai-cta-ico"><${Icon} n="sparkles" s=${16} /></div>
     <div style=${{ minWidth: 0 }}>
       <b>Conecte uma IA para conversar</b>
-      <p>O copilot conversa usando o Claude ou o ChatGPT com a sua chave de API. Ela fica salva só neste navegador.</p>
+      <p>O copilot conversa usando o Claude, o ChatGPT ou o Groq com a sua chave de API. Ela fica salva só neste navegador.</p>
       <div className="msg-actions">
         <button className="btn btn-sm btn-primary" onClick=${() => aiStore.open("anthropic")}><span className="prov-dot" style=${{ background: AI_PROVIDERS.anthropic.color }}></span>Conectar Claude</button>
         <button className="btn btn-sm btn-line" onClick=${() => aiStore.open("openai")}><span className="prov-dot" style=${{ background: AI_PROVIDERS.openai.color }}></span>Conectar ChatGPT</button>
+        <button className="btn btn-sm btn-line" onClick=${() => aiStore.open("groq")}><span className="prov-dot" style=${{ background: AI_PROVIDERS.groq.color }}></span>Conectar Groq</button>
       </div>
     </div>
   </div>`;
@@ -944,8 +951,8 @@ function AIConnectDrawer({ toast }) {
         <div className="ai-tabs" role="radiogroup" aria-label="Provedor de IA">${Object.entries(AI_PROVIDERS).map(([id, p]) => html`
           <button type="button" key=${id} role="radio" aria-checked=${prov === id} className=${"ai-tab" + (prov === id ? " on" : "")} onClick=${() => load(id)}>
             <span style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="prov-dot" style=${{ background: p.color }}></span><b>${p.name}</b>${conn && conn.provider === id ? html`<span className="pill pill-good" style=${{ marginLeft: "auto" }}><span className="dot"></span>Ativo</span>` : null}</span>
-            <small>API da ${p.vendor}</small></button>`)}</div>
-        <div className="field"><label htmlFor="ai-key">Chave de API da ${P.vendor}</label>
+            <small>API ${id === "groq" ? "do" : "da"} ${p.vendor}</small></button>`)}</div>
+        <div className="field"><label htmlFor="ai-key">Chave de API ${prov === "groq" ? "do" : "da"} ${P.vendor}</label>
           <div className="pass-wrap"><input id="ai-key" className="input mono" style=${{ fontSize: 13 }} type=${show ? "text" : "password"} autoComplete="off" spellCheck="false" placeholder=${P.keyHint} value=${key} onInput=${e => { setKey(e.target.value); setModels(null); }} />
             <button type="button" className="pass-eye" onClick=${() => setShow(!show)} aria-label=${show ? "Ocultar chave" : "Mostrar chave"}><${Icon} n=${show ? "eyeOff" : "eye"} s=${16} /></button></div>
           <span className="card-sub">Crie uma no <a href=${P.keyUrl} target="_blank" rel="noopener noreferrer" style=${{ color: "var(--accent-ink)", fontWeight: 600 }}>${P.keyPlace}</a>.</span></div>
@@ -953,7 +960,7 @@ function AIConnectDrawer({ toast }) {
           <select id="ai-model" className="input" value=${model} onChange=${e => setModel(e.target.value)}>${options.map(id => html`<option key=${id} value=${id}>${id}</option>`)}</select>
           ${models ? html`<span className="card-sub">${models.length} modelos disponíveis na sua conta.</span>` : null}</div>
         ${err ? html`<div className=${"err"} role="alert">${err}</div>` : null}
-        <div className="ai-note"><${Icon} n="shield" s=${15} /><div>A chave fica salva só neste navegador. A cada pergunta ela passa pelo servidor do ReadyAI direto para a ${P.vendor}, sem ser gravada. O uso é cobrado na sua conta de API da ${P.vendor}, separado de assinaturas como ${prov === "anthropic" ? "Claude Pro" : "ChatGPT Plus"}.</div></div>
+        <div className="ai-note"><${Icon} n="shield" s=${15} /><div>A chave fica salva só neste navegador. A cada pergunta ela passa pelo servidor do ReadyAI direto para ${prov === "groq" ? "o" : "a"} ${P.vendor}, sem ser gravada. ${prov === "groq" ? "O uso conta no limite da sua conta do Groq (o plano gratuito tem limite de requisições por minuto e por dia)." : "O uso é cobrado na sua conta de API da " + P.vendor + ", separado de assinaturas como " + (prov === "anthropic" ? "Claude Pro" : "ChatGPT Plus") + "."}</div></div>
       </div>
       <div className="drawer-foot">
         ${isCurrent ? html`<button type="button" className="btn btn-line" onClick=${() => { aiStore.disconnect(); aiStore.close(); toast && toast(P.name + " desconectado"); }}>Desconectar</button>` : html`<button type="button" className="btn btn-line" onClick=${close}>Cancelar</button>`}
@@ -1851,8 +1858,8 @@ function AdIntegrations({ client, onUpdate, toast, isAgency, live }) {
 function AIIntegrations() {
   const { conn } = useAI();
   return html`<div className="stack" style=${{ gap: 10 }}><div className="eyebrow">Inteligência artificial do copilot</div>
-    <div className="grid g2">${Object.entries(AI_PROVIDERS).map(([id, p]) => { const on = conn && conn.provider === id; return html`<article key=${id} className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title" style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="prov-dot" style=${{ background: p.color }}></span>${p.name}</div><div className="card-sub">Conversa do copilot pela API da ${p.vendor}</div></div>
+    <div className="grid g3">${Object.entries(AI_PROVIDERS).map(([id, p]) => { const on = conn && conn.provider === id; return html`<article key=${id} className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title" style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="prov-dot" style=${{ background: p.color }}></span>${p.name}</div><div className="card-sub">Conversa do copilot pela API ${id === "groq" ? "do" : "da"} ${p.vendor}</div></div>
         <span className=${"pill " + (on ? "pill-good" : "pill-mute")}>${on ? html`<span className="dot"></span>Conectado` : "Não conectado"}</span></div>
       <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}><span className="mono" style=${{ color: "var(--muted)" }}>${on ? conn.model : "Chave de API própria"}</span>
         <button className="btn btn-sm btn-line" onClick=${() => aiStore.open(id)}>${on ? "Gerenciar" : "Conectar"}</button></div>
