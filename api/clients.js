@@ -9,7 +9,7 @@
 //   { action: "reset_password", id }                      -> { client, password }
 //   { action: "import", clients: [...] }                  -> { imported, skipped, clients }
 // Cliente (sessão do próprio cliente):
-//   { action: "self_update", patch: { conn?, targetRoas? } } -> { client }
+//   { action: "self_update", patch: { conn?, ai?, targetRoas? } } -> { client }
 
 import crypto from "node:crypto";
 import {
@@ -37,6 +37,12 @@ function cleanConn(conn) {
   if (conn.google && typeof conn.google === "object") out.google = Object.fromEntries(Object.entries(conn.google).filter(([k]) => ["slug", "customerId", "customerName", "refreshToken", "at"].includes(k)).map(([k, v]) => [k, txt(v, 600)]));
   return out;
 }
+// conexão da IA do cliente (Claude, ChatGPT ou Groq); null desconecta
+function cleanAi(ai) {
+  if (!ai || typeof ai !== "object") return null;
+  if (!["anthropic", "openai", "groq"].includes(ai.provider)) return null;
+  return { provider: ai.provider, key: txt(ai.key, 300), model: txt(ai.model, 100) };
+}
 function cleanRoas(v) { const n = parseFloat(String(v).replace(",", ".")); return n > 0 && n < 100 ? Math.round(n * 100) / 100 : null; }
 
 // campos que a gestora pode alterar
@@ -49,6 +55,7 @@ function applyAdminPatch(c, p) {
   if (p.status !== undefined && STATUS.includes(p.status)) c.status = p.status;
   if (p.targetRoas !== undefined) { const r = cleanRoas(p.targetRoas); if (r) c.targetRoas = r; }
   if (p.conn !== undefined) c.conn = cleanConn(p.conn);
+  if (p.ai !== undefined) c.ai = cleanAi(p.ai);
   return c;
 }
 
@@ -80,6 +87,7 @@ export default async function handler(req, res) {
       const c = await mustGet(s.sub);
       const p = body.patch || {};
       if (p.conn !== undefined) c.conn = cleanConn(p.conn);
+      if (p.ai !== undefined) c.ai = cleanAi(p.ai);
       if (p.targetRoas !== undefined) { const r = cleanRoas(p.targetRoas); if (r) c.targetRoas = r; }
       await saveClient(c);
       return send(res, 200, { client: publicClient(c) });

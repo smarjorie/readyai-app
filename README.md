@@ -107,7 +107,7 @@ Use um token de usuário do sistema do Business Manager da agência, com acesso 
 
 Em Integrações (ou no próprio chat), clique em **Conectar Claude**, **Conectar ChatGPT** ou **Conectar Groq** e cole a chave de API.
 
-- A chave fica salva só no navegador.
+- A chave é de cada cliente: fica no cadastro dele (no banco, quando há banco) e não vale para as outras contas, mesmo no mesmo navegador.
 - A cada pergunta, o app envia a conversa e os dados da conta aberta para `/api/chat`, que repassa ao provedor.
 - Propostas de alteração (pausar, reativar, mudar orçamento) só valem com o clique em **Confirmar**, e por enquanto são simulação.
 
@@ -155,5 +155,5 @@ Com o banco ativo, só a gestora entra de cara (com a mesma senha, ou a de `ADMI
 
 - **Sem banco, tudo fica no navegador.** Sem o Upstash configurado, o app volta ao modo local: clientes, senhas e conexões ficam no localStorage de quem configurou, e não há convite por e-mail.
 - **Admin no código.** O acesso da gestora tem senha padrão no código (só o hash). Troque com `ADMIN_PASSWORD` na Vercel.
-- **Tokens no banco em texto.** Com banco, o token da Meta e o identificador do Google ficam no cadastro do cliente, no Upstash, sem criptografia. As chaves de IA continuam só no navegador de cada pessoa.
+- **Tokens no banco em texto.** Com banco, o token da Meta, o identificador do Google e a chave da IA ficam no cadastro de cada cliente, no Upstash, sem criptografia.
 - **Pausar e mudar orçamento continuam simulação.**

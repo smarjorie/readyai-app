@@ -784,17 +784,23 @@ const AI_PROVIDERS = {
     prefer: ["openai/gpt-oss-120b", "gpt-oss-120b", "gpt-oss", "llama"],
   },
 };
-const AI_KEY = "readyai_ai_v1";
+// A conexão da IA é de cada cliente: fica no cadastro dele (campo "ai"), como as contas de anúncio.
+// Versões anteriores guardavam uma chave única no navegador, compartilhada por todas as contas; ela é apagada aqui.
+try { localStorage.removeItem("readyai_ai_v1"); } catch (e) {}
 const aiStore = (() => {
-  let state = { conn: store.get(AI_KEY, null), modal: null };
+  let state = { conn: null, modal: null, owner: null };
+  let save = () => {};
   const subs = new Set();
   const emit = () => subs.forEach(f => f());
   const set = patch => { state = { ...state, ...patch }; emit(); };
   return {
     get: () => state,
     subscribe: f => { subs.add(f); return () => subs.delete(f); },
-    connect: conn => { store.set(AI_KEY, conn); set({ conn, modal: null }); },
-    disconnect: () => { try { localStorage.removeItem(AI_KEY); } catch (e) {} set({ conn: null }); },
+    // liga o store ao cliente aberto; chamado durante a renderização, então não avisa os inscritos
+    bind: (owner, conn, saver) => { state = { conn: conn || null, modal: null, owner }; save = saver || (() => {}); },
+    reset: () => { state = { conn: null, modal: null, owner: null }; save = () => {}; },
+    connect: conn => { set({ conn, modal: null }); save(conn); },
+    disconnect: () => { set({ conn: null }); save(null); },
     open: provider => set({ modal: provider || (state.conn && state.conn.provider) || "anthropic" }),
     close: () => set({ modal: null }),
   };
@@ -931,7 +937,7 @@ function AIConnectPrompt() {
     <div className="ai-cta-ico"><${Icon} n="sparkles" s=${16} /></div>
     <div style=${{ minWidth: 0 }}>
       <b>Conecte uma IA para conversar</b>
-      <p>O copilot conversa usando o Claude, o ChatGPT ou o Groq com a sua chave de API. Ela fica salva só neste navegador.</p>
+      <p>O copilot conversa usando o Claude, o ChatGPT ou o Groq com a sua chave de API. Ela fica salva só na sua conta.</p>
       <div className="msg-actions">
         <button className="btn btn-sm btn-primary" onClick=${() => aiStore.open("anthropic")}><span className="prov-dot" style=${{ background: AI_PROVIDERS.anthropic.color }}></span>Conectar Claude</button>
         <button className="btn btn-sm btn-line" onClick=${() => aiStore.open("openai")}><span className="prov-dot" style=${{ background: AI_PROVIDERS.openai.color }}></span>Conectar ChatGPT</button>
@@ -993,7 +999,7 @@ function AIConnectDrawer({ toast }) {
           <select id="ai-model" className="input" value=${model} onChange=${e => setModel(e.target.value)}>${options.map(id => html`<option key=${id} value=${id}>${id}</option>`)}</select>
           ${models ? html`<span className="card-sub">${models.length} modelos disponíveis na sua conta.</span>` : null}</div>
         ${err ? html`<div className=${"err"} role="alert">${err}</div>` : null}
-        <div className="ai-note"><${Icon} n="shield" s=${15} /><div>A chave fica salva só neste navegador. A cada pergunta ela passa pelo servidor do ReadyAI direto para ${prov === "groq" ? "o" : "a"} ${P.vendor}, sem ser gravada. ${prov === "groq" ? "O uso conta no limite da sua conta do Groq (o plano gratuito tem limite de requisições por minuto e por dia)." : "O uso é cobrado na sua conta de API da " + P.vendor + ", separado de assinaturas como " + (prov === "anthropic" ? "Claude Pro" : "ChatGPT Plus") + "."}</div></div>
+        <div className="ai-note"><${Icon} n="shield" s=${15} /><div>A chave fica salva só na sua conta${SERVER.mode === "server" ? ", no seu cadastro da ReadyAI, e vale em qualquer computador" : ", neste navegador"}. Outras contas não usam essa chave. A cada pergunta ela passa pelo servidor do ReadyAI direto para ${prov === "groq" ? "o" : "a"} ${P.vendor}, sem ser gravada. ${prov === "groq" ? "O uso conta no limite da sua conta do Groq (o plano gratuito tem limite de requisições por minuto e por dia)." : "O uso é cobrado na sua conta de API da " + P.vendor + ", separado de assinaturas como " + (prov === "anthropic" ? "Claude Pro" : "ChatGPT Plus") + "."}</div></div>
       </div>
       <div className="drawer-foot">
         ${isCurrent ? html`<button type="button" className="btn btn-line" onClick=${() => { aiStore.disconnect(); aiStore.close(); toast && toast(P.name + " desconectado"); }}>Desconectar</button>` : html`<button type="button" className="btn btn-line" onClick=${close}>Cancelar</button>`}
@@ -1981,6 +1987,11 @@ function AccountWait({ live, name, onBack }) {
 
 /* ================= app do cliente ================= */
 function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate, startScreen }) {
+  // IA do cliente aberto: liga o store a este cliente antes de qualquer componente ler a conexão
+  const updRef = useRef(onUpdate); updRef.current = onUpdate;
+  const boundTo = useRef(null);
+  if (boundTo.current !== client.id) { aiStore.bind(client.id, client.ai, conn => updRef.current({ ai: conn })); boundTo.current = client.id; }
+  useEffect(() => () => aiStore.reset(), []);
   const allowed = new Set([...client.modules, "integrations"]);
   const isAgency = allowed.has("portfolio");
   const [screen, setScreen] = useState(startScreen && allowed.has(startScreen) ? startScreen : isAgency ? "portfolio" : allowed.has("copilot") ? "copilot" : "overview");
