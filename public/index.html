@@ -465,6 +465,35 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .wait-card{display:flex;gap:14px;align-items:flex-start;max-width:680px}
 .wait-card b{display:block;font-size:15px}
 
+/* ---------- cadastro, convites e exclusão ---------- */
+.notice{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:13px;color:var(--muted-2)}
+.notice b{display:block;color:var(--ink);font-size:13.5px;margin-bottom:2px}
+.notice span{line-height:1.5}
+.notice>svg{margin-top:2px;flex:none}
+.notice.warn{background:var(--warn-soft);border-color:transparent}
+.notice.warn>svg{color:var(--warn)}
+.notice.info{background:var(--accent-soft);border-color:transparent}
+.notice.info>svg{color:var(--accent-ink)}
+.notice .msg-actions{align-self:center}
+.row-acts{display:inline-flex;align-items:center;gap:2px}
+.icon-btn{width:30px;padding:0;justify-content:center}
+.icon-btn.danger{color:var(--muted)}
+.icon-btn.danger:hover{color:var(--bad);background:var(--bad-soft)}
+.confirm-row.del td{background:var(--bad-soft)!important}
+.confirm-row.del svg{color:var(--bad);flex:none}
+.inv-box{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);font-size:13px}
+.inv-box b{display:block;font-size:13.5px;color:var(--ink)}
+.inv-box span{color:var(--muted-2);line-height:1.5}
+.inv-box>svg{margin-top:2px;flex:none;color:var(--accent-ink)}
+.inv-box.good{background:var(--good-soft);border-color:transparent}
+.inv-box.good>svg{color:var(--good)}
+.inv-box.bad{background:var(--bad-soft);border-color:transparent}
+.inv-box.bad>svg{color:var(--bad)}
+.danger-zone{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.danger-zone p{font-size:13px;color:var(--muted-2);line-height:1.5}
+.danger-line{color:var(--bad);border-color:var(--bad)}
+.danger-line:hover{background:var(--bad-soft)}
+
 /* ---------- IA conectada ---------- */
 .prov-dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
 .ai-badge{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;border:1px solid var(--line-2);background:var(--surface);font-size:12px;font-weight:600;color:var(--ink);min-width:0;max-width:240px}
@@ -477,6 +506,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .ai-cta p{color:var(--muted);font-size:13px;margin:2px 0 12px}
 .ai-cta-ico{width:32px;height:32px;border-radius:10px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;flex:none}
 .ai-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ai-tabs.two{grid-template-columns:repeat(2,minmax(0,1fr))}
 .ai-tab{border:1px solid var(--line-2);border-radius:12px;padding:12px;text-align:left;display:flex;flex-direction:column;gap:3px;background:var(--surface)}
 .ai-tab:hover{background:var(--surface-2)}
 .ai-tab.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
@@ -546,6 +576,9 @@ const ICONS = {
   sliders: ["M4 21v-7", "M4 10V3", "M12 21v-9", "M12 8V3", "M20 21v-5", "M20 12V3", "M2 14h4", "M10 8h4", "M18 16h4"],
   eyeOff: ["M10.7 5.1A10.4 10.4 0 0 1 12 5c7 0 10 7 10 7a13.2 13.2 0 0 1-1.7 2.7", "M6.6 6.6A13.5 13.5 0 0 0 2 12s3 7 10 7a9.7 9.7 0 0 0 5.4-1.6", "M9.9 9.9a3 3 0 1 0 4.2 4.2", "m2 2 20 20"],
   eye: ["M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z", "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"],
+  trash: ["M3 6h18", "M8 6V4h8v2", "M19 6l-1 14H6L5 6", "M10 11v6", "M14 11v6"],
+  mail: ["M3 5h18v14H3z", "m3 7 9 6 9-6"],
+  refresh: ["M21 12a9 9 0 1 1-3-6.7L21 8", "M21 3v5h-5"],
   key: ["m21 2-9.6 9.6", "M7.5 22a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11z", "m15.5 7.5 3 3L22 7l-3-3"],
   pause: ["M7 4h3v16H7z", "M14 4h3v16h-3z"],
   play: ["m7 4 13 8-13 8V4z"],
@@ -1602,7 +1635,7 @@ function DataNote({ partial, home }) {
   return html`<span className="demo-note"><${Icon} n="check" s=${13} />${partial || "Dados reais · últimos 30 dias"}</span>`;
 }
 /* ================= dados reais: Meta Ads (token) e Google Ads (MCP) ================= */
-// As conexões ficam no cadastro de cada cliente (conn.meta e conn.google), salvo neste navegador.
+// As conexões ficam no cadastro de cada cliente (conn.meta e conn.google): no banco, quando há banco; senão, neste navegador.
 // O servidor (/api/meta e /api/google) busca as campanhas e devolve no mesmo formato dos dados de exemplo.
 async function apiPost(path, body, headers) {
   let r;
@@ -1617,6 +1650,8 @@ async function apiPost(path, body, headers) {
   return j;
 }
 const slugify = s => (String(s || "cliente").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "cliente").slice(0, 40);
+// a Meta pode ser lida pela Marketing API (token) ou pelo MCP oficial da Meta (mesmo token, com ads_mcp_management)
+const metaApi = m => m && m.via === "mcp" ? "/api/metamcp" : "/api/meta";
 const metaOn = conn => !!(conn && conn.meta && conn.meta.token && conn.meta.accountId);
 const googleOn = conn => !!(conn && conn.google && conn.google.slug && conn.google.customerId);
 
@@ -1625,13 +1660,13 @@ function useLiveData(client, enabled) {
   const [tick, setTick] = useState(0);
   const [st, setSt] = useState({ status: "idle", camps: [], errors: {}, sources: [] });
   const m = metaOn(conn) ? conn.meta : null, g = googleOn(conn) ? conn.google : null;
-  const key = JSON.stringify([enabled, m && [m.accountId, m.token.slice(-8)], g && [g.slug, g.customerId, g.refreshToken || ""], tick]);
+  const key = JSON.stringify([enabled, m && [m.accountId, m.token.slice(-8), m.via || "api"], g && [g.slug, g.customerId, g.refreshToken || ""], tick]);
   useEffect(() => {
     if (!enabled || (!m && !g)) { setSt({ status: "idle", camps: [], errors: {}, sources: [] }); return; }
     let dead = false;
     setSt(s => ({ ...s, status: "loading", errors: {} }));
     Promise.allSettled([
-      m ? apiPost("/api/meta", { action: "data", account_id: m.accountId }, { "x-meta-token": m.token }) : Promise.resolve(null),
+      m ? apiPost(metaApi(m), { action: "data", account_id: m.accountId }, { "x-meta-token": m.token }) : Promise.resolve(null),
       g ? apiPost("/api/google", { action: "data", slug: g.slug, customer_id: g.customerId, refresh_token: g.refreshToken || undefined }) : Promise.resolve(null),
     ]).then(([rm, rg]) => {
       if (dead) return;
@@ -1700,6 +1735,7 @@ function DataBand({ live, company, go, isLive }) {
 
 function MetaConnectDrawer({ client, onUpdate, onClose, toast, agency }) {
   const cur = (client.conn || {}).meta || null;
+  const [via, setVia] = useState(cur && cur.via === "mcp" ? "mcp" : "api");
   const [token, setToken] = useState(cur ? cur.token : ""); const [show, setShow] = useState(false);
   const [list, setList] = useState(null); const [user, setUser] = useState("");
   const [sel, setSel] = useState(cur ? cur.accountId : ""); const [q, setQ] = useState("");
@@ -1708,7 +1744,7 @@ function MetaConnectDrawer({ client, onUpdate, onClose, toast, agency }) {
     e && e.preventDefault(); if (!token.trim() || busy) return;
     setBusy(true); setErr(null);
     try {
-      const j = await apiPost("/api/meta", { action: "accounts" }, { "x-meta-token": token.trim() });
+      const j = await apiPost(metaApi({ via }), { action: "accounts" }, { "x-meta-token": token.trim() });
       setList(j.accounts || []); setUser(j.user || "");
       if (!(j.accounts || []).length) setErr("O token é válido, mas não enxerga nenhuma conta de anúncio. Confira se o usuário tem acesso às contas no Business Manager.");
       else if (!(j.accounts || []).some(a => a.id === sel)) setSel((j.accounts.find(a => a.active) || j.accounts[0]).id);
@@ -1716,20 +1752,24 @@ function MetaConnectDrawer({ client, onUpdate, onClose, toast, agency }) {
   };
   const save = () => {
     if (agency) {
-      onUpdate({ conn: { ...(client.conn || {}), meta: { token: token.trim(), accountId: "all", accountName: list.length + " contas", user, at: new Date().toISOString() } } });
+      onUpdate({ conn: { ...(client.conn || {}), meta: { token: token.trim(), via, accountId: "all", accountName: list.length + " contas", user, at: new Date().toISOString() } } });
       toast("Meta Ads conectado: " + list.length + " contas na carteira"); onClose(); return;
     }
     const a = list.find(x => x.id === sel); if (!a) return;
-    onUpdate({ conn: { ...(client.conn || {}), meta: { token: token.trim(), accountId: a.id, accountName: a.name, user, at: new Date().toISOString() } } });
+    onUpdate({ conn: { ...(client.conn || {}), meta: { token: token.trim(), via, accountId: a.id, accountName: a.name, user, at: new Date().toISOString() } } });
     toast("Meta Ads conectado: " + a.name); onClose();
   };
   const shown = (list || []).filter(a => !q || (a.name + a.id).toLowerCase().includes(q.toLowerCase()));
   return html`<${Fragment}><div className="drawer-bg" style=${{ zIndex: 60 }} onClick=${onClose}></div>
     <aside className="drawer" style=${{ zIndex: 61 }} role="dialog" aria-modal="true" aria-label="Conectar Meta Ads">
       <div className="drawer-head"><div><div className="eyebrow">Integração · ${client.company}</div><h2 style=${{ fontSize: 20, fontWeight: 700 }}>Conectar Meta Ads</h2>
-        <div className="card-sub">Leitura das campanhas pela Marketing API da Meta, com um token de acesso.</div></div>
+        <div className="card-sub">${via === "mcp" ? "Leitura das campanhas pelo MCP oficial da Meta, com um token de acesso." : "Leitura das campanhas pela Marketing API da Meta, com um token de acesso."}</div></div>
         <button type="button" className="btn btn-ghost btn-sm" onClick=${onClose} aria-label="Fechar"><${Icon} n="x" /></button></div>
       <div className="drawer-body">
+        <div className="field"><label>Como conectar</label>
+          <div className="ai-tabs two" role="radiogroup" aria-label="Como conectar a Meta">${[["api", "Marketing API", "Graph API com token"], ["mcp", "MCP da Meta", "mcp.facebook.com/ads"]].map(([k, t, d]) => html`
+            <button type="button" key=${k} role="radio" aria-checked=${via === k} className=${"ai-tab" + (via === k ? " on" : "")} onClick=${() => { setVia(k); setList(null); setErr(null); }}>
+              <b>${t}</b><small className=${k === "mcp" ? "mono" : ""}>${d}</small></button>`)}</div></div>
         <ol className="steps">
           <li className=${list ? "done" : "on"}><b>Token de acesso</b>
             <form onSubmit=${find} className="stack" style=${{ gap: 8, marginTop: 8 }}>
@@ -1737,9 +1777,10 @@ function MetaConnectDrawer({ client, onUpdate, onClose, toast, agency }) {
                 <button type="button" className="pass-eye" onClick=${() => setShow(!show)} aria-label=${show ? "Ocultar token" : "Mostrar token"}><${Icon} n=${show ? "eyeOff" : "eye"} s=${16} /></button></div>
               <button className="btn btn-primary" type="submit" disabled=${!token.trim() || busy}>${busy ? "Validando token…" : list ? "Buscar contas de novo" : "Validar e buscar contas"}</button>
             </form>
-            <details className="help"><summary>Como gerar o token</summary>
-              <p><b>Para testar:</b> abra o <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer">Graph API Explorer</a>, escolha seu app, adicione a permissão <span className="mono">ads_read</span> e clique em Generate Access Token. Esse token expira em poucas horas.</p>
-              <p><b>Para uso contínuo:</b> no Business Manager, em Configurações do negócio › Usuários do sistema, crie um usuário do sistema, dê acesso às contas de anúncio e gere um token com <span className="mono">ads_read</span>. Esse token não expira.</p></details>
+            <details className="help" open=${via === "mcp"}><summary>Como gerar o token</summary>
+              ${via === "mcp" ? html`<p>O app chama <span className="mono">https://mcp.facebook.com/ads</span> com o seu token, como a Meta documenta para integrações programáticas. O token precisa das permissões <span className="mono">ads_mcp_management</span> e <span className="mono">ads_read</span>.</p>` : null}
+              <p><b>Para testar:</b> abra o <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer">Graph API Explorer</a>, escolha seu app, adicione a permissão <span className="mono">${via === "mcp" ? "ads_mcp_management, ads_read" : "ads_read"}</span> e clique em Generate Access Token. Esse token expira em poucas horas.</p>
+              <p><b>Para uso contínuo:</b> no Business Manager, em Configurações do negócio › Usuários do sistema, crie um usuário do sistema, dê acesso às contas de anúncio e gere um token com <span className="mono">${via === "mcp" ? "ads_mcp_management e ads_read" : "ads_read"}</span>. Esse token não expira.${via === "mcp" ? " A Meta documenta o MCP com token de usuário; se o token de usuário do sistema for recusado, use a Marketing API." : ""}</p></details>
           </li>
           <li className=${list ? "on" : ""}><b>${agency ? "Contas que entram na carteira" : "Conta de anúncio"}</b>
             ${list ? html`<div className="stack" style=${{ gap: 8, marginTop: 8 }}>
@@ -1753,7 +1794,7 @@ function MetaConnectDrawer({ client, onUpdate, onClose, toast, agency }) {
           </li>
         </ol>
         ${err ? html`<div className="err" role="alert">${err}</div>` : null}
-        <div className="ai-note"><${Icon} n="shield" s=${15} /><div>O token fica salvo neste navegador, no cadastro de ${client.company}, e só é usado para ler campanhas. Pausar ou alterar orçamento pelo painel continua sendo simulação.</div></div>
+        <div className="ai-note"><${Icon} n="shield" s=${15} /><div>O token fica salvo ${SERVER.mode === "server" ? "no cadastro de " + client.company + ", no banco da ReadyAI," : "neste navegador, no cadastro de " + client.company + ","} e só é usado para ler campanhas. Pausar ou alterar orçamento pelo painel continua sendo simulação.</div></div>
       </div>
       <div className="drawer-foot">
         ${cur ? html`<button type="button" className="btn btn-line" onClick=${() => { const c = { ...(client.conn || {}) }; delete c.meta; onUpdate({ conn: c }); toast("Meta Ads desconectado"); onClose(); }}>Desconectar</button>` : html`<button type="button" className="btn btn-line" onClick=${onClose}>Cancelar</button>`}
@@ -1840,7 +1881,7 @@ function AdIntegrations({ client, onUpdate, toast, isAgency, live }) {
     <div className="eyebrow">Contas de anúncio</div>
     ${isAgency ? html`<p className="card-sub">Na agência, todas as contas de anúncio que o token da Meta acessa viram clientes da carteira. Google Ads e TikTok ainda não entram na carteira.</p>` : null}
     <div className="grid g2">
-      ${card("meta", "Meta Ads", "Campanhas, investimento, compras e receita pela Marketing API", metaOn(conn), metaOn(conn) ? (isAgency ? "Token" + (conn.meta.user ? " de " + conn.meta.user : "") + " · carteira com as contas dele" : conn.meta.accountName + " · " + conn.meta.accountId) : "Token de acesso com ads_read", live && live.errors && live.errors.meta)}
+      ${card("meta", "Meta Ads", "Campanhas, investimento, compras e receita pela Marketing API ou pelo MCP oficial da Meta", metaOn(conn), metaOn(conn) ? (isAgency ? "Token" + (conn.meta.user ? " de " + conn.meta.user : "") + " · carteira com as contas dele" : conn.meta.accountName + " · " + conn.meta.accountId) + (conn.meta.via === "mcp" ? " · via MCP" : " · via API") : "Marketing API ou MCP da Meta", live && live.errors && live.errors.meta)}
       ${card("google", "Google Ads", "Campanhas, investimento, cliques e conversões pelo MCP do Google Ads", googleOn(conn), googleOn(conn) ? conn.google.customerName : "Login com a conta Google", live && live.errors && live.errors.google)}
       <article className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
         <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title" style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: CH.tiktok.color }}></span>TikTok Ads</div><div className="card-sub">Campanhas e Spark Ads</div></div><span className="pill pill-violet">Em breve</span></div>
@@ -1878,12 +1919,12 @@ function usePortfolio(client, enabled) {
   const m = enabled && metaOn(client.conn) ? client.conn.meta : null;
   const [tick, setTick] = useState(0);
   const [st, setSt] = useState({ status: "idle", accounts: [] });
-  const key = JSON.stringify([m && m.token.slice(-8), tick]);
+  const key = JSON.stringify([m && m.token.slice(-8), m && m.via, tick]);
   useEffect(() => {
     if (!m) { setSt({ status: "idle", accounts: [] }); return; }
     let dead = false;
     setSt(s => ({ ...s, status: "loading", error: null }));
-    apiPost("/api/meta", { action: "portfolio" }, { "x-meta-token": m.token })
+    apiPost(metaApi(m), { action: "portfolio" }, { "x-meta-token": m.token })
       .then(j => { if (!dead) setSt({ status: "ready", accounts: j.accounts || [], truncated: j.truncated, at: new Date() }); })
       .catch(e => { if (!dead) setSt({ status: "error", accounts: [], error: e.message }); });
     return () => { dead = true; };
@@ -1958,7 +1999,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
     ACTIVE = { target: activeAcc.target, health: row.health, prev: { spend: PREV.spend * activeAcc.k, revenue: PREV.revenue * activeAcc.k * activeAcc.rm * f, purchases: PREV.purchases * activeAcc.k * activeAcc.rm * f, clicks: PREV.clicks * activeAcc.k, impr: PREV.impr * activeAcc.k } };
   }
   // dados reais: a conta do cliente (Starter/Pro) ou a conta aberta na carteira da agência
-  const liveSrc = isAgency ? (livePf && activeRow ? { conn: { meta: { token: client.conn.meta.token, accountId: activeRow.id, accountName: activeRow.name } } } : { conn: {} }) : client;
+  const liveSrc = isAgency ? (livePf && activeRow ? { conn: { meta: { token: client.conn.meta.token, accountId: activeRow.id, accountName: activeRow.name, via: client.conn.meta.via } } } : { conn: {} }) : client;
   const live = useLiveData(liveSrc, isAgency ? !!(livePf && activeId && screen !== "portfolio") : true);
   const isLive = live.status === "ready" && live.camps.length > 0 && (!isAgency || !!(livePf && activeId && screen !== "portfolio"));
   if (!isAgency || livePf) ACTIVE = isLive ? { prev: live.prev, target, health: liveHealth(live.camps, target), live: true }
@@ -2089,26 +2130,96 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   </div>`;
 }
 
+/* ================= dados no servidor (banco + e-mail) ================= */
+// No boot o app pergunta ao servidor se há banco. Com banco, clientes, senhas, convites e conexões ficam no servidor
+// e valem em qualquer computador. Sem banco (ou fora da Vercel), tudo fica neste navegador, como na demonstração.
+let SERVER = { mode: "local", db: false, email: false };
+const SESSION_KEY = "readyai_session_v1";
+async function srv(path, body, token) {
+  let r;
+  try { r = await fetch(path, { method: "POST", headers: { "content-type": "application/json", ...(token ? { authorization: "Bearer " + token } : {}) }, body: JSON.stringify(body) }); }
+  catch (e) { throw new Error("Sem conexão com o servidor. Confira sua internet e tente de novo."); }
+  let j = {}; try { j = await r.json(); } catch (e) {}
+  if (!r.ok) { const err = new Error(j.error || "Falha no servidor (" + r.status + ")."); err.code = j.code; err.status = r.status; throw err; }
+  return j;
+}
+// datas do servidor chegam em ISO; as da demonstração já vêm como texto ("hoje, 08:41")
+function fmtWhen(v) {
+  if (!v) return "nunca";
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(v)) return v;
+  const d = new Date(v), now = new Date();
+  const hm = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  if (d.toDateString() === now.toDateString()) return "hoje, " + hm;
+  const y = new Date(now); y.setDate(now.getDate() - 1);
+  if (d.toDateString() === y.toDateString()) return "ontem, " + hm;
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "") + ", " + hm;
+}
+const fmtDay = v => v ? new Date(v).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
+function copyText(txt, toast, ok) {
+  try { navigator.clipboard.writeText(txt).then(() => toast(ok), () => toast("Selecione o texto e copie")); } catch (e) { toast("Selecione o texto e copie"); }
+}
+
 /* ================= console de gestão (admin) ================= */
-function AdminConsole({ clients, setClients, onLogout, onImpersonate }) {
+function AdminConsole({ clients, api, onLogout, onImpersonate, adminName }) {
   const [tab, setTab] = useState("clients"); const [sel, setSel] = useState(null); const [adding, setAdding] = useState(false);
   const [q, setQ] = useState(""); const [toastMsg, setToastMsg] = useState(null);
-  const toast = m => { setToastMsg(m); clearTimeout(toast.t); toast.t = setTimeout(() => setToastMsg(null), 2600); };
+  const [delId, setDelId] = useState(null); const [busy, setBusy] = useState(false);
+  const [inviteRes, setInviteRes] = useState({});
+  const [legacyOff, setLegacyOff] = useState(() => store.get("readyai_import_done", false));
+  const toast = m => { setToastMsg(m); clearTimeout(toast.t); toast.t = setTimeout(() => setToastMsg(null), 3200); };
+  // retorno do aceite: a lista é atualizada a cada 20 s e ao voltar para a aba; quem saiu de "convite" para "ativo" vira aviso
+  const prev = useRef(null);
+  useEffect(() => {
+    const was = prev.current; prev.current = Object.fromEntries(clients.map(c => [c.id, c.status]));
+    if (!was) return;
+    const acc = clients.filter(c => was[c.id] === "convite" && c.status === "ativo");
+    if (acc.length) toast(acc.length === 1 ? acc[0].company + " aceitou o convite e já pode entrar" : acc.length + " clientes aceitaram o convite");
+  }, [clients]);
+  useEffect(() => {
+    if (!api.refresh) return;
+    const tick = () => { if (!document.hidden) api.refresh().catch(() => {}); };
+    const t = setInterval(tick, 20000); window.addEventListener("focus", tick);
+    return () => { clearInterval(t); window.removeEventListener("focus", tick); };
+  }, []);
   const active = clients.filter(c => c.status === "ativo");
+  const pending = clients.filter(c => c.status === "convite");
   const mrr = clients.filter(c => c.status !== "suspenso").reduce((a, c) => a + PLANS[c.plan].price, 0);
   const list = clients.filter(c => (c.name + c.company + c.email).toLowerCase().includes(q.toLowerCase()));
-  const upd = (id, patch) => setClients(cs => cs.map(c => c.id === id ? { ...c, ...patch } : c));
+  const upd = (id, patch) => api.update(id, patch).catch(e => toast(e.message));
   const cur = sel ? clients.find(c => c.id === sel) : null;
   const statusPill = s => ({ ativo: html`<span className="pill pill-good"><span className="dot"></span>Ativo</span>`, suspenso: html`<span className="pill pill-bad">Suspenso</span>`, convite: html`<span className="pill pill-warn">Convite enviado</span>` })[s];
+  const inviteNote = c => {
+    const inv = c.invite;
+    if (!inv) return null;
+    if (c.status === "convite" && inv.emailError) return html`<span className="rec-why" style=${{ color: "var(--bad)" }}>E-mail não enviado</span>`;
+    if (c.status === "convite" && inv.sentAt) return html`<span className="rec-why">Enviado ${fmtWhen(inv.sentAt)}</span>`;
+    if (inv.acceptedAt) return html`<span className="rec-why">Aceito ${fmtWhen(inv.acceptedAt)}</span>`;
+    return null;
+  };
   const visibleMods = MODULES.filter(m => !m.hidden);
+  const remove = async c => {
+    setBusy(true);
+    try { await api.remove(c.id); toast(c.company + " foi excluído"); if (sel === c.id) setSel(null); setDelId(null); }
+    catch (e) { toast(e.message); } finally { setBusy(false); }
+  };
+  const legacy = api.legacy && !legacyOff ? api.legacy.filter(l => !clients.some(c => c.email.toLowerCase() === String(l.email).toLowerCase())) : [];
+  const doImport = async () => {
+    setBusy(true);
+    try { const r = await api.importLegacy(legacy); store.set("readyai_import_done", true); setLegacyOff(true); toast(r.imported + (r.imported === 1 ? " cliente importado" : " clientes importados") + " para o banco"); }
+    catch (e) { toast(e.message); } finally { setBusy(false); }
+  };
   return html`<div className="admin">
     <header className="admin-top"><div className="brand" style=${{ padding: 0 }}><${Logo} /><div><b><${Wordmark} /> Console</b><small>Gestão de clientes e acessos</small></div></div>
-      <div style=${{ display: "flex", alignItems: "center", gap: 10 }}><span className="avatar">SM</span><span className="hide-sm" style=${{ fontSize: 13, fontWeight: 600 }}>${ADMIN.name}</span><${ThemeToggle} /><button className="btn btn-line btn-sm" onClick=${onLogout}><${Icon} n="logout" s=${14} />Sair</button></div></header>
+      <div style=${{ display: "flex", alignItems: "center", gap: 10 }}><span className="avatar">${(adminName || "A").split(" ").map(x => x[0]).slice(0, 2).join("")}</span><span className="hide-sm" style=${{ fontSize: 13, fontWeight: 600 }}>${adminName}</span><${ThemeToggle} /><button className="btn btn-line btn-sm" onClick=${onLogout}><${Icon} n="logout" s=${14} />Sair</button></div></header>
     <div className="admin-body">
+      ${!api.server ? html`<div className="notice warn"><${Icon} n="alert" s=${16} /><div style=${{ flex: 1, minWidth: 220 }}><b>Modo local</b><span>Os clientes ficam só neste navegador e os convites não são enviados por e-mail. Para enviar convites e receber o aceite, conecte o banco (Upstash Redis) e o e-mail (Resend) na Vercel. O passo a passo está no README.</span></div></div>`
+        : !api.email ? html`<div className="notice warn"><${Icon} n="mail" s=${16} /><div style=${{ flex: 1, minWidth: 220 }}><b>E-mail não configurado</b><span>Os convites são criados, mas não saem por e-mail. Copie o link do convite na ficha do cliente e envie você mesma, ou configure RESEND_API_KEY na Vercel.</span></div></div>` : null}
+      ${legacy.length ? html`<div className="notice info"><${Icon} n="users" s=${16} /><div style=${{ flex: 1, minWidth: 220 }}><b>${legacy.length} ${legacy.length === 1 ? "cliente está salvo" : "clientes estão salvos"} só neste navegador</b><span>São cadastros de antes do banco (${legacy.slice(0, 3).map(l => l.company).join(", ")}${legacy.length > 3 ? "…" : ""}). Importar leva senhas e contas conectadas, sem enviar e-mail.</span></div>
+        <div className="msg-actions"><button className="btn btn-sm btn-primary" disabled=${busy} onClick=${doImport}>Importar para o banco</button><button className="btn btn-sm btn-line" onClick=${() => { store.set("readyai_import_done", true); setLegacyOff(true); }}>Agora não</button></div></div>` : null}
       <div className="grid g4">
         <${Kpi} label="Clientes ativos" value=${active.length} hint=${clients.length + " cadastrados"} />
         <${Kpi} label="MRR" value=${brl(mrr)} hint="Ativos + convites" />
-        <${Kpi} label="Ticket médio" value=${brl(mrr / Math.max(1, clients.filter(c => c.status !== "suspenso").length))} />
+        <${Kpi} label="Convites pendentes" value=${pending.length} hint=${pending.length ? "Aguardando a pessoa criar a senha" : "Nenhum aguardando"} />
         <${Kpi} label="Acessos suspensos" value=${clients.filter(c => c.status === "suspenso").length} hint="Pagamento pendente" />
       </div>
       <div className="tabs" role="tablist">${[["clients", "Clientes"], ["plans", "Planos e módulos"]].map(([k, l]) => html`<button key=${k} role="tab" aria-selected=${tab === k} className=${tab === k ? "on" : ""} onClick=${() => setTab(k)}>${l}</button>`)}</div>
@@ -2118,12 +2229,18 @@ function AdminConsole({ clients, setClients, onLogout, onImpersonate }) {
           <button className="btn btn-primary" onClick=${() => setAdding(true)}><${Icon} n="plus" s=${15} />Novo cliente</button></div>
         <div className="card card-pad"><div className="tbl-wrap" style=${{ marginTop: -18 }}><table className="tbl"><thead><tr><th>Cliente</th><th>Plano</th><th>Módulos</th><th>Status</th><th>Último acesso</th><th className="r">Mensalidade</th><th></th></tr></thead>
           <tbody>${list.map(c => { const custom = c.modules.slice().sort().join() !== PLANS[c.plan].modules.slice().sort().join();
-            return html`<tr key=${c.id} style=${{ cursor: "pointer" }} onClick=${() => setSel(c.id)}>
+            return html`<${Fragment} key=${c.id}><tr style=${{ cursor: "pointer" }} onClick=${() => setSel(c.id)}>
               <td><b style=${{ color: "var(--ink)", display: "block" }}>${c.company}</b><span style=${{ fontSize: 12 }}>${c.name} · ${c.email}</span></td>
               <td><span className="pill pill-info">${PLANS[c.plan].name}</span>${custom ? html` <span className="pill pill-violet">Personalizado</span>` : null}</td>
               <td className="num">${c.modules.filter(m => MODULES.find(x => x.key === m && !x.hidden)).length} de ${visibleMods.length}</td>
-              <td>${statusPill(c.status)}</td><td>${c.lastAccess}</td><td className="r num">${brl(PLANS[c.plan].price)}</td>
-              <td><button className="btn btn-sm btn-ghost" onClick=${e => { e.stopPropagation(); setSel(c.id); }}>Gerenciar<${Icon} n="chevR" s=${13} /></button></td></tr>`; })}</tbody></table></div></div>
+              <td>${statusPill(c.status)}${inviteNote(c)}</td><td>${fmtWhen(c.lastAccess)}</td><td className="r num">${brl(PLANS[c.plan].price)}</td>
+              <td><span className="row-acts"><button className="btn btn-sm btn-ghost" onClick=${e => { e.stopPropagation(); setSel(c.id); }}>Gerenciar<${Icon} n="chevR" s=${13} /></button>
+                <button className="btn btn-sm btn-ghost icon-btn danger" aria-label=${"Excluir " + c.company} title="Excluir cliente" onClick=${e => { e.stopPropagation(); setDelId(delId === c.id ? null : c.id); }}><${Icon} n="trash" s=${15} /></button></span></td></tr>
+              ${delId === c.id ? html`<tr className="confirm-row del"><td colSpan="7"><div className="confirm-inline"><${Icon} n="alert" s=${16} />
+                <span style=${{ flex: 1, minWidth: 220, whiteSpace: "normal" }}>Excluir <b>${c.company}</b>? O acesso de ${c.email} é removido junto com as contas conectadas${c.status === "convite" ? " e o link do convite deixa de valer" : ""}. Não dá para desfazer.</span>
+                <button className="btn btn-sm btn-danger" disabled=${busy} onClick=${() => remove(c)}>${busy ? "Excluindo…" : "Excluir cliente"}</button><button className="btn btn-sm btn-line" onClick=${() => setDelId(null)}>Cancelar</button></div></td></tr>` : null}
+            <//>`; })}
+            ${list.length === 0 ? html`<tr><td colSpan="7" style=${{ textAlign: "center", padding: 28 }}>${clients.length ? "Nenhum cliente com essa busca." : "Nenhum cliente cadastrado ainda. Clique em Novo cliente para enviar o primeiro convite."}</td></tr>` : null}</tbody></table></div></div>
       </div>` : html`<div className="stack">
         <div className="grid g3">${Object.entries(PLANS).map(([k, p]) => html`<div key=${k} className="card plan-card" style=${k === "pro" ? { borderColor: "var(--accent)" } : null}>
           <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><b style=${{ fontSize: 17 }}>${p.name}</b><span className=${"pill " + (k === "pro" ? "pill-info" : "pill-mute")}>${p.tag}</span></div>
@@ -2135,27 +2252,50 @@ function AdminConsole({ clients, setClients, onLogout, onImpersonate }) {
             ${m.hidden ? html`<span className="pill pill-violet">Oculto · em breve</span>` : m.core ? html`<span className="pill pill-mute">Base de todos os planos</span>` : html`<span className="mono" style=${{ color: "var(--muted)" }}>${m.key}</span>`}</div>`)}</div></div>
       </div>`}
     </div>
-    ${cur ? html`<${ClientDrawer} c=${cur} upd=${upd} onClose=${() => setSel(null)} onImpersonate=${onImpersonate} toast=${toast} visibleMods=${visibleMods} />` : null}
-    ${adding ? html`<${NewClient} onClose=${() => setAdding(false)} onCreate=${c => { setClients(cs => [c, ...cs]); setAdding(false); setSel(c.id); toast("Cliente criado. Envie a senha temporária para " + c.email); }} />` : null}
+    ${cur ? html`<${ClientDrawer} c=${cur} upd=${upd} api=${api} inviteRes=${inviteRes[cur.id]} setInviteRes=${r => setInviteRes(x => ({ ...x, [cur.id]: r }))} onClose=${() => setSel(null)} onImpersonate=${onImpersonate} onDelete=${() => remove(cur)} busy=${busy} toast=${toast} visibleMods=${visibleMods} />` : null}
+    ${adding ? html`<${NewClient} server=${api.server} onClose=${() => setAdding(false)} onCreate=${async f => {
+      const r = await api.create(f);
+      setAdding(false); setSel(r.client.id);
+      if (r.invite) setInviteRes(x => ({ ...x, [r.client.id]: r.invite }));
+      toast(!api.server ? "Cliente criado. Envie a senha temporária para " + r.client.email : r.invite && r.invite.sent ? "Convite enviado para " + r.client.email : "Cliente criado, mas o e-mail não saiu. Copie o link do convite.");
+    }} />` : null}
     ${toastMsg ? html`<div className="toast" role="status">${toastMsg}</div>` : null}
   </div>`;
 }
-function ClientDrawer({ c, upd, onClose, onImpersonate, toast, visibleMods }) {
+
+function ClientDrawer({ c, upd, api, inviteRes, setInviteRes, onClose, onImpersonate, onDelete, busy, toast, visibleMods }) {
   const [secret, setSecret] = useState(c.newPass || null);
-  useEffect(() => setSecret(c.newPass || null), [c.id]);
+  const [confirmDel, setConfirmDel] = useState(false); const [sending, setSending] = useState(false);
+  useEffect(() => { setSecret(c.newPass || null); setConfirmDel(false); }, [c.id]);
   const toggleMod = (k, v) => upd(c.id, { modules: v ? [...new Set([...c.modules, k])] : c.modules.filter(x => x !== k) });
   const setPlan = p => upd(c.id, { plan: p, modules: [...PLANS[p].modules] });
-  const copy = txt => { try { navigator.clipboard.writeText(txt).then(() => toast("Senha copiada"), () => toast("Selecione a senha e copie")); } catch (e) { toast("Selecione a senha e copie"); } };
+  const inv = c.invite || null;
+  const resend = async () => {
+    setSending(true);
+    try { const r = await api.resend(c.id); setInviteRes(r.invite); toast(r.invite.sent ? "Convite reenviado para " + c.email : "Novo link criado, mas o e-mail não saiu. Copie o link abaixo."); }
+    catch (e) { toast(e.message); } finally { setSending(false); }
+  };
+  const newPass = async () => { try { const p = await api.resetPassword(c.id); setSecret(p); } catch (e) { toast(e.message); } };
   return html`<${Fragment}><div className="drawer-bg" onClick=${onClose}></div>
     <aside className="drawer" role="dialog" aria-label=${"Gerenciar " + c.company}>
       <div className="drawer-head"><div><div className="eyebrow">Cliente</div><h2 style=${{ fontSize: 20, fontWeight: 700 }}>${c.company}</h2><div className="card-sub">${c.name} · ${c.email} · cliente desde ${c.since.split("-").reverse().join("/")}</div></div>
         <button className="btn btn-ghost btn-sm" onClick=${onClose} aria-label="Fechar"><${Icon} n="x" /></button></div>
       <div className="drawer-body">
+        ${api.server && (c.status === "convite" || inv) ? html`<section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Convite por e-mail</div>
+          ${inv && inv.acceptedAt ? html`<div className="inv-box good"><${Icon} n="check" s=${16} /><div><b>Convite aceito</b><span>${c.name} criou a senha em ${fmtDay(inv.acceptedAt)} às ${new Date(inv.acceptedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}.</span></div></div>`
+            : html`<${Fragment}>
+            ${inv && inv.emailError ? html`<div className="inv-box bad"><${Icon} n="alert" s=${16} /><div><b>O e-mail não foi enviado</b><span>${inv.emailError}</span></div></div>`
+              : inv && inv.sentAt ? html`<div className="inv-box"><${Icon} n="mail" s=${16} /><div><b>Enviado ${fmtWhen(inv.sentAt)} para ${c.email}</b><span>Aguardando a pessoa criar a senha. O link vale até ${fmtDay(inv.expiresAt)}.</span></div></div>`
+              : html`<div className="inv-box"><${Icon} n="mail" s=${16} /><div><b>Nenhum convite enviado ainda</b><span>Envie o convite para ${c.email} criar a senha.</span></div></div>`}
+            ${inviteRes && inviteRes.link ? html`<div className="field"><label htmlFor="inv-link">Link do convite</label><div style=${{ display: "flex", gap: 8 }}><input id="inv-link" className="input mono" style=${{ fontSize: 12 }} readOnly value=${inviteRes.link} onFocus=${e => e.target.select()} /><button className="btn btn-line" onClick=${() => copyText(inviteRes.link, toast, "Link copiado")}><${Icon} n="copy" s=${14} />Copiar</button></div><span className="card-sub">Ele aparece só agora. Reenviar o convite cria um link novo e invalida o anterior.</span></div>` : null}
+            <div><button className="btn btn-line btn-sm" disabled=${sending || c.status === "suspenso"} onClick=${resend}><${Icon} n="refresh" s=${14} />${sending ? "Enviando…" : inv && inv.sentAt ? "Reenviar convite" : "Enviar convite"}</button></div>
+          <//>`}
+        </section>` : null}
         <section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Contas de anúncio</div>
           ${[["meta", "Meta Ads", metaOn(c.conn) ? c.conn.meta.accountName + " · " + c.conn.meta.accountId : null], ["google", "Google Ads", googleOn(c.conn) ? c.conn.google.customerName : null]].map(([k, l, d]) => html`<div key=${k} className="mod-row"><div><b style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: CH[k].color }}></span>${l}</b><small>${d || "Não conectado"}</small></div><span className=${"pill " + (d ? "pill-good" : "pill-mute")}>${d ? "Conectado" : "Pendente"}</span></div>`)}
           <div className="mod-row"><div><b>Meta de ROAS</b><small>Usada nos insights e no copilot</small></div><span className="num" style=${{ fontWeight: 700 }}>${xroas(c.targetRoas || TARGET_ROAS)}</span></div>
           <div><button className="btn btn-line btn-sm" disabled=${c.status === "suspenso"} onClick=${() => onImpersonate(c.id, "integrations")}><${Icon} n="plug" s=${14} />Conectar contas deste cliente</button></div>
-          <div className="card-sub">Abre a plataforma como ${c.company}, direto em Integrações. As conexões ficam salvas neste navegador.</div></section>
+          <div className="card-sub">Abre a plataforma como ${c.company}, direto em Integrações. ${api.server ? "As conexões ficam no cadastro do cliente e aparecem para ele em qualquer computador." : "As conexões ficam salvas neste navegador."}</div></section>
         <section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Plano</div>
           <div className="seg">${Object.entries(PLANS).map(([k, p]) => html`<button key=${k} className=${c.plan === k ? "on" : ""} onClick=${() => setPlan(k)}>${p.name} · ${brl(p.price)}</button>`)}</div>
           <div className="card-sub">Trocar o plano redefine os módulos para o pacote padrão. Depois você pode ajustar um a um.</div></section>
@@ -2166,33 +2306,43 @@ function ClientDrawer({ c, upd, onClose, onImpersonate, toast, visibleMods }) {
         </section>
         <section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Acesso</div>
           <div className="mod-row"><div><b>Acesso à plataforma</b><small>${c.status === "suspenso" ? "Bloqueado: o cliente não consegue entrar" : "Liberado"}</small></div>
-            <${Toggle} on=${c.status !== "suspenso"} onChange=${v => { upd(c.id, { status: v ? "ativo" : "suspenso" }); toast(v ? "Acesso liberado" : "Acesso suspenso"); }} label="Acesso à plataforma" /></div>
-          <div style=${{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="btn btn-line btn-sm" onClick=${() => { const p = tempPass(); upd(c.id, { password: p, newPass: p }); setSecret(p); }}><${Icon} n="key" s=${14} />Gerar nova senha</button></div>
-          ${secret ? html`<div className="secret"><span>Senha temporária:</span><code>${secret}</code><button className="btn btn-sm btn-line" onClick=${() => copy(secret)}><${Icon} n="copy" s=${13} />Copiar</button><span style=${{ flexBasis: "100%", fontSize: 12, color: "var(--muted-2)" }}>Ela aparece só agora. Envie para ${c.email}.</span></div>` : null}
+            <${Toggle} on=${c.status !== "suspenso"} onChange=${v => { upd(c.id, { status: v ? (c.status === "suspenso" && api.server && !c.hasPassword ? "convite" : "ativo") : "suspenso" }); toast(v ? "Acesso liberado" : "Acesso suspenso"); }} label="Acesso à plataforma" /></div>
+          <div style=${{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="btn btn-line btn-sm" onClick=${newPass}><${Icon} n="key" s=${14} />Gerar senha temporária</button></div>
+          ${secret ? html`<div className="secret"><span>Senha temporária:</span><code>${secret}</code><button className="btn btn-sm btn-line" onClick=${() => copyText(secret, toast, "Senha copiada")}><${Icon} n="copy" s=${13} />Copiar</button><span style=${{ flexBasis: "100%", fontSize: 12, color: "var(--muted-2)" }}>Ela aparece só agora. Envie para ${c.email}.</span></div>` : null}
+        </section>
+        <section className="danger-zone"><div className="eyebrow" style=${{ color: "var(--bad)" }}>Excluir cliente</div>
+          ${confirmDel ? html`<div className="stack" style=${{ gap: 10 }}><p>Excluir <b>${c.company}</b> remove o acesso de ${c.email}, as contas conectadas e o histórico de convites. Não dá para desfazer.</p>
+            <div className="msg-actions"><button className="btn btn-sm btn-danger" disabled=${busy} onClick=${onDelete}><${Icon} n="trash" s=${14} />${busy ? "Excluindo…" : "Excluir definitivamente"}</button><button className="btn btn-sm btn-line" onClick=${() => setConfirmDel(false)}>Cancelar</button></div></div>`
+            : html`<div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}><span className="card-sub">Remove o cliente da carteira e o acesso dele à plataforma.</span><button className="btn btn-sm btn-line danger-line" onClick=${() => setConfirmDel(true)}><${Icon} n="trash" s=${14} />Excluir cliente</button></div>`}
         </section>
       </div>
       <div className="drawer-foot"><span className="card-sub" style=${{ alignSelf: "center" }}>Alterações salvas automaticamente</span>
         <button className="btn btn-primary" disabled=${c.status === "suspenso"} onClick=${() => onImpersonate(c.id)}><${Icon} n="eye" s=${15} />Ver como este cliente</button></div>
     </aside><//>`;
 }
-function NewClient({ onClose, onCreate }) {
-  const [f, setF] = useState({ company: "", name: "", email: "", plan: "pro", targetRoas: "3" }); const [err, setErr] = useState("");
+function NewClient({ onClose, onCreate, server }) {
+  const [f, setF] = useState({ company: "", name: "", email: "", plan: "pro", targetRoas: "3" }); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
   const set = k => e => setF({ ...f, [k]: e.target.value });
-  const submit = e => { e.preventDefault(); if (!f.company || !f.name || !/.+@.+\..+/.test(f.email)) { setErr("Preencha empresa, nome e um e-mail válido."); return; }
+  const submit = async e => {
+    e.preventDefault(); if (busy) return;
+    if (!f.company.trim() || !f.name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) { setErr("Preencha empresa, nome e um e-mail válido."); return; }
     const tr = parseFloat(String(f.targetRoas).replace(",", ".")); if (!(tr > 0 && tr < 100)) { setErr("Informe a meta de ROAS, por exemplo 3."); return; }
-    const p = tempPass(); onCreate({ id: "cl" + Date.now(), ...f, email: f.email.trim().toLowerCase(), targetRoas: Math.round(tr * 100) / 100, conn: {}, password: p, newPass: p, modules: [...PLANS[f.plan].modules], status: "convite", since: new Date().toISOString().slice(0, 10), lastAccess: "nunca", accounts: 0 }); };
+    setBusy(true); setErr("");
+    try { await onCreate({ company: f.company.trim(), name: f.name.trim(), email: f.email.trim().toLowerCase(), plan: f.plan, targetRoas: Math.round(tr * 100) / 100, modules: [...PLANS[f.plan].modules] }); }
+    catch (e2) { setErr(e2.message); setBusy(false); }
+  };
   return html`<${Fragment}><div className="drawer-bg" onClick=${onClose}></div>
     <aside className="drawer" role="dialog" aria-label="Novo cliente"><form onSubmit=${submit} style=${{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div className="drawer-head"><div><div className="eyebrow">Novo cliente</div><h2 style=${{ fontSize: 20, fontWeight: 700 }}>Liberar acesso</h2><div className="card-sub">Uma senha temporária é gerada ao salvar.</div></div><button type="button" className="btn btn-ghost btn-sm" onClick=${onClose} aria-label="Fechar"><${Icon} n="x" /></button></div>
+      <div className="drawer-head"><div><div className="eyebrow">Novo cliente</div><h2 style=${{ fontSize: 20, fontWeight: 700 }}>Liberar acesso</h2><div className="card-sub">${server ? "A pessoa recebe um convite por e-mail para criar a própria senha." : "Uma senha temporária é gerada ao salvar."}</div></div><button type="button" className="btn btn-ghost btn-sm" onClick=${onClose} aria-label="Fechar"><${Icon} n="x" /></button></div>
       <div className="drawer-body">
         <div className="field"><label htmlFor="nc-co">Empresa</label><input id="nc-co" className="input" value=${f.company} onInput=${set("company")} placeholder="Ex.: Ótica Lumière" /></div>
         <div className="field"><label htmlFor="nc-n">Gestor de marketing</label><input id="nc-n" className="input" value=${f.name} onInput=${set("name")} placeholder="Nome completo" /></div>
-        <div className="field"><label htmlFor="nc-e">E-mail de login</label><input id="nc-e" type="email" className="input" value=${f.email} onInput=${set("email")} placeholder="nome@empresa.com.br" /></div>
+        <div className="field"><label htmlFor="nc-e">E-mail de login</label><input id="nc-e" type="email" className="input" value=${f.email} onInput=${set("email")} placeholder="nome@empresa.com.br" />${server ? html`<span className="card-sub">O convite vai para este e-mail.</span>` : null}</div>
         <div className="field"><label htmlFor="nc-roas">Meta de ROAS</label><input id="nc-roas" className="input num" inputMode="decimal" style=${{ maxWidth: 140 }} value=${f.targetRoas} onInput=${set("targetRoas")} /><span className="card-sub">Pode ser ajustada depois em Integrações.</span></div>
         <div className="field"><label htmlFor="nc-p">Plano</label><select id="nc-p" className="input" value=${f.plan} onChange=${set("plan")}>${Object.entries(PLANS).map(([k, p]) => html`<option key=${k} value=${k}>${p.name} · ${brl(p.price)}/mês</option>`)}</select></div>
-        ${err ? html`<div className="err">${err}</div>` : null}
+        ${err ? html`<div className="err" role="alert">${err}</div>` : null}
       </div>
-      <div className="drawer-foot"><button type="button" className="btn btn-line" onClick=${onClose}>Cancelar</button><button className="btn btn-primary" type="submit">Criar cliente</button></div>
+      <div className="drawer-foot"><button type="button" className="btn btn-line" onClick=${onClose}>Cancelar</button><button className="btn btn-primary" type="submit" disabled=${busy}>${busy ? (server ? "Enviando convite…" : "Criando…") : server ? "Criar e enviar convite" : "Criar cliente"}</button></div>
     </form></aside><//>`;
 }
 
@@ -2227,20 +2377,8 @@ function LoginStage() {
 }
 
 /* ================= login ================= */
-function Login({ clients, onLogin }) {
-  const [email, setEmail] = useState(""); const [pass, setPass] = useState(""); const [err, setErr] = useState(""); const [showPass, setShowPass] = useState(false);
-  const submit = async e => {
-    e.preventDefault(); setErr("");
-    const em = email.trim().toLowerCase();
-    if (em === ADMIN.email) { let ok = false; try { ok = (await sha256(pass)) === ADMIN.passHash; } catch (x) {} if (ok) return onLogin({ role: "admin" }); return setErr("E-mail ou senha incorretos. Confira os dados e tente de novo."); }
-    const c = clients.find(x => x.email.toLowerCase() === em);
-    if (!c || c.password !== pass) return setErr("E-mail ou senha incorretos. Confira os dados e tente de novo.");
-    if (c.status === "suspenso") return setErr("Seu acesso está suspenso. Fale com comercial@readyai.com para reativar.");
-    onLogin({ role: "client", clientId: c.id });
-  };
-  const fill = (e, p) => { setEmail(e); setPass(p); setErr(""); };
-  return html`<div className="login">
-    <section className="login-side">
+function LoginSide() {
+  return html`<section className="login-side">
       <div className="login-inner">
       <div className="brand" style=${{ padding: 0 }}><${Logo} s=${34} /><span style=${{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", fontSize: 17 }}><${Wordmark} /><span style=${{ color: "var(--line-2)" }}>|</span><span style=${{ fontWeight: 500, color: "var(--muted-2)" }}>Assistente de Marketing</span></span></div>
       <div><h1>Seu copilot de marketing para <em>todas as campanhas</em>.</h1>
@@ -2249,35 +2387,176 @@ function Login({ clients, onLogin }) {
       <${LoginStage} />
       <div className="trust"><span><${Icon} n="shield" s=${14} />Mudanças só com sua confirmação</span><span><${Icon} n="lock" s=${14} />Acesso por senha</span><span><${Icon} n="clock" s=${14} />Insights diários</span></div>
       </div>
-    </section>
+    </section>`;
+}
+// auth(email, senha) faz o login (no servidor ou neste navegador) e lança um erro com a mensagem para a pessoa
+function Login({ auth, showDemo, notice }) {
+  const [email, setEmail] = useState(""); const [pass, setPass] = useState(""); const [err, setErr] = useState(""); const [showPass, setShowPass] = useState(false); const [busy, setBusy] = useState(false);
+  const submit = async e => {
+    e.preventDefault(); if (busy) return; setErr(""); setBusy(true);
+    try { await auth(email.trim().toLowerCase(), pass); } catch (x) { setErr(x.message); setBusy(false); }
+  };
+  const fill = (e, p) => { setEmail(e); setPass(p); setErr(""); };
+  return html`<div className="login">
+    <${LoginSide} />
     <section className="login-main" style=${{ position: "relative" }}><span style=${{ position: "absolute", top: 16, right: "max(16px, env(safe-area-inset-right, 0px))" }}><${ThemeToggle} withLabel /></span><form className="login-box" onSubmit=${submit}>
-      <div><h2>Entrar</h2><p style=${{ color: "var(--muted)", marginTop: 4 }}>Use o e-mail e a senha enviados pelo seu gestor de conta.</p></div>
+      <div><h2>Entrar</h2><p style=${{ color: "var(--muted)", marginTop: 4 }}>${showDemo ? "Use o e-mail e a senha enviados pelo seu gestor de conta." : "Use o e-mail do convite e a senha que você criou."}</p></div>
+      ${notice ? html`<div className="notice info" style=${{ padding: "10px 12px" }}><${Icon} n="check" s=${15} /><span>${notice}</span></div>` : null}
       <div className="field"><label htmlFor="lg-e">E-mail</label><input id="lg-e" className="input" type="email" autoComplete="username" value=${email} onInput=${e => setEmail(e.target.value)} placeholder="voce@empresa.com.br" /></div>
       <div className="field"><label htmlFor="lg-p">Senha</label><div className="pass-wrap"><input id="lg-p" className="input" type=${showPass ? "text" : "password"} autoComplete="current-password" value=${pass} onInput=${e => setPass(e.target.value)} placeholder="••••••••" />
         <button type="button" className="pass-eye" onClick=${() => setShowPass(v => !v)} aria-label=${showPass ? "Ocultar senha" : "Mostrar senha"} aria-pressed=${showPass} title=${showPass ? "Ocultar senha" : "Mostrar senha"}><${Icon} n=${showPass ? "eyeOff" : "eye"} s=${17} /></button></div></div>
       ${err ? html`<div className="err" role="alert">${err}</div>` : null}
-      <button className="btn btn-primary" style=${{ height: 42 }} type="submit">Entrar</button>
-      <div className="demo-creds"><div className="eyebrow">Acessos da demonstração</div>
+      <button className="btn btn-primary" style=${{ height: 42 }} type="submit" disabled=${busy}>${busy ? "Entrando…" : "Entrar"}</button>
+      ${showDemo ? html`<div className="demo-creds"><div className="eyebrow">Acessos da demonstração</div>
         ${[["camila@lojaaurora.com.br", "demo123", "Loja Aurora", "Plano Pro"], ["rafael@nortex.com.br", "demo123", "Grupo Nortex", "Plano Scale, com todos os módulos"], ["marina@studiovitta.com.br", "demo123", "Studio Vitta", "Plano Starter, com módulos bloqueados"]].map(([e, p, l, d]) => html`<button key=${e} type="button" className="cred" onClick=${() => fill(e, p)}><span><b style=${{ fontSize: 13 }}>${l}</b><small>${d}</small></span><span className="mono" style=${{ color: "var(--muted)" }}>${p}</span></button>`)}
-      </div>
+      </div>` : null}
     </form></section>
+  </div>`;
+}
+
+/* ================= aceite do convite (link do e-mail) ================= */
+function InviteAccept({ token, onAccepted, onLeave }) {
+  const [info, setInfo] = useState(null); const [err, setErr] = useState(null);
+  const [p1, setP1] = useState(""); const [p2, setP2] = useState(""); const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false); const [ferr, setFerr] = useState("");
+  useEffect(() => {
+    if (SERVER.mode !== "server") { setErr("Este link de convite precisa do servidor da ReadyAI. Abra-o pelo endereço publicado do app."); return; }
+    srv("/api/auth", { action: "invite_info", token }).then(setInfo).catch(e => setErr(e.message));
+  }, []);
+  const submit = async e => {
+    e.preventDefault(); if (busy) return; setFerr("");
+    if (p1.length < 8) return setFerr("A senha precisa ter pelo menos 8 caracteres.");
+    if (p1 !== p2) return setFerr("As duas senhas não são iguais.");
+    setBusy(true);
+    try { const j = await srv("/api/auth", { action: "accept", token, password: p1 }); onAccepted(j); }
+    catch (x) { setFerr(x.message); setBusy(false); }
+  };
+  const first = info ? String(info.name || "").split(" ")[0] : "";
+  return html`<div className="login">
+    <${LoginSide} />
+    <section className="login-main" style=${{ position: "relative" }}><span style=${{ position: "absolute", top: 16, right: "max(16px, env(safe-area-inset-right, 0px))" }}><${ThemeToggle} withLabel /></span>
+      ${err ? html`<div className="login-box"><div><div className="eyebrow">Convite</div><h2>Convite indisponível</h2></div><div className="err" role="alert">${err}</div><button className="btn btn-primary" style=${{ height: 42 }} onClick=${onLeave}>Ir para o login</button></div>`
+      : !info ? html`<div className="login-box"><div style=${{ display: "flex", alignItems: "center", gap: 10, color: "var(--muted)" }}><span className="spin" aria-hidden="true"></span>Abrindo seu convite…</div></div>`
+      : html`<form className="login-box" onSubmit=${submit}>
+        <div><div className="eyebrow">Convite · ${info.company}</div><h2>Crie sua senha</h2><p style=${{ color: "var(--muted)", marginTop: 4 }}>${first ? first + ", você" : "Você"} vai acessar a ReadyAI como <b style=${{ color: "var(--ink)" }}>${info.company}</b>, no plano ${info.plan}.</p></div>
+        <div className="field"><label htmlFor="iv-e">E-mail de login</label><input id="iv-e" className="input" type="email" autoComplete="username" value=${info.email} readOnly /></div>
+        <div className="field"><label htmlFor="iv-p1">Nova senha</label><div className="pass-wrap"><input id="iv-p1" className="input" type=${show ? "text" : "password"} autoComplete="new-password" value=${p1} onInput=${e => setP1(e.target.value)} placeholder="Pelo menos 8 caracteres" />
+          <button type="button" className="pass-eye" onClick=${() => setShow(v => !v)} aria-label=${show ? "Ocultar senha" : "Mostrar senha"} aria-pressed=${show}><${Icon} n=${show ? "eyeOff" : "eye"} s=${17} /></button></div></div>
+        <div className="field"><label htmlFor="iv-p2">Confirme a senha</label><input id="iv-p2" className="input" type=${show ? "text" : "password"} autoComplete="new-password" value=${p2} onInput=${e => setP2(e.target.value)} /></div>
+        ${ferr ? html`<div className="err" role="alert">${ferr}</div>` : null}
+        <button className="btn btn-primary" style=${{ height: 42 }} type="submit" disabled=${busy}>${busy ? "Criando acesso…" : "Aceitar convite e entrar"}</button>
+        <p className="card-sub">Depois de entrar, conecte o Meta Ads e o Google Ads em Integrações para ver suas campanhas.</p>
+      </form>`}
+    </section>
   </div>`;
 }
 
 /* ================= raiz ================= */
 const KEY = "readyai_demo_v3";
 function App() {
+  const [ready, setReady] = useState(false);
+  const [invite, setInvite] = useState(() => { try { return new URLSearchParams(location.search).get("convite"); } catch (e) { return null; } });
+  const [accepted, setAccepted] = useState(null);
+  useEffect(() => {
+    srv("/api/auth", { action: "status" })
+      .then(j => { SERVER = { mode: j.db ? "server" : "local", db: !!j.db, email: !!j.email }; })
+      .catch(() => { SERVER = { mode: "local", db: false, email: false }; })
+      .finally(() => setReady(true));
+  }, []);
+  const clearInvite = () => { try { history.replaceState(null, "", location.pathname); } catch (e) {} setInvite(null); };
+  if (!ready) return html`<div className="boot">Carregando ReadyAI…</div>`;
+  if (invite) return html`<${InviteAccept} token=${invite} onLeave=${clearInvite} onAccepted=${j => { store.set(SESSION_KEY, { token: j.token, role: "client", clientId: j.client.id }); setAccepted(j.client); clearInvite(); }} />`;
+  return SERVER.mode === "server" ? html`<${ServerApp} welcome=${accepted} />` : html`<${LocalApp} />`;
+}
+
+// ---------- modo com banco: tudo passa pelo servidor ----------
+function ServerApp({ welcome }) {
+  const [sess, setSessS] = useState(() => store.get(SESSION_KEY, null));
+  const setSess = v => { setSessS(v); if (v) store.set(SESSION_KEY, v); else { try { localStorage.removeItem(SESSION_KEY); } catch (e) {} } };
+  const [clients, setClients] = useState(welcome ? [welcome] : []);
+  const [admin, setAdmin] = useState(null);
+  const [phase, setPhase] = useState(sess && !welcome ? "loading" : "ready");
+  const [notice, setNotice] = useState(null);
+  const tok = () => (store.get(SESSION_KEY, null) || {}).token;
+  const call = (path, body) => srv(path, body, tok()).catch(e => { if (e.code === "no_session" || e.status === 401 && path === "/api/auth") { setSess(null); setNotice(e.message); } throw e; });
+  const loadList = async () => { const j = await call("/api/clients", { action: "list" }); setClients(j.clients); return j.clients; };
+  useEffect(() => {
+    if (!sess || welcome) return;
+    call("/api/auth", { action: "me" }).then(async j => {
+      if (j.role === "admin") { setAdmin(j.admin); await loadList(); } else setClients([j.client]);
+      setPhase("ready");
+    }).catch(e => { setSess(null); setNotice(e.code === "no_session" ? e.message : null); setPhase("ready"); });
+  }, []);
+  // "abrir direto em Integrações" vale só na entrada
+  useEffect(() => { if (sess && sess.to) setSess({ ...sess, to: null }); }, [sess && sess.to]);
+  const auth = async (email, password) => {
+    const j = await srv("/api/auth", { action: "login", email, password });
+    setSess({ token: j.token, role: j.role, clientId: j.client ? j.client.id : null }); setNotice(null);
+    if (j.role === "admin") { setAdmin(j.admin); setPhase("loading"); try { await loadList(); } finally { setPhase("ready"); } }
+    else setClients([j.client]);
+  };
+  const replace = c => setClients(cs => cs.some(x => x.id === c.id) ? cs.map(x => x.id === c.id ? c : x) : [c, ...cs]);
+  const legacy = useMemo(() => { const s = store.get(KEY, null); return s && Array.isArray(s.clients) ? s.clients : []; }, []);
+  const api = {
+    server: true, email: SERVER.email, refresh: loadList, legacy,
+    create: async f => { const j = await call("/api/clients", { action: "create", client: f }); replace(j.client); return j; },
+    update: async (id, patch) => {
+      setClients(cs => cs.map(c => c.id === id ? { ...c, ...patch } : c));
+      try { const j = await call("/api/clients", { action: "update", id, patch }); replace(j.client); }
+      catch (e) { loadList().catch(() => {}); throw e; }
+    },
+    remove: async id => { await call("/api/clients", { action: "delete", id }); setClients(cs => cs.filter(c => c.id !== id)); },
+    resend: async id => { const j = await call("/api/clients", { action: "resend", id }); replace(j.client); return j; },
+    resetPassword: async id => { const j = await call("/api/clients", { action: "reset_password", id }); replace(j.client); return j.password; },
+    importLegacy: async list => { const j = await call("/api/clients", { action: "import", clients: list }); setClients(j.clients); return j; },
+  };
+  const logout = () => { setSess(null); setClients([]); setAdmin(null); };
+  if (phase === "loading") return html`<div className="boot">Carregando ReadyAI…</div>`;
+  if (!sess) return html`<${Login} auth=${auth} showDemo=${false} notice=${notice} />`;
+  const asGone = sess.as && !clients.some(c => c.id === sess.as); // cliente excluído enquanto estava aberto
+  if (sess.role === "admin" && (!sess.as || asGone)) return html`<${AdminConsole} clients=${clients} api=${api} adminName=${admin ? admin.name : "Gestora"} onLogout=${logout} onImpersonate=${(id, to) => setSess({ ...sess, as: id, to })} />`;
+  const cid = sess.as || sess.clientId; const client = clients.find(c => c.id === cid);
+  if (!client) return html`<${Login} auth=${auth} showDemo=${false} notice=${notice} />`;
+  const onUpdate = patch => {
+    setClients(cs => cs.map(c => c.id === client.id ? { ...c, ...patch } : c));
+    const p = sess.role === "admin" ? call("/api/clients", { action: "update", id: client.id, patch }) : call("/api/clients", { action: "self_update", patch });
+    p.then(j => replace(j.client)).catch(() => {});
+  };
+  return html`<${ClientApp} key=${client.id + client.modules.join()} client=${client} onLogout=${logout} impersonating=${!!sess.as} onBackToConsole=${() => setSess({ ...sess, as: null, to: null })} onUpdate=${onUpdate} startScreen=${sess.to} />`;
+}
+
+// ---------- modo local (sem banco): tudo neste navegador, como na demonstração ----------
+function LocalApp() {
   const saved = store.get(KEY, null);
   const [clients, setClients] = useState(saved && saved.clients ? saved.clients : SEED_CLIENTS);
   const [session, setSession] = useState(saved && saved.session ? saved.session : null);
   useEffect(() => store.set(KEY, { clients, session }), [clients, session]);
-  // "abrir direto em Integrações" vale só na entrada; depois de usado, sai da sessão
   useEffect(() => { if (session && session.to) setSession(x => { const n = { ...x }; delete n.to; return n; }); }, [session && session.to]);
-  if (!session) return html`<${Login} clients=${clients} onLogin=${s => { setSession(s); if (s.role === "client") setClients(cs => cs.map(c => c.id === s.clientId ? { ...c, lastAccess: "agora", status: c.status === "convite" ? "ativo" : c.status } : c)); }} />`;
+  const auth = async (email, pass) => {
+    if (email === ADMIN.email) { let ok = false; try { ok = (await sha256(pass)) === ADMIN.passHash; } catch (x) {} if (ok) return setSession({ role: "admin" }); throw new Error("E-mail ou senha incorretos. Confira os dados e tente de novo."); }
+    const c = clients.find(x => x.email.toLowerCase() === email);
+    if (!c || c.password !== pass) throw new Error("E-mail ou senha incorretos. Confira os dados e tente de novo.");
+    if (c.status === "suspenso") throw new Error("Seu acesso está suspenso. Fale com comercial@readyai.com para reativar.");
+    setSession({ role: "client", clientId: c.id });
+    setClients(cs => cs.map(x => x.id === c.id ? { ...x, lastAccess: "agora", status: x.status === "convite" ? "ativo" : x.status } : x));
+  };
+  const api = {
+    server: false, email: false,
+    create: async f => {
+      if (clients.some(c => c.email.toLowerCase() === f.email)) throw new Error("Já existe um cliente com esse e-mail.");
+      const p = tempPass();
+      const c = { id: "cl" + Date.now(), ...f, conn: {}, password: p, newPass: p, status: "convite", since: new Date().toISOString().slice(0, 10), lastAccess: "nunca", accounts: 0 };
+      setClients(cs => [c, ...cs]); return { client: c };
+    },
+    update: async (id, patch) => setClients(cs => cs.map(c => c.id === id ? { ...c, ...patch } : c)),
+    remove: async id => setClients(cs => cs.filter(c => c.id !== id)),
+    resetPassword: async id => { const p = tempPass(); setClients(cs => cs.map(c => c.id === id ? { ...c, password: p, newPass: p } : c)); return p; },
+  };
+  if (!session) return html`<${Login} auth=${auth} showDemo=${true} />`;
   const logout = () => setSession(null);
-  if (session.role === "admin" && !session.as) return html`<${AdminConsole} clients=${clients} setClients=${setClients} onLogout=${logout} onImpersonate=${(id, to) => setSession({ ...session, as: id, to })} />`;
+  if (session.role === "admin" && !session.as) return html`<${AdminConsole} clients=${clients} api=${api} adminName=${ADMIN.name} onLogout=${logout} onImpersonate=${(id, to) => setSession({ ...session, as: id, to })} />`;
   const cid = session.as || session.clientId; const client = clients.find(c => c.id === cid);
-  if (!client) { return html`<${Login} clients=${clients} onLogin=${setSession} />`; }
+  if (!client) return html`<${Login} auth=${auth} showDemo=${true} />`;
   const onUpdate = patch => setClients(cs => cs.map(c => c.id === client.id ? { ...c, ...patch } : c));
   return html`<${ClientApp} key=${client.id + client.modules.join()} client=${client} onLogout=${logout} impersonating=${!!session.as} onBackToConsole=${() => setSession({ role: "admin" })} onUpdate=${onUpdate} startScreen=${session.to} />`;
 }

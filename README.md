@@ -12,11 +12,50 @@ Painel de marketing multicanal com um copilot conversacional.
 public/index.html   app completo (React via CDN, sem build)
 api/chat.js         conversa do copilot -> Anthropic, OpenAI ou Groq
 api/meta.js         Meta Ads -> Graph API v25 (contas, campanhas, 30 dias, semana, período anterior)
+api/metamcp.js      Meta Ads -> MCP oficial da Meta (mcp.facebook.com/ads), mesmo formato do meta.js
 api/google.js       Google Ads -> MCP do Google Ads (autorização, contas, campanhas)
+api/_mcp.js         cliente MCP usado pelas rotas (não vira rota)
+api/auth.js         login, sessão e aceite do convite
+api/clients.js      cadastro de clientes: criar (com convite por e-mail), editar, excluir, reenviar convite
+api/_store.js       banco (Upstash Redis), senhas, sessões e envio de e-mail (Resend)
 vercel.json         config da Vercel (pasta public + timeout das funções)
 ```
 
 Não há dependências para instalar.
+
+## Banco e e-mail (convites)
+
+Com o banco configurado, os clientes ficam no servidor. Cada pessoa entra do próprio computador, e o cadastro de um novo cliente envia um convite por e-mail.
+
+**Como funciona o convite**
+1. A gestora cria o cliente no console. O app envia um e-mail com o botão **Aceitar convite e criar senha**. O link vale 7 dias.
+2. A pessoa abre o link, cria a senha e já entra na plataforma.
+3. O console recebe o aceite: a lista se atualiza a cada 20 segundos e quando você volta para a aba. O cliente passa de "Convite enviado" para "Ativo", aparece "Aceito hoje, 10:01" e um aviso na tela. Com `NOTIFY_EMAIL` configurado, a gestora também recebe um e-mail.
+4. Na ficha do cliente dá para **reenviar o convite** (gera um link novo e invalida o anterior), copiar o link quando o e-mail não sai e gerar uma senha temporária.
+5. **Excluir cliente:** pelo ícone de lixeira na lista ou no fim da ficha, sempre com confirmação. Remove o acesso, as contas conectadas e o convite pendente.
+
+**Configurar na Vercel**
+1. **Banco:** em *Storage* (ou *Marketplace*), adicione **Upstash for Redis** e conecte ao projeto. Ele cria `KV_REST_API_URL` e `KV_REST_API_TOKEN`.
+2. **E-mail:** crie uma conta no [Resend](https://resend.com) e gere uma API key. Na Vercel, crie `RESEND_API_KEY`.
+3. **Remetente:**
+   - Sem domínio verificado, o Resend usa `onboarding@resend.dev`, que **só entrega para o e-mail da sua própria conta do Resend**. Serve para testar com você mesma.
+   - Para enviar a clientes, verifique um domínio no Resend (registros DNS) e crie `RESEND_FROM`, por exemplo `ReadyAI <convites@seudominio.com.br>`.
+4. Faça um **Redeploy** depois de criar as variáveis.
+
+| Variável | Obrigatória | Para quê |
+|---|---|---|
+| `KV_REST_API_URL`, `KV_REST_API_TOKEN` | Sim | Banco (criadas pela integração do Upstash) |
+| `RESEND_API_KEY` | Para enviar e-mail | Envio dos convites |
+| `RESEND_FROM` | Para enviar a clientes | Remetente com domínio verificado |
+| `SESSION_SECRET` | Recomendada | Assina as sessões (texto longo aleatório) |
+| `ADMIN_PASSWORD` | Recomendada | Troca a senha da gestora (`ADMIN_EMAIL` troca o e-mail) |
+| `APP_URL` | Opcional | Endereço usado no link do convite (padrão: o domínio da Vercel) |
+| `NOTIFY_EMAIL` | Opcional | Recebe um e-mail quando um cliente aceita o convite |
+| `RESEND_REPLY_TO` | Opcional | Endereço de resposta dos convites |
+
+**Clientes antigos:** os cadastros feitos antes do banco ficam no navegador de quem cadastrou. Ao entrar no console com o banco ativo, aparece **Importar para o banco**, que leva senhas e contas conectadas sem enviar e-mail.
+
+Sem banco, o app continua funcionando no modo local, com o aviso "Modo local" no console.
 
 ## Passo a passo: novo cliente com dados reais
 
@@ -28,6 +67,18 @@ Não há dependências para instalar.
    - Depois, volte e clique em *Já autorizei, buscar contas*.
    - Escolha a conta (não a gerenciadora/MCC) e clique em *Conectar conta*.
 5. O topo passa a mostrar **Dados reais** com as contas conectadas. Painel, campanhas, insights e copilot usam esses números.
+
+### Meta: Marketing API ou MCP da Meta
+
+Na conexão da Meta há duas formas, com o mesmo token:
+
+- **Marketing API:** o servidor lê a Graph API v25. O token precisa de `ads_read`.
+- **MCP da Meta:** o servidor chama o MCP oficial em `https://mcp.facebook.com/ads`, com o token no cabeçalho `Authorization: Bearer`, como a Meta documenta para integrações programáticas.
+  - O token precisa de `ads_mcp_management` e `ads_read`.
+  - Pelo MCP, a receita é calculada como investimento × ROAS de compras.
+  - Campanhas de conversa ou lead usam o resultado que o MCP informa.
+
+O painel, a carteira da agência e o copilot funcionam igual nos dois caminhos. Se o MCP recusar um token de usuário do sistema, use a Marketing API.
 
 ### Token da Meta
 
@@ -89,7 +140,7 @@ Campanhas de leads, conversas ou alcance na Meta não entram no ROAS. Elas são 
 
 Cada `git push` publica de novo. Para testar localmente: `npm i -g vercel` e depois `vercel dev`.
 
-## Acessos de demonstração
+## Acessos de demonstração (modo local)
 
 | Perfil | E-mail | Senha |
 |---|---|---|
@@ -98,10 +149,11 @@ Cada `git push` publica de novo. Para testar localmente: `npm i -g vercel` e dep
 | Cliente plano Starter | marina@studiovitta.com.br | demo123 |
 | Agência (plano Scale) | rafael@nortex.com.br | demo123 |
 
+Com o banco ativo, só a gestora entra de cara (com a mesma senha, ou a de `ADMIN_PASSWORD`). Os clientes de demonstração entram depois de importados.
+
 ## Limites desta versão
 
-- **Tudo fica no navegador.** Clientes, senhas, conexões e tokens ficam no localStorage de quem configurou.
-  - Se você conecta as contas de um cliente no seu computador, o cliente não vê essas conexões ao entrar no computador dele.
-  - Para produção, o próximo passo é um banco (por exemplo Supabase ou Upstash) e login de verdade.
-- **Login de demonstração.** Os usuários e as senhas estão no código, e qualquer pessoa com o link pode ver.
-- **Tokens no navegador.** O token da Meta e as chaves de IA ficam em texto no localStorage. Use em navegador de confiança.
+- **Sem banco, tudo fica no navegador.** Sem o Upstash configurado, o app volta ao modo local: clientes, senhas e conexões ficam no localStorage de quem configurou, e não há convite por e-mail.
+- **Admin no código.** O acesso da gestora tem senha padrão no código (só o hash). Troque com `ADMIN_PASSWORD` na Vercel.
+- **Tokens no banco em texto.** Com banco, o token da Meta e o identificador do Google ficam no cadastro do cliente, no Upstash, sem criptografia. As chaves de IA continuam só no navegador de cada pessoa.
+- **Pausar e mudar orçamento continuam simulação.**
