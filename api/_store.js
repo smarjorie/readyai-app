@@ -30,11 +30,14 @@ export async function pipe(cmds) {
   return j.map(x => { if (x.error) throw new HttpError(503, "Erro no banco: " + x.error, "db_error"); return x.result; });
 }
 
+// Prefixo próprio do app: o servidor MCP da ReadyAI usa "readyai:" no mesmo tipo de banco,
+// então os dois projetos podem dividir o mesmo Upstash sem misturar os cadastros.
+const P = process.env.KV_PREFIX || "readyai-app:";
 const K = {
-  ids: "readyai:clients",
-  client: id => "readyai:client:" + id,
-  email: e => "readyai:email:" + e.toLowerCase(),
-  invite: h => "readyai:invite:" + h,
+  ids: P + "clients",
+  client: id => P + "client:" + id,
+  email: e => P + "email:" + e.toLowerCase(),
+  invite: h => P + "invite:" + h,
 };
 
 export async function getClient(id) { const v = await cmd("GET", K.client(id)); return v ? JSON.parse(v) : null; }
