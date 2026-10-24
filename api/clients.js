@@ -43,7 +43,7 @@ function cleanAi(ai) {
   if (!["anthropic", "openai", "groq"].includes(ai.provider)) return null;
   return { provider: ai.provider, key: txt(ai.key, 300), model: txt(ai.model, 100) };
 }
-function cleanRoas(v) { const n = parseFloat(String(v).replace(",", ".")); return n > 0 && n < 100 ? Math.round(n * 100) / 100 : null; }
+function cleanRoas(v) { if (v === null || v === undefined || String(v).trim() === "") return null; const n = parseFloat(String(v).replace(",", ".")); return n > 0 && n < 100 ? Math.round(n * 100) / 100 : null; }
 
 // campos que a gestora pode alterar
 function applyAdminPatch(c, p) {
@@ -53,7 +53,7 @@ function applyAdminPatch(c, p) {
   if (Array.isArray(p.modules) && p.modules.length) c.modules = [...new Set(p.modules.filter(m => MODULES.includes(m)))];
   else if (p.plan !== undefined && PLANS[p.plan] && !c.modules.length) c.modules = [...PLAN_MODULES[p.plan]];
   if (p.status !== undefined && STATUS.includes(p.status)) c.status = p.status;
-  if (p.targetRoas !== undefined) { const r = cleanRoas(p.targetRoas); if (r) c.targetRoas = r; }
+  if (p.targetRoas !== undefined) c.targetRoas = cleanRoas(p.targetRoas); // meta é opcional: vazio ou null apaga
   if (p.conn !== undefined) c.conn = cleanConn(p.conn);
   if (p.ai !== undefined) c.ai = cleanAi(p.ai);
   return c;
@@ -88,7 +88,7 @@ export default async function handler(req, res) {
       const p = body.patch || {};
       if (p.conn !== undefined) c.conn = cleanConn(p.conn);
       if (p.ai !== undefined) c.ai = cleanAi(p.ai);
-      if (p.targetRoas !== undefined) { const r = cleanRoas(p.targetRoas); if (r) c.targetRoas = r; }
+      if (p.targetRoas !== undefined) c.targetRoas = cleanRoas(p.targetRoas); // meta é opcional: vazio ou null apaga
       await saveClient(c);
       return send(res, 200, { client: publicClient(c) });
     }
@@ -106,7 +106,7 @@ export default async function handler(req, res) {
       const now = new Date().toISOString();
       const c = applyAdminPatch({
         id: "cl" + crypto.randomBytes(6).toString("hex"), company: "", name: "", email, plan, modules: [], status: "convite",
-        since: now.slice(0, 10), createdAt: now, lastAccess: null, targetRoas: 3, conn: {}, invite: null,
+        since: now.slice(0, 10), createdAt: now, lastAccess: null, targetRoas: null, conn: {}, invite: null,
       }, { company: f.company, name: f.name, plan, modules: f.modules, targetRoas: f.targetRoas });
       await saveClient(c);
       const invite = await inviteAndEmail(req, c);
@@ -151,7 +151,7 @@ export default async function handler(req, res) {
         const now = new Date().toISOString();
         const c = applyAdminPatch({
           id: "cl" + crypto.randomBytes(6).toString("hex"), company: "", name: "", email, plan: PLANS[f.plan] ? f.plan : "pro", modules: [],
-          status: "convite", since: /^\d{4}-\d{2}-\d{2}$/.test(f.since) ? f.since : now.slice(0, 10), createdAt: now, lastAccess: null, targetRoas: 3, conn: {}, invite: null,
+          status: "convite", since: /^\d{4}-\d{2}-\d{2}$/.test(f.since) ? f.since : now.slice(0, 10), createdAt: now, lastAccess: null, targetRoas: null, conn: {}, invite: null,
         }, { company: f.company, name: f.name || f.company, plan: f.plan, modules: f.modules, status: f.status, targetRoas: f.targetRoas, conn: f.conn });
         if (f.password) c.passHash = hashPassword(String(f.password));
         if (c.status === "ativo" && !c.passHash) c.status = "convite";
