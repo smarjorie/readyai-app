@@ -173,6 +173,7 @@ async function data(token, accountId) {
 
 // Quebras da conta nos últimos 30 dias: hora do dia, faixa etária, dispositivo e região.
 // "kind" diz qual resultado contar (compras, leads ou conversas), para todas as quebras usarem o mesmo.
+const REGION_PT = { "Federal District": "Distrito Federal", "Distrito Federal (state)": "Distrito Federal" };
 const KIND_TYPES = { compras: PURCHASE_TYPES, leads: LEAD_TYPES, conversas: CHAT_TYPES };
 const DEVICE = { iphone: "Celular", android_smartphone: "Celular", ipod: "Celular", mobile_web: "Celular", ipad: "Tablet", android_tablet: "Tablet", desktop: "Desktop" };
 async function breakdowns(token, accountId, kind) {
@@ -219,7 +220,7 @@ async function breakdowns(token, accountId, kind) {
   if (ages.rows) ages.rows.sort((a, b) => a.label.localeCompare(b.label));
   const devices = group(device, r => DEVICE[r.impression_device] || "Outros");
   if (devices.rows) devices.rows.sort((a, b) => b.impr - a.impr);
-  const regions = group(region, r => r.region && r.region !== "Unknown" ? r.region.replace(/^State of /, "").replace(/ \(state\)$/, "") : null);
+  const regions = group(region, r => r.region && r.region !== "Unknown" ? (REGION_PT[r.region] || r.region.replace(/^State of /, "").replace(/ \(state\)$/, "")) : null);
   if (regions.rows) regions.rows.sort((a, b) => (b.results - a.results) || (b.spend - a.spend));
   return { kind: types ? kind : "resultados", hours, heat, activeDays, ages, devices, regions, period: { since: ymd(daysAgo(30)), until: ymd(daysAgo(1)) } };
 }

@@ -1380,6 +1380,19 @@ function TimeOfDay({ heat, activeDays, kind }) {
     </div>
   </div>`;
 }
+function RegionTable({ regions, rk, rl, regTot, kind, fallback }) {
+  const [all, setAll] = useState(false);
+  if (!regions || !(regTot > 0)) return html`<div className="card card-pad"><div className="card-head"><div className="card-title">${rl} e investimento por região</div></div>${fallback}</div>`;
+  const money = v => v < 100 ? brl2(v) : brl(v);
+  const rows = all ? regions : regions.slice(0, 10);
+  const totSpend = regions.reduce((a, r) => a + r.spend, 0);
+  return html`<div className="card card-pad"><div className="card-head"><div><div className="card-title">${rl} e investimento por região</div><div className="card-sub">${regions.length} ${regions.length === 1 ? "região" : "regiões"} com veiculação · ordenadas por ${rl.toLowerCase()}</div></div></div>
+    <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Região</th><th className="r">${rl}</th><th className="r">Investimento</th><th className="r">${rk === "results" ? kindCost(kind) : "CPC"}</th><th className="r">Participação</th></tr></thead>
+    <tbody>${rows.map(r => html`<tr key=${r.label}><td style=${{ color: "var(--ink)", fontWeight: 600 }}>${r.label}</td><td className="r num">${fmtInt(r[rk])}</td><td className="r num">${money(r.spend)}</td><td className="r num">${r[rk] > 0 ? brl2(r.spend / r[rk]) : "—"}</td><td className="r num">${pct(r[rk] / regTot, 0)}</td></tr>`)}
+    ${all ? html`<tr><td style=${{ color: "var(--ink)", fontWeight: 700 }}>Total</td><td className="r num"><b>${fmtInt(regTot)}</b></td><td className="r num"><b>${money(totSpend)}</b></td><td className="r num"><b>${brl2(totSpend / regTot)}</b></td><td className="r num"><b>100%</b></td></tr>` : null}</tbody></table></div>
+    ${regions.length > 10 ? html`<div style=${{ paddingTop: 12, textAlign: "center" }}><button className="link-btn" onClick=${() => setAll(!all)}>${all ? "Mostrar só as 10 primeiras" : "Ver todas as " + regions.length + " regiões"}</button></div>` : null}
+  </div>`;
+}
 function BreakNote({ children }) { return html`<div className="card-sub" style=${{ padding: "18px 0", textAlign: "center" }}>${children}</div>`; }
 
 function Analytics({ camps, brk }) {
@@ -1422,9 +1435,7 @@ function Analytics({ camps, brk }) {
       <div className="card card-pad"><div className="card-head"><div><div className="card-title">${sells ? "ROAS por canal" : kindCost(kind) + " por canal"}</div></div></div>
         <div className="stack" style=${{ gap: 10 }}>${chPresent(camps).map(k => { const v = totals(camps.filter(c => c.ch === k)); return html`<div key=${k} style=${{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><${ChTag} ch=${k} />${sells ? html`<b className="num" style=${{ color: roasColor(v.roas) }}>${xroas(v.roas)}</b>` : html`<b className="num">${brl2(v.cpa)}</b>`}</div>`; })}</div></div>
     </div>
-    <div className="card card-pad"><div className="card-head"><div><div className="card-title">${rl} e investimento por região</div></div></div>
-      ${regions && regTot > 0 ? html`<div className="tbl-wrap"><table className="tbl"><thead><tr><th>Região</th><th className="r">${rl}</th><th className="r">Investimento</th><th className="r">Participação</th></tr></thead>
-      <tbody>${regions.slice(0, 12).map(r => html`<tr key=${r.label}><td style=${{ color: "var(--ink)", fontWeight: 600 }}>${r.label}</td><td className="r num">${fmtInt(r[rk])}</td><td className="r num">${brl(r.spend)}</td><td className="r num">${pct(r[rk] / regTot, 0)}</td></tr>`)}</tbody></table></div>` : empty(d && d.regions && d.regions.error ? "Não consegui buscar esta quebra: " + d.regions.error : null)}</div>
+    <${RegionTable} regions=${regions} rk=${rk} rl=${rl} regTot=${regTot} kind=${kind} fallback=${empty(d && d.regions && d.regions.error ? "Não consegui buscar esta quebra: " + d.regions.error : null)} />
   </div>`;
 }
 
