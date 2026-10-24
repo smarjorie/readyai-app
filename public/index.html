@@ -535,6 +535,14 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .stale-pill{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:999px;background:var(--warn-soft);color:var(--warn);font-size:12px;font-weight:600;white-space:nowrap}
 @media (max-width:900px){.tod-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:640px){.heat{grid-template-columns:30px repeat(24,minmax(0,1fr));gap:2px}.heat .hc{height:16px;border-radius:3px}.heat .hx{font-size:9.5px}}
+.thumb img.real{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.thumb.noimg{background:linear-gradient(150deg,var(--surface-2),var(--line-2));color:var(--ink)}
+.thumb.noimg::after{display:none}
+.thumb.noimg .hl{text-shadow:none}
+.mini-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.idle-list{display:flex;flex-direction:column;gap:6px;margin-top:12px;max-height:320px;overflow:auto}
+.idle-list div{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:9px;background:var(--surface-2);font-size:13px}
+.idle-list small{color:var(--muted);white-space:nowrap}
 </style>
 
 <div id="root"><div class="boot">Carregando ReadyAI…</div></div>
@@ -1466,7 +1474,21 @@ function RoasBar({ roas, target = ACTIVE.target }) {
     <i style=${{ width: Math.min((fin(roas) ? roas : 0) / max, 1) * 100 + "%", background: !has ? (roas < 1 ? "var(--bad)" : "var(--accent)") : ok ? "var(--good)" : roas < 1.5 ? "var(--bad)" : "var(--warn)" }}></i>
     ${has ? html`<u style=${{ left: (target / max * 100) + "%" }}></u>` : null}</span>`;
 }
-function Campaigns({ camps, setCamps, toast, chat }) {
+const OBJ_PT = { OUTCOME_ENGAGEMENT: "Engajamento", OUTCOME_LEADS: "Cadastros", OUTCOME_SALES: "Vendas", OUTCOME_TRAFFIC: "Tráfego", OUTCOME_AWARENESS: "Reconhecimento", OUTCOME_APP_PROMOTION: "App", MESSAGES: "Mensagens", LINK_CLICKS: "Tráfego", CONVERSIONS: "Conversões", POST_ENGAGEMENT: "Engajamento" };
+function IdleCampaigns({ idle }) {
+  const [open, setOpen] = useState(false);
+  if (!idle || !idle.length) return null;
+  return html`<div className="card card-pad">
+    <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+      <div style=${{ display: "flex", gap: 10, alignItems: "flex-start", minWidth: 0, flex: 1 }}><span className="stale-pill" style=${{ flex: "none" }}><${Icon} n="pause" s=${12} />${idle.length}</span>
+        <div><b>${idle.length === 1 ? "Mais 1 campanha está ativa" : "Mais " + idle.length + " campanhas estão ativas"} na Meta, mas não gastaram nos últimos 30 dias</b>
+        <div className="card-sub">Por isso não entram na tabela nem nos números. Costuma ser conjunto de anúncios pausado ou encerrado, anúncio reprovado ou sem orçamento.</div></div></div>
+      <button className="btn btn-sm btn-line" onClick=${() => setOpen(!open)} aria-expanded=${open}>${open ? "Esconder lista" : "Ver campanhas"}</button>
+    </div>
+    ${open ? html`<div className="idle-list">${idle.map(c => html`<div key=${c.id}><span className="cname" title=${c.name}>${c.name}</span><small>${OBJ_PT[c.objective] || c.objective || "—"} · ${c.id}</small></div>`)}</div>` : null}
+  </div>`;
+}
+function Campaigns({ camps, setCamps, toast, chat, idle }) {
   const [ch, setCh] = useState("all"); const [st, setSt] = useState("all"); const [sort, setSort] = useState("rec"); const [rf, setRf] = useState("all");
   const [pending, setPending] = useState(null);
   const withRec = camps.map(c => ({ ...c, rec: recFor(c) }));
@@ -1536,6 +1558,7 @@ function Campaigns({ camps, setCamps, toast, chat }) {
         <//>`; })}
         ${list.length === 0 ? html`<tr><td colSpan="9" style=${{ textAlign: "center", padding: 28 }}>Nenhuma campanha com esses filtros.</td></tr>` : null}
       </tbody></table></div></div>
+    ${ACTIVE.live ? html`<${IdleCampaigns} idle=${idle} />` : null}
   </div>`;
 }
 
@@ -1595,7 +1618,67 @@ function CreativeArt({ id }) {
   return html`<svg className="cre-art" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g transform="translate(60 32) scale(0.7)">${arts[id] || null}</g></svg>`;
 }
 
-function Creatives({ camps }) {
+function useMetaCreatives(meta, kind, enabled, at) {
+  const [st, setSt] = useState({ status: "idle" });
+  const key = JSON.stringify([enabled, meta && [meta.accountId, meta.token.slice(-8)], kind, at ? +at : 0]);
+  useEffect(() => {
+    if (!enabled || !meta) { setSt({ status: "idle" }); return; }
+    let dead = false; setSt({ status: "loading" });
+    apiPost("/api/meta", { action: "creatives", account_id: meta.accountId, kind }, { "x-meta-token": meta.token })
+      .then(d => { if (!dead) setSt({ status: "ready", data: d }); }, e => { if (!dead) setSt({ status: "error", error: e.message }); });
+    return () => { dead = true; };
+  }, [key]);
+  return st;
+}
+// status do criativo a partir dos dados reais
+function creStatus(k, sells) {
+  if (k.results === 0 && k.spend > 0) return ["pill-bad", "Sem resultado", "Gastou " + brl2(k.spend) + " sem nenhum resultado"];
+  if (k.freq >= 4) return ["pill-warn", "Fadiga", "Frequência de " + dec(k.freq, 1) + ": o mesmo público já viu muitas vezes"];
+  if (k.ctrTrend != null && k.ctrTrend <= -0.25) return ["pill-warn", "CTR caindo", "CTR caiu " + pct(-k.ctrTrend, 0) + " na última semana"];
+  if (sells && hasTarget() && k.spend > 0 && k.revenue / k.spend < ACTIVE.target) return ["pill-bad", "Abaixo da meta", "ROAS abaixo da meta de " + xroas(ACTIVE.target)];
+  return ["pill-good", "Saudável", "Sem sinal de fadiga"];
+}
+function LiveCreatives({ cre }) {
+  const [view, setViewS] = useState(() => store.get("readyai_cre_view", "grid"));
+  const setView = v => { setViewS(v); store.set("readyai_cre_view", v); };
+  const d = cre && cre.status === "ready" ? cre.data : null;
+  const ads = d ? d.ads : [];
+  const kind = d ? d.kind : "resultados", kl = kindLabel(kind);
+  const sells = ads.some(a => a.revenue > 0);
+  // ranking: ROAS quando vende; senão menor custo por resultado; sem resultado vai para o fim
+  const list = [...ads].sort((a, b) => sells ? (b.revenue / b.spend) - (a.revenue / a.spend) : ((a.results > 0 ? a.spend / a.results : 1e9) - (b.results > 0 ? b.spend / b.results : 1e9)) || b.spend - a.spend);
+  const main = k => sells ? ["ROAS", xroas(k.revenue / k.spend)] : [kindCost(kind), k.results > 0 ? brl2(k.spend / k.results) : "—"];
+  const third = k => k.hook != null ? ["Retenção 3s", pct(k.hook, 0)] : ["Investido", brl2(k.spend)];
+  const thumb = (k, cls) => k.thumb ? html`<img className=${cls} src=${k.thumb} alt="" loading="lazy" referrerPolicy="no-referrer" onError=${e => { e.target.style.display = "none"; }} />` : null;
+  const head = html`<${PageHead} title="Criativos" sub=${sells ? "Anúncios ranqueados por ROAS, com sinais de fadiga." : "Anúncios ranqueados pelo menor " + kindCost(kind).toLowerCase() + ", com sinais de fadiga."} right=${html`<div className="seg view-seg" role="group" aria-label="Visualização"><button className=${view === "grid" ? "on" : ""} onClick=${() => setView("grid")} aria-label="Ver em grade" aria-pressed=${view === "grid"} title="Grade"><${Icon} n="grid" s=${15} /></button><button className=${view === "list" ? "on" : ""} onClick=${() => setView("list")} aria-label="Ver em lista" aria-pressed=${view === "list"} title="Lista"><${Icon} n="list" s=${15} /></button></div>`} />`;
+  if (!cre || cre.status === "loading" || cre.status === "idle") return html`<div className="stack">${head}<div className="card card-pad"><${BreakNote}>Buscando os anúncios na Meta…<//></div></div>`;
+  if (cre.status === "error") return html`<div className="stack">${head}<div className="card card-pad"><${BreakNote}>Não consegui buscar os anúncios: ${cre.error}<//></div></div>`;
+  if (!ads.length) return html`<div className="stack">${head}<div className="card card-pad"><${BreakNote}>Nenhum anúncio da Meta teve investimento nos últimos 30 dias.<//></div></div>`;
+  return html`<div className="stack">${head}
+    ${view === "list" ? html`<div className="card cre-list">
+      <div className="cre-row cre-row-head"><span></span><span>Anúncio</span><span>Status</span><span className="r">${main(list[0])[0]}</span><span className="r">CTR</span><span className="r">${kl}</span><span className="r">Investido</span></div>
+      ${list.map((k, idx) => { const s = creStatus(k, sells); return html`<div key=${k.id} className="cre-row">
+        <span className="mini-thumb" style=${{ background: "var(--surface-2)" }}>${thumb(k)}</span>
+        <span style=${{ minWidth: 0 }}><b className="cname" style=${{ fontSize: 13.5 }} title=${k.name}>#${idx + 1} · ${k.name}</b><span style=${{ display: "flex", gap: 8, alignItems: "center", marginTop: 2, flexWrap: "wrap" }}><${ChTag} ch="meta" /><span style=${{ fontSize: 12, color: "var(--muted)" }}>${k.format} · ${k.campaign}</span></span></span>
+        <span><span className=${"pill " + s[0]} title=${s[2]}>${s[1]}</span></span>
+        <span className="r num"><b>${main(k)[1]}</b></span>
+        <span className="r num">${pct(k.clicks / k.impr, 1)}</span>
+        <span className="r num">${fmtInt(k.results)}</span>
+        <span className="r num">${brl2(k.spend)}</span>
+      </div>`; })}
+    </div>` : html`<div className="cre-grid">${list.map((k, idx) => { const s = creStatus(k, sells); return html`<article key=${k.id} className="card cre">
+      <div className=${"thumb" + (k.thumb ? "" : " noimg")}>${thumb(k, "real")}<span className="fmt">${k.format}</span>${k.text ? html`<span className="hl" style=${{ maxWidth: "20ch", fontSize: 14 }}>${k.text.length > 60 ? k.text.slice(0, 58) + "…" : k.text}</span>` : html`<span></span>`}</div>
+      <div className="cre-body">
+        <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><b style=${{ fontSize: 13.5, lineHeight: 1.3, overflowWrap: "anywhere" }}>${k.name}</b><span className="mono" style=${{ color: "var(--muted)" }}>#${idx + 1}</span></div>
+        <div className="card-sub" style=${{ marginTop: -4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title=${k.campaign}>${k.campaign}</div>
+        <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, flexWrap: "wrap" }}><span style=${{ fontSize: 12.5, color: "var(--muted-2)" }}>${fmtInt(k.results)} ${kl.toLowerCase()}</span><span className=${"pill " + s[0]} title=${s[2]}>${s[1]}</span></div>
+        <div className="cre-stats"><div><small>${main(k)[0]}</small><b className="num">${main(k)[1]}</b></div><div><small>CTR</small><b className="num">${pct(k.clicks / k.impr, 1)}</b></div><div><small>${third(k)[0]}</small><b className="num">${third(k)[1]}</b></div></div>
+      </div></article>`; })}</div>`}
+    <p className="demo-note"><${Icon} n="check" s=${13} />${d.total > ads.length ? "Os " + ads.length + " anúncios com mais investimento, de " + d.total + "," : ads.length + (ads.length === 1 ? " anúncio" : " anúncios")} da Meta com investimento nos últimos 30 dias. Passe o mouse no status para ver o motivo. O Google Ads ainda não entrega criativos.</p>
+  </div>`;
+}
+function Creatives({ camps, cre }) {
+  if (ACTIVE.live) return html`<${LiveCreatives} cre=${cre} />`;
   const [ch, setCh] = useState("all");
   const [view, setViewS] = useState(() => store.get("readyai_cre_view", "grid"));
   const setView = v => { setViewS(v); store.set("readyai_cre_view", v); };
@@ -1847,11 +1930,12 @@ function useLiveData(client, enabled) {
         const v = r.value || {};
         camps.push(...(v.campaigns || []));
         if (v.prev) Object.keys(prev).forEach(k => { prev[k] += v.prev[k] || 0; });
-        sources.push({ ch, label: ch === "meta" ? (c.accountName || c.accountId) : (c.customerName || c.customerId), n: (v.campaigns || []).length, note: v.note, lastSpend: v.lastSpend || null, period: v.period || null });
+        sources.push({ ch, label: ch === "meta" ? (c.accountName || c.accountId) : (c.customerName || c.customerId), n: (v.campaigns || []).length, note: v.note, lastSpend: v.lastSpend || null, period: v.period || null, idle: v.idleActive || [] });
       });
       const lastSpend = sources.map(x => x.lastSpend).filter(Boolean).sort().pop() || null;
       const period = (sources.find(x => x.period) || {}).period || null;
-      setSt({ status: sources.length ? "ready" : "error", camps, prev, errors, sources, lastSpend, period, at: new Date() });
+      const idle = sources.flatMap(x => x.idle.map(c => ({ ...c, ch: x.ch })));
+      setSt({ status: sources.length ? "ready" : "error", camps, prev, errors, sources, lastSpend, period, idle, at: new Date() });
     });
     return () => { dead = true; };
   }, [key]);
@@ -2203,6 +2287,9 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   const [seenAnalytics, setSeenAnalytics] = useState(false);
   useEffect(() => { if (screen === "analytics") setSeenAnalytics(true); }, [screen]);
   const brkMeta = metaOn(liveSrc.conn) ? liveSrc.conn.meta : null;
+  const [seenCre, setSeenCre] = useState(false);
+  useEffect(() => { if (screen === "creatives") setSeenCre(true); }, [screen]);
+  const cre = useMetaCreatives(brkMeta, resultKind(isLive ? live.camps.filter(c => c.ch === "meta") : []), isLive && seenCre && !!brkMeta, live.at);
   const brk = useBreakdowns(brkMeta, resultKind(isLive ? live.camps.filter(c => c.ch === "meta") : []), isLive && seenAnalytics && !!brkMeta, live.at);
   useEffect(() => { if (isLive) setCamps(live.camps); else if (!isAgency) setCamps(CAMPAIGNS0); }, [isLive, live.at]);
   const [msgs, setMsgs] = useState([]); const [typing, setTyping] = useState(false);
@@ -2261,8 +2348,8 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   if (!can) body = html`<${Locked} mod=${screen} plan=${client.plan} />`;
   else if (screen === "overview") body = html`<${Overview} camps=${camps} />`;
   else if (screen === "analytics") body = html`<${Analytics} camps=${camps} brk=${brk} />`;
-  else if (screen === "campaigns") body = html`<${Campaigns} camps=${camps} setCamps=${setCamps} toast=${toast} chat=${chat} />`;
-  else if (screen === "creatives") body = html`<${Creatives} camps=${camps} />`;
+  else if (screen === "campaigns") body = html`<${Campaigns} camps=${camps} setCamps=${setCamps} toast=${toast} chat=${chat} idle=${isLive ? live.idle : null} />`;
+  else if (screen === "creatives") body = html`<${Creatives} camps=${camps} cre=${cre} />`;
   else if (screen === "report") body = html`<${Report} camps=${camps} toast=${toast} user=${client} account=${accountName} agency=${isAgency ? client.company : null} />`;
   else if (screen === "portfolio") body = html`<${Portfolio} chat=${chat} openClient=${openClient} toast=${toast} agency=${client.company} rows=${pfRows} />`;
   else if (screen === "skills") body = html`<${Skills} chat=${chat} toast=${toast} />`;
