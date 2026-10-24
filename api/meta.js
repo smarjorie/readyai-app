@@ -98,7 +98,7 @@ async function data(token, accountId) {
   const insFields = "campaign_id,campaign_name,spend,impressions,clicks,frequency,actions,action_values";
   const range = (since, until) => JSON.stringify({ since: ymd(since), until: ymd(until) });
 
-  const [info, camps, cur, last7, prev7, prev30, daily] = await Promise.all([
+  const [info, camps, cur, last7, prev7, prev30, daily, acctDays] = await Promise.all([
     graph("/" + act, { fields: "name,currency,account_status" }, token),
     graphAll("/" + act + "/campaigns", {
       fields: "id,name,effective_status,daily_budget,lifetime_budget,objective",
@@ -111,7 +111,10 @@ async function data(token, accountId) {
     graphAll("/" + act + "/insights", { level: "campaign", time_range: range(daysAgo(60), daysAgo(31)), fields: "campaign_id,spend,impressions,clicks,actions,action_values", limit: 200 }, token, 5),
     // dia a dia dos últimos 14 dias, para o minigráfico da tabela de campanhas
     graphAll("/" + act + "/insights", { level: "campaign", time_range: range(daysAgo(14), daysAgo(1)), time_increment: 1, fields: "campaign_id,spend,actions,action_values", limit: 500 }, token, 8).catch(() => []),
+    // dia a dia da conta nos últimos 90 dias, só para saber a última data com veiculação
+    graphAll("/" + act + "/insights", { level: "account", date_preset: "last_90d", time_increment: 1, fields: "spend", limit: 100 }, token, 2).catch(() => []),
   ]);
+  const lastSpend = acctDays.filter(r => num(r.spend) > 0).map(r => r.date_start).sort().pop() || null;
   const days14 = []; for (let i = 14; i >= 1; i--) days14.push(ymd(daysAgo(i)));
   const dailyBy = {};
   for (const r of daily) (dailyBy[r.campaign_id] = dailyBy[r.campaign_id] || {})[r.date_start] = r;
@@ -164,6 +167,7 @@ async function data(token, accountId) {
     campaigns,
     prev,
     period: { since: ymd(daysAgo(30)), until: ymd(daysAgo(1)) },
+    lastSpend,
   };
 }
 
@@ -176,7 +180,11 @@ async function breakdowns(token, accountId, kind) {
   const types = KIND_TYPES[kind] || null;
   const q = b => graphAll("/" + act + "/insights", { level: "account", date_preset: "last_30d", breakdowns: b, fields: "spend,impressions,clicks,actions", limit: 500 }, token, 4)
     .then(rows => ({ ok: true, rows }), e => ({ ok: false, error: e.message }));
-  const [hour, age, device, region] = await Promise.all([q("hourly_stats_aggregated_by_advertiser_time_zone"), q("age"), q("impression_device"), q("region")]);
+  const [hour, age, device, region] = await Promise.all([
+    // hora do dia separada por data, para montar o mapa dia da semana x hora
+    graphAll("/" + act + "/insights", { level: "account", date_preset: "last_30d", time_increment: 1, breakdowns: "hourly_stats_aggregated_by_advertiser_time_zone", fields: "spend,impressions,clicks,actions", limit: 500 }, token, 6)
+      .then(rows => ({ ok: true, rows }), e => ({ ok: false, error: e.message })),
+    q("age"), q("impression_device"), q("region")]);
   const row = r => ({ spend: num(r.spend), impr: num(r.impressions), clicks: num(r.clicks), results: types ? pick(r.actions, types) : result(r.actions).n });
   const group = (res, keyOf) => {
     if (!res.ok) return { error: res.error };
@@ -188,7 +196,21 @@ async function breakdowns(token, accountId, kind) {
     }
     return { rows: Object.values(m) };
   };
-  const hours = group(hour, r => String(parseInt(String(r.hourly_stats_aggregated_by_advertiser_time_zone || "").slice(0, 2), 10)));
+  const hourOf = r => parseInt(String(r.hourly_stats_aggregated_by_advertiser_time_zone || "").slice(0, 2), 10);
+  const hours = group(hour, r => String(hourOf(r)));
+  // heat[dia da semana 0=domingo][hora] e quantos dias tiveram veiculação
+  let heat = null, activeDays = 0;
+  if (hour.ok) {
+    heat = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => ({ spend: 0, impr: 0, clicks: 0, results: 0 })));
+    const days = new Set();
+    for (const r of hour.rows) {
+      const h = hourOf(r); if (!(h >= 0 && h < 24) || !r.date_start) continue;
+      const v = row(r); if (v.spend > 0 || v.impr > 0) days.add(r.date_start);
+      const c = heat[new Date(r.date_start + "T12:00:00Z").getUTCDay()][h];
+      c.spend += v.spend; c.impr += v.impr; c.clicks += v.clicks; c.results += v.results;
+    }
+    activeDays = days.size;
+  }
   if (hours.rows) {
     const by = Object.fromEntries(hours.rows.map(x => [x.label, x]));
     hours.rows = Array.from({ length: 24 }, (_, h) => by[String(h)] || { label: String(h), spend: 0, impr: 0, clicks: 0, results: 0 });
@@ -199,7 +221,7 @@ async function breakdowns(token, accountId, kind) {
   if (devices.rows) devices.rows.sort((a, b) => b.impr - a.impr);
   const regions = group(region, r => r.region && r.region !== "Unknown" ? r.region.replace(/^State of /, "").replace(/ \(state\)$/, "") : null);
   if (regions.rows) regions.rows.sort((a, b) => (b.results - a.results) || (b.spend - a.spend));
-  return { kind: types ? kind : "resultados", hours, ages, devices, regions, period: { since: ymd(daysAgo(30)), until: ymd(daysAgo(1)) } };
+  return { kind: types ? kind : "resultados", hours, heat, activeDays, ages, devices, regions, period: { since: ymd(daysAgo(30)), until: ymd(daysAgo(1)) } };
 }
 
 // Carteira da agência: todas as contas que o token acessa, com os números de cada uma.
