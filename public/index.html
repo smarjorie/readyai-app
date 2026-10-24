@@ -513,6 +513,28 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .ai-tab small{color:var(--muted);font-size:12px}
 .ai-note{font-size:12.5px;color:var(--muted-2);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start;line-height:1.5}
 .ai-note svg{margin-top:2px;color:var(--good)}
+
+/* quando a conta converte: períodos do dia + mapa dia da semana x hora */
+.tod-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.tod-tile{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;background:var(--surface)}
+.tod-tile.top{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.tod-tile .t-h{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12.5px;color:var(--muted-2);font-weight:600}
+.tod-tile .t-v{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.tod-tile .t-s{font-size:12px;color:var(--muted)}
+.tod-tile .t-badges{display:flex;gap:4px;flex-wrap:wrap;min-height:20px}
+.tod-tile .pill{height:20px;font-size:11px}
+.heat{display:grid;grid-template-columns:38px repeat(24,minmax(0,1fr));gap:3px;align-items:center}
+.heat .hl{font-size:11.5px;color:var(--muted);font-weight:600}
+.heat .hc{height:24px;border-radius:5px;background:var(--surface-2);border:1px solid transparent;position:relative}
+.heat .hc.best{border-color:var(--ink)}
+.heat .hx{font-size:10.5px;color:var(--muted);text-align:left;white-space:nowrap}
+.heat .sep{grid-column:1/-1;height:4px}
+.heat-legend{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)}
+.heat-legend i{width:14px;height:10px;border-radius:3px;display:inline-block}
+.tod-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.stale-pill{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:999px;background:var(--warn-soft);color:var(--warn);font-size:12px;font-weight:600;white-space:nowrap}
+@media (max-width:900px){.tod-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.heat{grid-template-columns:30px repeat(24,minmax(0,1fr));gap:2px}.heat .hc{height:16px;border-radius:3px}.heat .hx{font-size:9.5px}}
 </style>
 
 <div id="root"><div class="boot">Carregando ReadyAI…</div></div>
@@ -1281,6 +1303,8 @@ const DEMO_BREAK = {
   devices: DEVICES.map(([l, v]) => ({ label: l, results: v * 3200, impr: 0, clicks: 0, spend: 0 })),
   regions: REGIONS.map(([l, p, sp]) => ({ label: l, results: p, spend: sp, impr: 0, clicks: 0 })),
 };
+DEMO_BREAK.heat = [0.85, 1.05, 1, 1.02, 1.08, 1.12, 0.9].map(f => HOURS.map((v, h) => { const r = v * f / 7 * 4.3; const c = h < 6 ? 1.45 : h < 9 ? 1.2 : h >= 18 && h <= 22 ? 0.88 : 1; return { results: r, clicks: r * 28, spend: r * 39 * c, impr: r * 1300 }; }));
+DEMO_BREAK.activeDays = 30;
 // quebras reais (hora, idade, dispositivo, região) da conta da Meta aberta
 function useBreakdowns(meta, kind, enabled, at) {
   const [st, setSt] = useState({ status: "idle" });
@@ -1300,6 +1324,74 @@ function peakWindow(vals) {
   let best = 0, at = 0;
   for (let i = 0; i <= vals.length - 5; i++) { const v = vals.slice(i, i + 5).reduce((a, b) => a + b, 0); if (v > best) { best = v; at = i; } }
   return { from: at, to: at + 4, share: best / tot, peak: vals.indexOf(Math.max(...vals)) };
+}
+const WEEK = [[1, "Seg"], [2, "Ter"], [3, "Qua"], [4, "Qui"], [5, "Sex"], [6, "Sáb"], [0, "Dom"]];
+const WEEK_LONG = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+const DAY_PARTS = [["Madrugada", 0, 5], ["Manhã", 6, 11], ["Tarde", 12, 17], ["Noite", 18, 23]];
+function TimeOfDay({ heat, activeDays, kind }) {
+  const kl = kindLabel(kind), unit = kl.toLowerCase();
+  const [m, setM] = useState("results");
+  const sum = cells => cells.reduce((a, c) => ({ spend: a.spend + c.spend, clicks: a.clicks + c.clicks, results: a.results + c.results, impr: a.impr + c.impr }), { spend: 0, clicks: 0, results: 0, impr: 0 });
+  const byHour = Array.from({ length: 24 }, (_, h) => sum(heat.map(row => row[h])));
+  const tot = sum(byHour);
+  const useRes = tot.results > 0;
+  const metric = m === "results" && !useRes ? "clicks" : m;
+  const val = c => metric === "cpr" ? (c.results > 0 ? c.spend / c.results : null) : c[metric];
+  const fmt = v => v == null ? "sem " + unit : metric === "spend" || metric === "cpr" ? brl2(v) : fmtInt(v);
+  const opts = [["results", kl], ["clicks", "Cliques"], ["spend", "Investimento"], ["cpr", kindCost(kind)]].filter(([k]) => useRes || (k !== "results" && k !== "cpr"));
+  // períodos do dia
+  const parts = DAY_PARTS.map(([name, a, b]) => { const t = sum(byHour.slice(a, b + 1)); return { name, a, b, ...t, share: useRes ? t.results / tot.results : t.clicks / (tot.clicks || 1), cpr: t.results > 0 ? t.spend / t.results : null }; });
+  const most = parts.reduce((x, y) => y.share > x.share ? y : x);
+  const withCpr = parts.filter(p => p.cpr != null && p.results >= Math.max(1, tot.results * 0.05));
+  // "Menor custo" só quando a diferença é real (pelo menos 5% mais barato que o segundo)
+  const byCpr = [...withCpr].sort((x, y) => x.cpr - y.cpr);
+  const cheapest = byCpr.length > 1 && byCpr[0].cpr < byCpr[1].cpr * 0.95 ? byCpr[0] : null;
+  // escala do mapa: custo é melhor quando menor, então a cor se inverte
+  const all = []; heat.forEach(row => row.forEach(c => { const v = val(c); if (v != null && v > 0) all.push(v); }));
+  const mx = Math.max(...all, 0), mn = Math.min(...all, mx);
+  const flat = metric === "cpr" && mx > 0 && (mx - mn) / mx < 0.05;
+  const inten = v => v == null || v <= 0 || !mx ? 0 : metric === "cpr" ? (flat ? 0.55 : 0.25 + 0.75 * (mx - v) / (mx - mn)) : 0.12 + 0.88 * v / mx;
+  const color = metric === "cpr" ? "var(--good)" : "var(--accent)";
+  const bg = v => { const k = inten(v); return k ? `color-mix(in srgb, ${color} ${Math.round(k * 100)}%, var(--surface-2))` : "var(--surface-2)"; };
+  let best = null;
+  heat.forEach((row, wd) => row.forEach((c, h) => { const v = val(c); if (v == null || v <= 0) return; if (!best || (metric === "cpr" ? v < best.v : v > best.v)) best = { wd, h, v }; }));
+  const hourRange = h => h + "h–" + (h + 1) + "h";
+  return html`<div className="stack" style=${{ gap: 16 }}>
+    <div className="tod-tiles">${parts.map(p => html`<div key=${p.name} className=${"tod-tile" + (p === most ? " top" : "")}>
+      <div className="t-h"><span>${p.name}</span><span className="mono" style=${{ color: "var(--muted)" }}>${p.a}h–${p.b + 1}h</span></div>
+      <div className="t-v num">${pct(p.share, 0)}</div>
+      <div className="bar-track" style=${{ height: 6 }}><div className="bar-fill" style=${{ width: (p.share / (most.share || 1) * 100) + "%", background: "var(--accent)" }}></div></div>
+      <div className="t-s num">${useRes ? fmtInt(p.results) + " " + unit + " · " + (p.cpr != null ? brl2(p.cpr) + " cada" : "sem resultado") : fmtInt(p.clicks) + " cliques"}</div>
+      <div className="t-badges">${p === most && p.share > 0 ? html`<span className="pill pill-info">Mais ${useRes ? unit : "cliques"}</span>` : null}${p === cheapest ? html`<span className="pill pill-good">Menor custo</span>` : null}</div>
+    </div>`)}</div>
+    <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+      <div className="seg" role="tablist" aria-label="Métrica do mapa">${opts.map(([k, l]) => html`<button key=${k} role="tab" aria-selected=${metric === k} className=${metric === k ? "on" : ""} onClick=${() => setM(k)}>${l}</button>`)}</div>
+      ${flat ? html`<span style=${{ fontSize: 13, color: "var(--muted-2)" }}>Custo praticamente igual em todos os horários · <b style=${{ color: "var(--ink)" }}>${brl2(tot.spend / tot.results)}</b></span>` : best ? html`<span style=${{ fontSize: 13, color: "var(--muted-2)" }}>${metric === "cpr" ? "Mais barato" : "Pico"}: <b style=${{ color: "var(--ink)" }}>${WEEK_LONG[best.wd]}, ${hourRange(best.h)}</b> · ${fmt(best.v)}</span>` : null}
+    </div>
+    <div className="heat" role="table" aria-label=${"Mapa de " + opts.find(o => o[0] === metric)[1].toLowerCase() + " por dia da semana e hora"}>
+      ${WEEK.map(([wd, l]) => html`<${Fragment} key=${wd}><span className="hl">${l}</span>${heat[wd].map((c, h) => { const v = val(c); return html`<span key=${h} className=${"hc" + (!flat && best && best.wd === wd && best.h === h ? " best" : "")} style=${{ background: bg(v) }} title=${WEEK_LONG[wd] + ", " + hourRange(h) + ": " + fmt(v)}></span>`; })}<//>`)}
+      <span className="sep"></span>
+      <span className="hl">Total</span>${byHour.map((c, h) => { const v = val(c); const vs = byHour.map(val).filter(x => x != null && x > 0); const hmx = Math.max(...vs, 0), hmn = Math.min(...vs, hmx); const k = v == null || v <= 0 || !hmx ? 0 : metric === "cpr" ? ((hmx - hmn) / hmx < 0.05 ? .55 : .25 + .75 * (hmx - v) / (hmx - hmn)) : .12 + .88 * v / hmx; return html`<span key=${"t" + h} className="hc" style=${{ background: k ? `color-mix(in srgb, ${color} ${Math.round(k * 100)}%, var(--surface-2))` : "var(--surface-2)" }} title=${"Todos os dias, " + hourRange(h) + ": " + fmt(v)}></span>`; })}
+      <span></span>${byHour.map((_, h) => html`<span key=${"x" + h} className="hx">${h % 3 === 0 ? h + "h" : ""}</span>`)}
+    </div>
+    <div className="tod-foot">
+      <span className="card-sub">${activeDays ? "Baseado em " + activeDays + (activeDays === 1 ? " dia" : " dias") + " com veiculação nos últimos 30 dias, no fuso da conta." : "Últimos 30 dias, no fuso da conta."}${activeDays && activeDays < 7 ? " Ainda é pouco volume para cravar o melhor horário." : ""}</span>
+      <span className="heat-legend">${metric === "cpr" ? "Mais caro" : "Menos"}<i style=${{ background: `color-mix(in srgb, ${color} 15%, var(--surface-2))` }}></i><i style=${{ background: `color-mix(in srgb, ${color} 50%, var(--surface-2))` }}></i><i style=${{ background: color }}></i>${metric === "cpr" ? "Mais barato" : "Mais"}</span>
+    </div>
+  </div>`;
+}
+function RegionTable({ regions, rk, rl, regTot, kind, fallback }) {
+  const [all, setAll] = useState(false);
+  if (!regions || !(regTot > 0)) return html`<div className="card card-pad"><div className="card-head"><div className="card-title">${rl} e investimento por região</div></div>${fallback}</div>`;
+  const money = v => v < 100 ? brl2(v) : brl(v);
+  const rows = all ? regions : regions.slice(0, 10);
+  const totSpend = regions.reduce((a, r) => a + r.spend, 0);
+  return html`<div className="card card-pad"><div className="card-head"><div><div className="card-title">${rl} e investimento por região</div><div className="card-sub">${regions.length} ${regions.length === 1 ? "região" : "regiões"} com veiculação · ordenadas por ${rl.toLowerCase()}</div></div></div>
+    <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Região</th><th className="r">${rl}</th><th className="r">Investimento</th><th className="r">${rk === "results" ? kindCost(kind) : "CPC"}</th><th className="r">Participação</th></tr></thead>
+    <tbody>${rows.map(r => html`<tr key=${r.label}><td style=${{ color: "var(--ink)", fontWeight: 600 }}>${r.label}</td><td className="r num">${fmtInt(r[rk])}</td><td className="r num">${money(r.spend)}</td><td className="r num">${r[rk] > 0 ? brl2(r.spend / r[rk]) : "—"}</td><td className="r num">${pct(r[rk] / regTot, 0)}</td></tr>`)}
+    ${all ? html`<tr><td style=${{ color: "var(--ink)", fontWeight: 700 }}>Total</td><td className="r num"><b>${fmtInt(regTot)}</b></td><td className="r num"><b>${money(totSpend)}</b></td><td className="r num"><b>${brl2(totSpend / regTot)}</b></td><td className="r num"><b>100%</b></td></tr>` : null}</tbody></table></div>
+    ${regions.length > 10 ? html`<div style=${{ paddingTop: 12, textAlign: "center" }}><button className="link-btn" onClick=${() => setAll(!all)}>${all ? "Mostrar só as 10 primeiras" : "Ver todas as " + regions.length + " regiões"}</button></div>` : null}
+  </div>`;
 }
 function BreakNote({ children }) { return html`<div className="card-sub" style=${{ padding: "18px 0", textAlign: "center" }}>${children}</div>`; }
 
@@ -1324,9 +1416,6 @@ function Analytics({ camps, brk }) {
     return html`<div className="stack" style=${{ gap: 10 }}>${rows.filter(r => r[mk] > 0).map(r => html`<div key=${r.label} className="bar-row" style=${{ gridTemplateColumns: labelW + " minmax(0,1fr) 44px" }}><span>${r.label}</span><div className="bar-track"><div className="bar-fill" style=${{ width: (r[mk] / tot / max * 100) + "%", background: color }}></div></div><b className="num" style=${{ textAlign: "right" }}>${pct(r[mk] / tot, 0)}</b></div>`)}</div>`;
   };
   const rowsOf = part => d && d[part] && !d[part].error ? (d[part].rows || d[part]) : null;
-  const hours = rowsOf("hours"), [hk, hl] = metricOf(hours);
-  const hv = hours ? hours.map(r => r[hk]) : [];
-  const pw = hours ? peakWindow(hv) : null;
   const regions = rowsOf("regions"), [rk, rl] = metricOf(regions);
   const regTot = regions ? regions.reduce((a, r) => a + r[rk], 0) : 0;
   const ageMetric = metricOf(rowsOf("ages"))[1], devMetric = metricOf(rowsOf("devices"))[1];
@@ -1338,17 +1427,15 @@ function Analytics({ camps, brk }) {
       <${Kpi} label="CPC médio" value=${brl2(t.spend / t.clicks)} d=${dd(t.spend / t.clicks, prevCpc)} invert />
       <${Kpi} label="Taxa de conversão" value=${pct(t.purchases / t.clicks, 2)} d=${dd(t.purchases / t.clicks, prevCv)} hint=${kl + " por clique"} />
     </div>
-    <div className="card card-pad"><div className="card-head"><div><div className="card-title">${hl} por hora do dia</div><div className="card-sub">${pw ? "Pico às " + pw.peak + "h. Em destaque, a janela de " + pw.from + "h a " + pw.to + "h, com " + pct(pw.share, 0) + " " + (hk === "results" ? "dos resultados" : "dos cliques") + "." : live ? "Últimos 30 dias, no fuso da conta de anúncio" : ""}</div></div></div>
-      ${hours && hv.some(v => v > 0) ? html`<${Columns} values=${hv} labels=${hv.map((_, i) => i + "h")} highlight=${i => pw && i >= pw.from && i <= pw.to} />` : empty(d && d.hours && d.hours.error ? "Não consegui buscar esta quebra: " + d.hours.error : null)}</div>
+    <div className="card card-pad"><div className="card-head"><div><div className="card-title">Quando suas campanhas trazem resultado</div><div className="card-sub">Participação de cada período do dia e o mapa por dia da semana e hora</div></div></div>
+      ${d && d.heat ? html`<${TimeOfDay} heat=${d.heat} activeDays=${d.activeDays} kind=${live ? (d.kind || kind) : "compras"} />` : empty(d && d.hours && d.hours.error ? "Não consegui buscar esta quebra: " + d.hours.error : null)}</div>
     <div className="grid g3">
       <div className="card card-pad"><div className="card-head"><div><div className="card-title">Faixa etária</div><div className="card-sub">Participação em ${ageMetric.toLowerCase()}</div></div></div>${shareBars("ages", "var(--accent)", "54px")}</div>
       <div className="card card-pad"><div className="card-head"><div><div className="card-title">Dispositivos</div><div className="card-sub">Participação em ${devMetric.toLowerCase()}</div></div></div>${shareBars("devices", "var(--c-tiktok)", "64px")}</div>
       <div className="card card-pad"><div className="card-head"><div><div className="card-title">${sells ? "ROAS por canal" : kindCost(kind) + " por canal"}</div></div></div>
         <div className="stack" style=${{ gap: 10 }}>${chPresent(camps).map(k => { const v = totals(camps.filter(c => c.ch === k)); return html`<div key=${k} style=${{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><${ChTag} ch=${k} />${sells ? html`<b className="num" style=${{ color: roasColor(v.roas) }}>${xroas(v.roas)}</b>` : html`<b className="num">${brl2(v.cpa)}</b>`}</div>`; })}</div></div>
     </div>
-    <div className="card card-pad"><div className="card-head"><div><div className="card-title">${rl} e investimento por região</div></div></div>
-      ${regions && regTot > 0 ? html`<div className="tbl-wrap"><table className="tbl"><thead><tr><th>Região</th><th className="r">${rl}</th><th className="r">Investimento</th><th className="r">Participação</th></tr></thead>
-      <tbody>${regions.slice(0, 12).map(r => html`<tr key=${r.label}><td style=${{ color: "var(--ink)", fontWeight: 600 }}>${r.label}</td><td className="r num">${fmtInt(r[rk])}</td><td className="r num">${brl(r.spend)}</td><td className="r num">${pct(r[rk] / regTot, 0)}</td></tr>`)}</tbody></table></div>` : empty(d && d.regions && d.regions.error ? "Não consegui buscar esta quebra: " + d.regions.error : null)}</div>
+    <${RegionTable} regions=${regions} rk=${rk} rl=${rl} regTot=${regTot} kind=${kind} fallback=${empty(d && d.regions && d.regions.error ? "Não consegui buscar esta quebra: " + d.regions.error : null)} />
   </div>`;
 }
 
@@ -1760,9 +1847,11 @@ function useLiveData(client, enabled) {
         const v = r.value || {};
         camps.push(...(v.campaigns || []));
         if (v.prev) Object.keys(prev).forEach(k => { prev[k] += v.prev[k] || 0; });
-        sources.push({ ch, label: ch === "meta" ? (c.accountName || c.accountId) : (c.customerName || c.customerId), n: (v.campaigns || []).length, note: v.note });
+        sources.push({ ch, label: ch === "meta" ? (c.accountName || c.accountId) : (c.customerName || c.customerId), n: (v.campaigns || []).length, note: v.note, lastSpend: v.lastSpend || null, period: v.period || null });
       });
-      setSt({ status: sources.length ? "ready" : "error", camps, prev, errors, sources, at: new Date() });
+      const lastSpend = sources.map(x => x.lastSpend).filter(Boolean).sort().pop() || null;
+      const period = (sources.find(x => x.period) || {}).period || null;
+      setSt({ status: sources.length ? "ready" : "error", camps, prev, errors, sources, lastSpend, period, at: new Date() });
     });
     return () => { dead = true; };
   }, [key]);
@@ -1803,12 +1892,20 @@ function buildLiveInsights(camps) {
   return list;
 }
 
+const ddmm = ymd => ymd ? ymd.slice(8, 10) + "/" + ymd.slice(5, 7) : "";
+// a conta está parada quando o último gasto é anterior a anteontem (ontem ainda pode estar fechando)
+function staleSince(last) {
+  if (!last) return null;
+  const lim = new Date(); lim.setDate(lim.getDate() - 2);
+  const y = lim.getFullYear() + "-" + String(lim.getMonth() + 1).padStart(2, "0") + "-" + String(lim.getDate()).padStart(2, "0");
+  return last < y ? ddmm(last) : null;
+}
 function DataBand({ live, company, go, isLive }) {
   if (live.status === "loading") return html`<div className="data-band"><span className="spin" aria-hidden="true"></span><span>Buscando as campanhas conectadas…</span></div>`;
   const errs = Object.entries(live.errors || {});
   if (isLive) return html`<div className="data-band live"><span className="pill pill-good"><span className="dot"></span>Dados reais</span>
     <span className="band-src">${live.sources.map(s => html`<span key=${s.ch} className="acc-chip"><span className="ch-dot" style=${{ background: CH[s.ch].color }}></span>${CH[s.ch].label} · ${s.label}</span>`)}</span>
-    ${errs.length ? html`<span className="band-err">${errs.map(([ch, m]) => CH[ch].label + ": " + m).join(" ")}</span>` : html`<span className="band-note hide-sm">Últimos 30 dias · atualizado às ${live.at ? live.at.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}</span>`}
+    ${errs.length ? html`<span className="band-err">${errs.map(([ch, m]) => CH[ch].label + ": " + m).join(" ")}</span>` : html`${staleSince(live.lastSpend) ? html`<span className="stale-pill" title="Nenhuma campanha gastou desde esta data. Os números do período não mudam até a conta voltar a veicular."><${Icon} n="alert" s=${13} />Sem veiculação desde ${staleSince(live.lastSpend)}</span>` : null}<span className="band-note hide-sm">Últimos 30 dias${live.period ? " (" + ddmm(live.period.since) + " a " + ddmm(live.period.until) + ")" : ""} · atualizado às ${live.at ? live.at.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}</span>`}
     <button className="btn btn-sm btn-line" onClick=${live.reload}>Atualizar</button></div>`;
   if (errs.length) return html`<div className="data-band err"><${Icon} n="alert" s=${15} /><span style=${{ flex: 1, minWidth: 200 }}>${errs.map(([ch, m]) => html`<span key=${ch} style=${{ display: "block" }}><b>${CH[ch].label}:</b> ${m}</span>`)}<span style=${{ display: "block", color: "var(--muted-2)" }}>Enquanto isso, o painel mostra dados de exemplo.</span></span>
     <button className="btn btn-sm btn-line" onClick=${live.reload}>Tentar de novo</button><button className="btn btn-sm btn-primary" onClick=${() => go("integrations")}>Ver integrações</button></div>`;
