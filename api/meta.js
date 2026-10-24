@@ -3,6 +3,7 @@
 //
 // POST /api/meta  { action: "accounts" }                 -> contas de anúncio do token
 // POST /api/meta  { action: "data", account_id: "act_" } -> campanhas dos últimos 30 dias, já no formato do painel
+// POST /api/meta  { action: "breakdowns", account_id, kind } -> hora do dia, idade, dispositivo e região (30 dias)
 
 const GRAPH = "https://graph.facebook.com/v25.0";
 
@@ -97,7 +98,7 @@ async function data(token, accountId) {
   const insFields = "campaign_id,campaign_name,spend,impressions,clicks,frequency,actions,action_values";
   const range = (since, until) => JSON.stringify({ since: ymd(since), until: ymd(until) });
 
-  const [info, camps, cur, last7, prev7, prev30] = await Promise.all([
+  const [info, camps, cur, last7, prev7, prev30, daily] = await Promise.all([
     graph("/" + act, { fields: "name,currency,account_status" }, token),
     graphAll("/" + act + "/campaigns", {
       fields: "id,name,effective_status,daily_budget,lifetime_budget,objective",
@@ -108,7 +109,12 @@ async function data(token, accountId) {
     graphAll("/" + act + "/insights", { level: "campaign", date_preset: "last_7d", fields: "campaign_id,spend,action_values,actions", limit: 200 }, token, 5),
     graphAll("/" + act + "/insights", { level: "campaign", time_range: range(daysAgo(14), daysAgo(8)), fields: "campaign_id,spend,action_values,actions", limit: 200 }, token, 5),
     graphAll("/" + act + "/insights", { level: "campaign", time_range: range(daysAgo(60), daysAgo(31)), fields: "campaign_id,spend,impressions,clicks,actions,action_values", limit: 200 }, token, 5),
+    // dia a dia dos últimos 14 dias, para o minigráfico da tabela de campanhas
+    graphAll("/" + act + "/insights", { level: "campaign", time_range: range(daysAgo(14), daysAgo(1)), time_increment: 1, fields: "campaign_id,spend,actions,action_values", limit: 500 }, token, 8).catch(() => []),
   ]);
+  const days14 = []; for (let i = 14; i >= 1; i--) days14.push(ymd(daysAgo(i)));
+  const dailyBy = {};
+  for (const r of daily) (dailyBy[r.campaign_id] = dailyBy[r.campaign_id] || {})[r.date_start] = r;
 
   const byId = Object.fromEntries(camps.map(c => [c.id, c]));
   const map7 = Object.fromEntries(last7.map(r => [r.campaign_id, r]));
@@ -123,6 +129,7 @@ async function data(token, accountId) {
     const metric = x => x ? (revenue > 0 ? pick(x.action_values) : num(x.spend)) : 0;
     const m7 = metric(a), mp = metric(b);
     const d7 = mp > 0 ? (m7 - mp) / mp : 0;
+    const dd = dailyBy[r.campaign_id] || {};
     return {
       id: "m" + r.campaign_id,
       name: r.campaign_name || c.name || r.campaign_id,
@@ -140,6 +147,9 @@ async function data(token, accountId) {
       freq: Math.round(num(r.frequency) * 10) / 10,
       d7: Math.max(-1, Math.min(5, Math.round(d7 * 100) / 100)),
       objective: c.objective || "",
+      // mesma métrica da variação de 7 dias: receita quando a campanha vende, senão investimento
+      daily: days14.map(d => Math.round(metric(dd[d]) * 100) / 100),
+      dailyMetric: revenue > 0 ? "receita" : "investimento",
     };
   }).sort((a, b) => b.spend - a.spend);
 
@@ -155,6 +165,41 @@ async function data(token, accountId) {
     prev,
     period: { since: ymd(daysAgo(30)), until: ymd(daysAgo(1)) },
   };
+}
+
+// Quebras da conta nos últimos 30 dias: hora do dia, faixa etária, dispositivo e região.
+// "kind" diz qual resultado contar (compras, leads ou conversas), para todas as quebras usarem o mesmo.
+const KIND_TYPES = { compras: PURCHASE_TYPES, leads: LEAD_TYPES, conversas: CHAT_TYPES };
+const DEVICE = { iphone: "Celular", android_smartphone: "Celular", ipod: "Celular", mobile_web: "Celular", ipad: "Tablet", android_tablet: "Tablet", desktop: "Desktop" };
+async function breakdowns(token, accountId, kind) {
+  const act = accountId.startsWith("act_") ? accountId : "act_" + accountId;
+  const types = KIND_TYPES[kind] || null;
+  const q = b => graphAll("/" + act + "/insights", { level: "account", date_preset: "last_30d", breakdowns: b, fields: "spend,impressions,clicks,actions", limit: 500 }, token, 4)
+    .then(rows => ({ ok: true, rows }), e => ({ ok: false, error: e.message }));
+  const [hour, age, device, region] = await Promise.all([q("hourly_stats_aggregated_by_advertiser_time_zone"), q("age"), q("impression_device"), q("region")]);
+  const row = r => ({ spend: num(r.spend), impr: num(r.impressions), clicks: num(r.clicks), results: types ? pick(r.actions, types) : result(r.actions).n });
+  const group = (res, keyOf) => {
+    if (!res.ok) return { error: res.error };
+    const m = {};
+    for (const r of res.rows) {
+      const k = keyOf(r); if (!k) continue;
+      const v = row(r), a = m[k] || (m[k] = { label: k, spend: 0, impr: 0, clicks: 0, results: 0 });
+      a.spend += v.spend; a.impr += v.impr; a.clicks += v.clicks; a.results += v.results;
+    }
+    return { rows: Object.values(m) };
+  };
+  const hours = group(hour, r => String(parseInt(String(r.hourly_stats_aggregated_by_advertiser_time_zone || "").slice(0, 2), 10)));
+  if (hours.rows) {
+    const by = Object.fromEntries(hours.rows.map(x => [x.label, x]));
+    hours.rows = Array.from({ length: 24 }, (_, h) => by[String(h)] || { label: String(h), spend: 0, impr: 0, clicks: 0, results: 0 });
+  }
+  const ages = group(age, r => r.age && r.age !== "Unknown" ? r.age : null);
+  if (ages.rows) ages.rows.sort((a, b) => a.label.localeCompare(b.label));
+  const devices = group(device, r => DEVICE[r.impression_device] || "Outros");
+  if (devices.rows) devices.rows.sort((a, b) => b.impr - a.impr);
+  const regions = group(region, r => r.region && r.region !== "Unknown" ? r.region.replace(/^State of /, "").replace(/ \(state\)$/, "") : null);
+  if (regions.rows) regions.rows.sort((a, b) => (b.results - a.results) || (b.spend - a.spend));
+  return { kind: types ? kind : "resultados", hours, ages, devices, regions, period: { since: ymd(daysAgo(30)), until: ymd(daysAgo(1)) } };
 }
 
 // Carteira da agência: todas as contas que o token acessa, com os números de cada uma.
@@ -204,6 +249,10 @@ export default async function handler(req, res) {
     if (body.action === "data") {
       if (!/^(act_)?\d{5,}$/.test(String(body.account_id || ""))) return send(res, 400, { error: "Escolha uma conta de anúncio." });
       return send(res, 200, await data(token, String(body.account_id)));
+    }
+    if (body.action === "breakdowns") {
+      if (!/^(act_)?\d{5,}$/.test(String(body.account_id || ""))) return send(res, 400, { error: "Escolha uma conta de anúncio." });
+      return send(res, 200, await breakdowns(token, String(body.account_id), String(body.kind || "")));
     }
     return send(res, 400, { error: "Ação desconhecida." });
   } catch (e) {

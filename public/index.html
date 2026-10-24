@@ -533,6 +533,14 @@ const brl2 = n => fin(n) ? "R$ " + n.toLocaleString("pt-BR", { minimumFractionDi
 const dec = (n, d = 2) => fin(n) ? n.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) : "—";
 const pct = (n, d = 1) => dec(n * 100, d) + "%";
 const xroas = n => fin(n) ? dec(n, 2) + "x" : "n/d";
+// a meta de ROAS é opcional: sem meta, nada é comparado com ela
+const hasTarget = () => fin(ACTIVE.target) && ACTIVE.target > 0;
+const roasColor = r => !fin(r) ? "var(--muted)" : hasTarget() ? (r >= ACTIVE.target ? "var(--good)" : "var(--bad)") : r < 1 ? "var(--bad)" : "var(--ink)";
+// tipo de resultado das campanhas: compras, leads ou conversas (WhatsApp/Messenger)
+const resKind = c => c.result || (c.ch === "google" ? "conversões" : "compras");
+function resultKind(camps) { const ks = [...new Set(camps.filter(c => c.spend > 0).map(resKind))]; return ks.length === 1 ? ks[0] : "conversões"; }
+const kindLabel = k => ({ compras: "Compras", leads: "Leads", conversas: "Conversas iniciadas" })[k] || "Conversões";
+const kindCost = k => ({ compras: "CPA", leads: "Custo por lead", conversas: "Custo por conversa" })[k] || "Custo por conversão";
 // ROAS de uma campanha; Google Ads (via MCP) não informa receita, então fica sem ROAS
 const roasOf = c => c.noRev ? NaN : c.revenue / c.spend;
 // ROAS do período anterior; com dados reais, só sobre o investimento das campanhas que informam receita
@@ -831,7 +839,8 @@ function aiContext({ camps, screen, account, isAgency, rows, insights, budget, d
     fonte: live ? "dados reais das contas conectadas" : "dados de exemplo (nenhuma conta conectada)",
     periodo: live ? "últimos 30 dias" : "últimos 30 dias (19/09 a 18/10/2026)",
     moeda: "BRL",
-    meta_roas: ACTIVE.target,
+    meta_roas: hasTarget() ? ACTIVE.target : null,
+    tipo_de_resultado: kindLabel(resultKind(camps)),
     saude_da_conta: ACTIVE.health,
     totais: { investimento: Math.round(t.spend), receita: Math.round(t.revenue), compras: t.purchases, roas: r2(t.roas), cpa: r2(t.cpa), ctr_pct: r2(t.ctr * 100), ticket_medio: r2(t.ticket) },
     periodo_anterior: { investimento: Math.round(ACTIVE.prev.spend), receita: Math.round(ACTIVE.prev.revenue), compras: Math.round(ACTIVE.prev.purchases) },
@@ -864,7 +873,7 @@ function aiSystem(data, screens, isAgency) {
     "Responda sempre em português do Brasil, de forma direta e prática, como um analista sênior de mídia paga.",
     "Use SOMENTE os números em DADOS. Não invente métricas; se algo não estiver nos dados, diga que essa informação não está disponível.",
     "Campanhas com roas null (Google Ads) não informam receita: avalie essas pelo CPA e pelas conversões.",
-    "Valores em reais. ROAS = receita / investimento. A meta de ROAS da conta está em meta_roas. Formate no padrão brasileiro (R$ 12.300, 3,45x, 12%).",
+    "Valores em reais. ROAS = receita / investimento. A meta de ROAS da conta está em meta_roas; se meta_roas for null, a conta não tem meta: não compare com meta nenhuma. Formate no padrão brasileiro (R$ 12.300, 3,45x, 12%).",
     "",
     "FORMATO: devolva APENAS um objeto JSON válido, sem markdown e sem texto fora dele, com os campos:",
     '{"text": "resposta principal em 1 a 4 frases",',
@@ -1049,12 +1058,12 @@ function Spark({ values, color = "var(--accent)", w = 80, h = 24 }) {
   return html`<svg width=${w} height=${h} viewBox=${`0 0 ${w} ${h}`} aria-hidden="true"><polyline points=${pts} fill="none" stroke=${color} strokeWidth="1.6" strokeLinejoin="round" /></svg>`;
 }
 function Columns({ values, labels, height = 170, highlight }) {
-  const W = 640, H = height, L = 8, R = 8, T = 10, B = 24; const max = Math.max(...values);
+  const W = 640, H = height, L = 8, R = 8, T = 10, B = 24; const max = Math.max(...values) || 1;
   const bw = (W - L - R) / values.length;
   return html`<svg viewBox=${`0 0 ${W} ${H}`} width="100%" style=${{ display: "block", maxWidth: "100%" }} role="img">
     <line x1=${L} x2=${W - R} y1=${H - B} y2=${H - B} stroke="var(--line)" />
     ${values.map((v, i) => { const h = (H - T - B) * v / max; return html`<g key=${i}>
-      <rect x=${L + i * bw + 3} y=${H - B - h} width=${bw - 6} height=${h} rx="3" fill=${highlight && highlight(i) ? "var(--accent)" : "var(--line-2)"} />
+      <rect x=${L + i * bw + 3} y=${H - B - h} width=${bw - 6} height=${h} rx="3" fill=${highlight && highlight(i) ? "var(--accent)" : "var(--line-2)"}><title>${labels[i]}: ${fmtInt(v)}</title></rect>
       ${i % 3 === 0 ? html`<text x=${L + i * bw + bw / 2} y=${H - 7} textAnchor="middle" fill="var(--muted)" style=${{ fontSize: 11 }}>${labels[i]}</text>` : null}
     </g>`; })}
   </svg>`;
@@ -1186,7 +1195,7 @@ function HomeCopilot({ user, client, chat, camps, insights, go }) {
     </section>
     <aside className="insights-pane" aria-label="Insights do dia">
       <div className="health"><${Gauge} value=${ACTIVE.health} /><div><div className="eyebrow">Saúde da conta</div>
-        <b style=${{ fontSize: 15 }}>${ACTIVE.health >= 75 ? "Boa, com pontos de atenção" : ACTIVE.health >= 60 ? "Regular, pede ajustes" : "Precisa de atenção"}</b><div className="card-sub">ROAS ${xroas(t.roas)} · meta ${xroas(ACTIVE.target)}</div></div></div>
+        <b style=${{ fontSize: 15 }}>${ACTIVE.health >= 75 ? "Boa, com pontos de atenção" : ACTIVE.health >= 60 ? "Regular, pede ajustes" : "Precisa de atenção"}</b><div className="card-sub">ROAS ${xroas(t.roas)}${hasTarget() ? " · meta " + xroas(ACTIVE.target) : " · sem meta definida"}</div></div></div>
       <div className="mini-kpis">
         <div><small>Investimento 30d</small><b className="num">${brl(t.spend)}</b><br /><${Delta} v=${delta(t.spend, ACTIVE.prev.spend)} invert /></div>
         <div><small>Receita 30d</small><b className="num">${brl(t.revenue)}</b><br /><${Delta} v=${delta(t.revenue, ACTIVE.prev.revenue)} /></div>
@@ -1195,11 +1204,11 @@ function HomeCopilot({ user, client, chat, camps, insights, go }) {
       </div>
       <div><div className="ins-top" style=${{ marginBottom: 10 }}><div className="eyebrow">Precisa da sua atenção</div><button className="link-btn" onClick=${() => go("insights")}>Ver todos</button></div>
         <div className="stack" style=${{ gap: 10 }}>${insights.slice(0, 4).map(i => html`<${InsightCard} key=${i.id} i=${i} chat=${chat} go=${go} />`)}</div></div>
-      <div className="card card-pad"><div className="card-head"><div><div className="card-title">ROAS por canal</div><div className="card-sub">Linha tracejada = meta ${xroas(ACTIVE.target)}</div></div></div>
+      <div className="card card-pad"><div className="card-head"><div><div className="card-title">ROAS por canal</div><div className="card-sub">${hasTarget() ? "Linha tracejada = meta " + xroas(ACTIVE.target) : "Sem meta de ROAS definida"}</div></div></div>
         <div className="stack" style=${{ gap: 10 }}>${byCh.map(([k, v]) => html`<div key=${k} className="bar-row" style=${{ gridTemplateColumns: "84px minmax(0,1fr) 52px" }}>
           <span style=${{ color: "var(--muted-2)" }}>${CH[k].label.replace(" Ads", "")}</span>
           <div className="bar-track" style=${{ position: "relative" }}><div className="bar-fill" style=${{ width: (v.roas / (maxR * 1.1) * 100) + "%", background: CH[k].color }}></div>
-            <span style=${{ position: "absolute", top: -3, bottom: -3, left: (ACTIVE.target / (maxR * 1.1) * 100) + "%", borderLeft: "1.5px dashed var(--ink)" }}></span></div>
+            ${hasTarget() ? html`<span style=${{ position: "absolute", top: -3, bottom: -3, left: Math.min(100, ACTIVE.target / (maxR * 1.1) * 100) + "%", borderLeft: "1.5px dashed var(--ink)" }}></span>` : null}</div>
           <b className="num" style=${{ textAlign: "right" }}>${xroas(v.roas)}</b></div>`)}</div></div>
       ${ACTIVE.live ? null : html`<div className="card card-pad"><div className="card-head"><div><div className="card-title">Ritmo do orçamento de outubro</div><div className="card-sub">${brl(MONTH_SPENT)} de ${brl(MONTH_BUDGET)} · ${pct(MONTH_ELAPSED, 0)} do mês</div></div>
         <span className="pill pill-good">No ritmo</span></div>
@@ -1220,74 +1229,140 @@ function InsightCard({ i, chat, go, full }) {
 
 function Overview({ camps }) {
   const t = totals(camps);
+  const kind = resultKind(camps), kl = kindLabel(kind);
+  const sells = t.revenue > 0;
   const rev = useMemo(() => series(t.revenue, 7, .18, .22), [t.revenue]);
   const spend = useMemo(() => series(t.spend, 11, .1, .12), [t.spend]);
   const byCh = chPresent(camps).map(k => [k, totals(camps.filter(c => c.ch === k))]);
-  const top = [...camps].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
-  const funnel = ACTIVE.live ? [["Impressões", t.impr], ["Cliques", t.clicks], ["Compras e conversões", t.purchases]] : [["Impressões", t.impr], ["Cliques", t.clicks], ["Adições ao carrinho", 8640], ["Checkouts iniciados", 3910], ["Compras", t.purchases]];
+  // sem receita (campanhas de conversa ou lead), a tabela ordena por investimento
+  const top = [...camps].sort((a, b) => sells ? b.revenue - a.revenue : b.spend - a.spend).slice(0, 5);
+  const funnel = ACTIVE.live ? [["Impressões", t.impr], ["Cliques", t.clicks], [kl, t.purchases]] : [["Impressões", t.impr], ["Cliques", t.clicks], ["Adições ao carrinho", 8640], ["Checkouts iniciados", 3910], ["Compras", t.purchases]];
+  const prevCtr = ACTIVE.prev.clicks / ACTIVE.prev.impr;
   return html`<div className="stack">
     <${PageHead} title="Visão geral" sub="Todos os canais somados nos últimos 30 dias, comparados com os 30 dias anteriores." right=${html`<${DataNote} />`} />
     <div className="grid g4">
-      <${Kpi} label="Investimento" value=${brl(t.spend)} d=${delta(t.spend, ACTIVE.prev.spend)} invert />
-      <${Kpi} label="Receita" value=${brl(t.revenue)} d=${delta(t.revenue, ACTIVE.prev.revenue)} />
-      <${Kpi} label="ROAS" value=${xroas(t.roas)} d=${delta(t.roas, prevRoas())} hint=${"Meta da conta: " + xroas(ACTIVE.target)} />
-      <${Kpi} label="CPA" value=${brl2(t.cpa)} d=${delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases)} invert hint=${fmtInt(t.purchases) + " compras · ticket " + brl(t.ticket)} />
+      <${Kpi} label="Investimento" value=${brl(t.spend)} d=${fin(delta(t.spend, ACTIVE.prev.spend)) ? delta(t.spend, ACTIVE.prev.spend) : undefined} invert />
+      <${Kpi} label="Impressões" value=${kfmt(t.impr)} d=${fin(delta(t.impr, ACTIVE.prev.impr)) ? delta(t.impr, ACTIVE.prev.impr) : undefined} hint=${fmtInt(t.clicks) + " cliques"} />
+      <${Kpi} label="CTR" value=${pct(t.ctr, 2)} d=${fin(delta(t.ctr, prevCtr)) ? delta(t.ctr, prevCtr) : undefined} hint=${"CPC " + brl2(t.spend / t.clicks)} />
+      <${Kpi} label=${kindCost(kind)} value=${brl2(t.cpa)} d=${fin(delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases)) ? delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases) : undefined} invert hint=${fmtInt(t.purchases) + " " + kl.toLowerCase()} />
     </div>
     <div className=${ACTIVE.live ? "grid" : "grid g-21"}>
       ${ACTIVE.live ? null : html`<div className="card card-pad"><div className="card-head"><div><div className="card-title">Receita x investimento por dia</div><div className="card-sub">Soma de Meta, Google e TikTok</div></div>
         <div style=${{ display: "flex", gap: 14, fontSize: 12.5, color: "var(--muted-2)" }}><span style=${{ display: "inline-flex", gap: 6, alignItems: "center" }}><span className="ch-dot" style=${{ background: "var(--accent)" }}></span>Receita</span><span style=${{ display: "inline-flex", gap: 6, alignItems: "center" }}><span className="ch-dot" style=${{ background: "var(--c-spend)" }}></span>Investimento</span></div></div>
         <${LineChart} labels=${DAYS.map(dayLbl)} sets=${[{ values: rev, color: "var(--accent)", area: true }, { values: spend, color: "var(--c-spend)", dash: true }]} />
       </div>`}
-      <div className="card card-pad"><div className="card-head"><div><div className="card-title">Investimento por canal</div><div className="card-sub">Participação e ROAS</div></div></div>
-        <div className="stack" style=${{ gap: 14 }}>${byCh.map(([k, v]) => html`<div key=${k} className="stack" style=${{ gap: 6 }}>
+      <div className="card card-pad"><div className="card-head"><div><div className="card-title">Investimento por canal</div><div className="card-sub">Participação no investimento e resultado de cada canal</div></div></div>
+        <div className="stack" style=${{ gap: 14 }}>${byCh.map(([k, v]) => { const ck = resultKind(camps.filter(c => c.ch === k)); return html`<div key=${k} className="stack" style=${{ gap: 6 }}>
           <div style=${{ display: "flex", justifyContent: "space-between", gap: 8 }}><${ChTag} ch=${k} /><span className="num" style=${{ fontSize: 13 }}><b>${brl(v.spend)}</b> · ${pct(v.spend / t.spend, 0)}</span></div>
           <div className="bar-track"><div className="bar-fill" style=${{ width: (v.spend / t.spend * 100) + "%", background: CH[k].color }}></div></div>
-          <div className="card-sub num">${v.tracked ? "Receita " + brl(v.revenue) : fmtInt(v.purchases) + " conversões · CPA " + brl2(v.cpa)} · ROAS <b style=${{ color: !fin(v.roas) ? "var(--muted)" : v.roas >= ACTIVE.target ? "var(--good)" : "var(--bad)" }}>${xroas(v.roas)}</b></div></div>`)}</div>
+          <div className="card-sub num">${fmtInt(v.purchases)} ${kindLabel(ck).toLowerCase()} · ${kindCost(ck)} ${brl2(v.cpa)} · CTR ${pct(v.ctr, 2)}${v.revenue > 0 ? html` · Receita ${brl(v.revenue)} · ROAS <b style=${{ color: roasColor(v.roas) }}>${xroas(v.roas)}</b>` : null}</div></div>`; })}</div>
       </div>
     </div>
     <div className="grid g-21">
-      <div className="card card-pad"><div className="card-head"><div><div className="card-title">Campanhas com mais receita</div></div></div>
-        <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Campanha</th><th>Canal</th><th className="r">Investido</th><th className="r">Receita</th><th className="r">ROAS</th></tr></thead>
-        <tbody>${top.map(c => html`<tr key=${c.id}><td><span className="cname">${c.name}</span></td><td><${ChTag} ch=${c.ch} /></td><td className="r num">${brl(c.spend)}</td><td className="r num">${brl(c.revenue)}</td><td className="r num"><b style=${{ color: "var(--ink)" }}>${xroas(roasOf(c))}</b></td></tr>`)}</tbody></table></div>
+      <div className="card card-pad"><div className="card-head"><div><div className="card-title">${sells ? "Campanhas com mais receita" : "Campanhas com mais investimento"}</div></div></div>
+        <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Campanha</th><th>Canal</th><th className="r">Investido</th><th className="r">${kl}</th>${sells ? html`<th className="r">Receita</th><th className="r">ROAS</th>` : html`<th className="r">${kindCost(kind)}</th><th className="r">CTR</th>`}</tr></thead>
+        <tbody>${top.map(c => html`<tr key=${c.id}><td><span className="cname">${c.name}</span></td><td><${ChTag} ch=${c.ch} /></td><td className="r num">${brl(c.spend)}</td><td className="r num">${fmtInt(c.purchases)}</td>${sells ? html`<td className="r num">${brl(c.revenue)}</td><td className="r num"><b style=${{ color: "var(--ink)" }}>${xroas(roasOf(c))}</b></td>` : html`<td className="r num">${brl2(c.spend / c.purchases)}</td><td className="r num">${pct(c.clicks / c.impr, 2)}</td>`}</tr>`)}</tbody></table></div>
       </div>
       <div className="card card-pad"><div className="card-head"><div><div className="card-title">Funil de tráfego</div><div className="card-sub">Taxa em relação à etapa anterior</div></div></div>
         <div className="stack" style=${{ gap: 10 }}>${funnel.map(([l, v], i) => html`<div key=${l} className="stack" style=${{ gap: 4 }}>
           <div style=${{ display: "flex", justifyContent: "space-between", fontSize: 13 }}><span style=${{ color: "var(--muted-2)" }}>${l}</span><span className="num"><b>${kfmt(v)}</b>${i > 0 ? html` <span style=${{ color: "var(--muted)" }}>· ${pct(v / funnel[i - 1][1], i === 1 ? 1 : 0)}</span>` : null}</span></div>
           <div className="bar-track" style=${{ height: 8 }}><div className="bar-fill" style=${{ width: Math.max(4, Math.pow(v / funnel[0][1], .28) * 100) + "%", background: "var(--accent)", opacity: 1 - i * .14 }}></div></div></div>`)}</div>
+        ${ACTIVE.live && kind !== "compras" ? html`<p className="card-sub" style=${{ marginTop: 12 }}>${kind === "conversas" ? "As campanhas desta conta otimizam para conversas no WhatsApp ou no Messenger, então a última etapa conta conversas iniciadas, não compras." : kind === "leads" ? "As campanhas desta conta otimizam para cadastros, então a última etapa conta leads, não compras." : "A última etapa soma o resultado principal de cada campanha (compras, leads ou conversas)."}</p>` : null}
       </div>
     </div>
   </div>`;
 }
 
-function Analytics({ camps }) {
+// dados de exemplo no mesmo formato das quebras reais da Meta
+const DEMO_BREAK = {
+  kind: "compras",
+  hours: HOURS.map((v, h) => ({ label: String(h), results: v, impr: 0, clicks: 0, spend: 0 })),
+  ages: AGES.map(([l, v]) => ({ label: l, results: v * 3200, impr: 0, clicks: 0, spend: 0 })),
+  devices: DEVICES.map(([l, v]) => ({ label: l, results: v * 3200, impr: 0, clicks: 0, spend: 0 })),
+  regions: REGIONS.map(([l, p, sp]) => ({ label: l, results: p, spend: sp, impr: 0, clicks: 0 })),
+};
+// quebras reais (hora, idade, dispositivo, região) da conta da Meta aberta
+function useBreakdowns(meta, kind, enabled, at) {
+  const [st, setSt] = useState({ status: "idle" });
+  const key = JSON.stringify([enabled, meta && [meta.accountId, meta.token.slice(-8)], kind, at ? +at : 0]);
+  useEffect(() => {
+    if (!enabled || !meta) { setSt({ status: "idle" }); return; }
+    let dead = false; setSt({ status: "loading" });
+    apiPost("/api/meta", { action: "breakdowns", account_id: meta.accountId, kind }, { "x-meta-token": meta.token })
+      .then(d => { if (!dead) setSt({ status: "ready", data: d }); }, e => { if (!dead) setSt({ status: "error", error: e.message }); });
+    return () => { dead = true; };
+  }, [key]);
+  return st;
+}
+// janela de 5 horas seguidas com mais resultados
+function peakWindow(vals) {
+  const tot = vals.reduce((a, b) => a + b, 0); if (!tot) return null;
+  let best = 0, at = 0;
+  for (let i = 0; i <= vals.length - 5; i++) { const v = vals.slice(i, i + 5).reduce((a, b) => a + b, 0); if (v > best) { best = v; at = i; } }
+  return { from: at, to: at + 4, share: best / tot, peak: vals.indexOf(Math.max(...vals)) };
+}
+function BreakNote({ children }) { return html`<div className="card-sub" style=${{ padding: "18px 0", textAlign: "center" }}>${children}</div>`; }
+
+function Analytics({ camps, brk }) {
   const t = totals(camps);
+  const kind = resultKind(camps), kl = kindLabel(kind);
+  const live = !!ACTIVE.live;
+  const hasMeta = camps.some(c => c.ch === "meta");
+  const d = live ? (brk && brk.status === "ready" ? brk.data : null) : DEMO_BREAK;
+  const prevCtr = ACTIVE.prev.clicks / ACTIVE.prev.impr, prevCpc = ACTIVE.prev.spend / ACTIVE.prev.clicks, prevCv = ACTIVE.prev.purchases / ACTIVE.prev.clicks;
+  const dd = (a, b) => fin(delta(a, b)) ? delta(a, b) : undefined;
+  // se a conta não registra resultados numa quebra, mostra cliques no lugar
+  const metricOf = rows => rows && rows.some(r => r.results > 0) ? ["results", kl] : ["clicks", "Cliques"];
+  const pending = live && (!brk || brk.status === "loading" || brk.status === "idle");
+  const failed = live && brk && brk.status === "error";
+  const empty = msg => pending ? html`<${BreakNote}>Buscando na Meta…<//>` : failed ? html`<${BreakNote}>Não consegui buscar esta quebra: ${brk.error}<//>` : !hasMeta ? html`<${BreakNote}>Disponível para contas do Meta Ads. O Google Ads ainda não entrega esta quebra.<//>` : html`<${BreakNote}>${msg || "Sem dados no período."}<//>`;
+  const shareBars = (part, color, labelW) => {
+    if (!d || !d[part] || d[part].error) return empty(d && d[part] && d[part].error ? "Não consegui buscar esta quebra: " + d[part].error : null);
+    const rows = d[part].rows || d[part]; const [mk] = metricOf(rows);
+    const tot = rows.reduce((a, r) => a + r[mk], 0); if (!tot) return empty();
+    const max = Math.max(...rows.map(r => r[mk] / tot));
+    return html`<div className="stack" style=${{ gap: 10 }}>${rows.filter(r => r[mk] > 0).map(r => html`<div key=${r.label} className="bar-row" style=${{ gridTemplateColumns: labelW + " minmax(0,1fr) 44px" }}><span>${r.label}</span><div className="bar-track"><div className="bar-fill" style=${{ width: (r[mk] / tot / max * 100) + "%", background: color }}></div></div><b className="num" style=${{ textAlign: "right" }}>${pct(r[mk] / tot, 0)}</b></div>`)}</div>`;
+  };
+  const rowsOf = part => d && d[part] && !d[part].error ? (d[part].rows || d[part]) : null;
+  const hours = rowsOf("hours"), [hk, hl] = metricOf(hours);
+  const hv = hours ? hours.map(r => r[hk]) : [];
+  const pw = hours ? peakWindow(hv) : null;
+  const regions = rowsOf("regions"), [rk, rl] = metricOf(regions);
+  const regTot = regions ? regions.reduce((a, r) => a + r[rk], 0) : 0;
+  const ageMetric = metricOf(rowsOf("ages"))[1], devMetric = metricOf(rowsOf("devices"))[1];
+  const sells = t.revenue > 0;
   return html`<div className="stack">
-    <${PageHead} title="Performance analítica" sub="Quando, onde e para quem suas campanhas vendem." right=${html`<${DataNote} partial="Indicadores reais; horário, público e região ainda de exemplo" />`} />
-    <div className="grid g4">
-      <${Kpi} label="CTR médio" value=${pct(t.ctr, 2)} d=${delta(t.ctr, ACTIVE.prev.clicks / ACTIVE.prev.impr)} />
-      <${Kpi} label="CPC médio" value=${brl2(t.spend / t.clicks)} d=${delta(t.spend / t.clicks, ACTIVE.prev.spend / ACTIVE.prev.clicks)} invert />
-      <${Kpi} label="Taxa de conversão" value=${pct(t.purchases / t.clicks, 2)} d=${delta(t.purchases / t.clicks, ACTIVE.prev.purchases / ACTIVE.prev.clicks)} />
-      <${Kpi} label="Ticket médio" value=${brl(t.ticket)} d=${delta(t.ticket, ACTIVE.prev.revenue / ACTIVE.prev.purchases)} />
-    </div>
-    <div className="card card-pad"><div className="card-head"><div><div className="card-title">Compras por hora do dia</div><div className="card-sub">Pico às 20h. Em destaque, a janela de 18h a 22h, com 33% das compras.</div></div></div>
-      <${Columns} values=${HOURS} labels=${HOURS.map((_, i) => i + "h")} highlight=${i => i >= 18 && i <= 22} /></div>
+    <${PageHead} title="Performance analítica" sub="Quando, onde e para quem suas campanhas trazem resultado." right=${html`<${DataNote} partial=${live && hasMeta && camps.some(c => c.ch !== "meta") ? "Dados reais · horário, público e região só do Meta Ads" : null} />`} />
     <div className="grid g3">
-      <div className="card card-pad"><div className="card-head"><div className="card-title">Faixa etária</div></div>
-        <div className="stack" style=${{ gap: 10 }}>${AGES.map(([l, v]) => html`<div key=${l} className="bar-row" style=${{ gridTemplateColumns: "54px minmax(0,1fr) 44px" }}><span>${l}</span><div className="bar-track"><div className="bar-fill" style=${{ width: (v / .38 * 100) + "%", background: "var(--accent)" }}></div></div><b className="num" style=${{ textAlign: "right" }}>${pct(v, 0)}</b></div>`)}</div></div>
-      <div className="card card-pad"><div className="card-head"><div className="card-title">Dispositivos</div></div>
-        <div className="stack" style=${{ gap: 10 }}>${DEVICES.map(([l, v]) => html`<div key=${l} className="bar-row" style=${{ gridTemplateColumns: "64px minmax(0,1fr) 44px" }}><span>${l}</span><div className="bar-track"><div className="bar-fill" style=${{ width: (v * 100) + "%", background: "var(--c-tiktok)" }}></div></div><b className="num" style=${{ textAlign: "right" }}>${pct(v, 0)}</b></div>`)}</div></div>
-      <div className="card card-pad"><div className="card-head"><div><div className="card-title">ROAS por canal</div></div></div>
-        <div className="stack" style=${{ gap: 10 }}>${chPresent(camps).map(k => { const v = totals(camps.filter(c => c.ch === k)); return html`<div key=${k} style=${{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><${ChTag} ch=${k} /><span className=${"pill " + (v.roas >= ACTIVE.target ? "pill-good" : "pill-bad")}>${xroas(v.roas)}</span></div>`; })}</div></div>
+      <${Kpi} label="CTR médio" value=${pct(t.ctr, 2)} d=${dd(t.ctr, prevCtr)} />
+      <${Kpi} label="CPC médio" value=${brl2(t.spend / t.clicks)} d=${dd(t.spend / t.clicks, prevCpc)} invert />
+      <${Kpi} label="Taxa de conversão" value=${pct(t.purchases / t.clicks, 2)} d=${dd(t.purchases / t.clicks, prevCv)} hint=${kl + " por clique"} />
     </div>
-    <div className="card card-pad"><div className="card-head"><div><div className="card-title">Compras e investimento por região</div></div></div>
-      <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Região</th><th className="r">Compras</th><th className="r">Investimento</th><th className="r">Participação</th></tr></thead>
-      <tbody>${REGIONS.map(([r, p, s]) => html`<tr key=${r}><td style=${{ color: "var(--ink)", fontWeight: 600 }}>${r}</td><td className="r num">${fmtInt(p)}</td><td className="r num">${brl(s)}</td><td className="r num">${pct(p / t.purchases, 0)}</td></tr>`)}</tbody></table></div></div>
+    <div className="card card-pad"><div className="card-head"><div><div className="card-title">${hl} por hora do dia</div><div className="card-sub">${pw ? "Pico às " + pw.peak + "h. Em destaque, a janela de " + pw.from + "h a " + pw.to + "h, com " + pct(pw.share, 0) + " " + (hk === "results" ? "dos resultados" : "dos cliques") + "." : live ? "Últimos 30 dias, no fuso da conta de anúncio" : ""}</div></div></div>
+      ${hours && hv.some(v => v > 0) ? html`<${Columns} values=${hv} labels=${hv.map((_, i) => i + "h")} highlight=${i => pw && i >= pw.from && i <= pw.to} />` : empty(d && d.hours && d.hours.error ? "Não consegui buscar esta quebra: " + d.hours.error : null)}</div>
+    <div className="grid g3">
+      <div className="card card-pad"><div className="card-head"><div><div className="card-title">Faixa etária</div><div className="card-sub">Participação em ${ageMetric.toLowerCase()}</div></div></div>${shareBars("ages", "var(--accent)", "54px")}</div>
+      <div className="card card-pad"><div className="card-head"><div><div className="card-title">Dispositivos</div><div className="card-sub">Participação em ${devMetric.toLowerCase()}</div></div></div>${shareBars("devices", "var(--c-tiktok)", "64px")}</div>
+      <div className="card card-pad"><div className="card-head"><div><div className="card-title">${sells ? "ROAS por canal" : kindCost(kind) + " por canal"}</div></div></div>
+        <div className="stack" style=${{ gap: 10 }}>${chPresent(camps).map(k => { const v = totals(camps.filter(c => c.ch === k)); return html`<div key=${k} style=${{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><${ChTag} ch=${k} />${sells ? html`<b className="num" style=${{ color: roasColor(v.roas) }}>${xroas(v.roas)}</b>` : html`<b className="num">${brl2(v.cpa)}</b>`}</div>`; })}</div></div>
+    </div>
+    <div className="card card-pad"><div className="card-head"><div><div className="card-title">${rl} e investimento por região</div></div></div>
+      ${regions && regTot > 0 ? html`<div className="tbl-wrap"><table className="tbl"><thead><tr><th>Região</th><th className="r">${rl}</th><th className="r">Investimento</th><th className="r">Participação</th></tr></thead>
+      <tbody>${regions.slice(0, 12).map(r => html`<tr key=${r.label}><td style=${{ color: "var(--ink)", fontWeight: 600 }}>${r.label}</td><td className="r num">${fmtInt(r[rk])}</td><td className="r num">${brl(r.spend)}</td><td className="r num">${pct(r[rk] / regTot, 0)}</td></tr>`)}</tbody></table></div>` : empty(d && d.regions && d.regions.error ? "Não consegui buscar esta quebra: " + d.regions.error : null)}</div>
   </div>`;
 }
 
 function recFor(c) {
   if (c.noRev) return c.status !== "ativa" ? { k: "keep", label: "Manter pausada", pill: "pill-mute", icon: "pause", why: "Sem valor de conversão" } : { k: "keep", label: "Acompanhar", pill: "pill-mute", icon: "eye", why: c.ch === "google" ? "Sem valor de conversão: avalie pelo CPA" : "Campanha sem venda: avalie pelo custo por " + (c.result === "leads" ? "lead" : c.result === "conversas" ? "conversa" : "resultado") };
   const roas = roasOf(c);
+  if (!hasTarget()) {
+    // sem meta: só o que é objetivo (ROAS abaixo de 1 = gasta mais do que traz) e a tendência da semana
+    if (c.status !== "ativa") return { k: "keep", label: "Manter pausada", pill: "pill-mute", icon: "pause", why: "Sem meta de ROAS para comparar" };
+    if (roas < 1) return { k: "review", label: "Revisar", pill: "pill-warn", icon: "alert", why: "ROAS de " + xroas(roas) + ": traz menos do que gasta" };
+    if (c.d7 <= -0.15) return { k: "review", label: "Revisar", pill: "pill-warn", icon: "alert", why: "Receita caiu " + pct(-c.d7, 0) + " em 7 dias" };
+    if (c.limited) return { k: "scale", label: "Escalar", pill: "pill-good", icon: "up", why: "Perde impressões por falta de orçamento" };
+    return { k: "keep", label: "Acompanhar", pill: "pill-mute", icon: "eye", why: "Defina uma meta de ROAS em Integrações para receber recomendações" };
+  }
   if (c.status !== "ativa") return roas >= ACTIVE.target
     ? { k: "reactivate", label: "Reativar", pill: "pill-info", icon: "play", why: "ROAS de " + xroas(roas) + " quando estava ativa" }
     : { k: "keep", label: "Manter pausada", pill: "pill-mute", icon: "pause", why: "Estava abaixo da meta" };
@@ -1299,10 +1374,10 @@ function recFor(c) {
 }
 const REC_ORDER = { pause: 0, review: 1, scale: 2, reactivate: 3, keep: 4 };
 function RoasBar({ roas, target = ACTIVE.target }) {
-  const max = 7, ok = roas >= target;
-  return html`<span className="roasbar" title=${"ROAS " + xroas(roas) + " · meta " + xroas(target)}>
-    <i style=${{ width: Math.min(roas / max, 1) * 100 + "%", background: ok ? "var(--good)" : roas < 1.5 ? "var(--bad)" : "var(--warn)" }}></i>
-    <u style=${{ left: (target / max * 100) + "%" }}></u></span>`;
+  const max = 7, has = fin(target) && target > 0, ok = has ? roas >= target : roas >= 1;
+  return html`<span className="roasbar" title=${"ROAS " + xroas(roas) + (has ? " · meta " + xroas(target) : " · sem meta definida")}>
+    <i style=${{ width: Math.min((fin(roas) ? roas : 0) / max, 1) * 100 + "%", background: !has ? (roas < 1 ? "var(--bad)" : "var(--accent)") : ok ? "var(--good)" : roas < 1.5 ? "var(--bad)" : "var(--warn)" }}></i>
+    ${has ? html`<u style=${{ left: (target / max * 100) + "%" }}></u>` : null}</span>`;
 }
 function Campaigns({ camps, setCamps, toast, chat }) {
   const [ch, setCh] = useState("all"); const [st, setSt] = useState("all"); const [sort, setSort] = useState("rec"); const [rf, setRf] = useState("all");
@@ -1334,6 +1409,7 @@ function Campaigns({ camps, setCamps, toast, chat }) {
   const confirmText = (c, kind) => kind === "pause" ? "Pausar “" + c.name + "”? Isso libera " + brl(c.budget) + "/dia de orçamento."
     : kind === "scale" ? "Aumentar o orçamento de “" + c.name + "” de " + brl(c.budget) + " para " + brl(Math.round(c.budget * 1.2 / 10) * 10) + " por dia?"
     : "Reativar “" + c.name + "” com " + brl(c.prevBudget || 200) + "/dia?";
+  const kind = resultKind(camps), sells = camps.some(c => c.revenue > 0);
   const chips = [["pause", "Pausar", "pill-bad", "pause"], ["review", "Revisar", "pill-warn", "alert"], ["scale", "Escalar", "pill-good", "up"], ["reactivate", "Reativar", "pill-info", "play"], ["keep", "Manter", "pill-mute", "check"]];
   return html`<div className="stack">
     <${PageHead} title="Campanhas" sub="Meta, Google e TikTok numa tabela só. O copilot indica o que pausar, revisar ou escalar." right=${html`<span className="demo-note"><${Icon} n="eye" s=${13} />Alterações são simuladas</span>`} />
@@ -1351,19 +1427,20 @@ function Campaigns({ camps, setCamps, toast, chat }) {
       </div>
     </div>
     <div className="grid g4">
-      <${Kpi} label="Investido" value=${brl(t.spend)} /><${Kpi} label="Receita" value=${brl(t.revenue)} /><${Kpi} label="ROAS" value=${xroas(t.roas)} hint=${"Meta da conta: " + xroas(ACTIVE.target)} /><${Kpi} label="Compras" value=${fmtInt(t.purchases)} />
+      <${Kpi} label="Investido" value=${brl(t.spend)} /><${Kpi} label=${kindLabel(kind)} value=${fmtInt(t.purchases)} /><${Kpi} label=${kindCost(kind)} value=${brl2(t.cpa)} />
+      ${sells ? html`<${Kpi} label="ROAS" value=${xroas(t.roas)} hint=${hasTarget() ? "Meta da conta: " + xroas(ACTIVE.target) : "Sem meta de ROAS definida"} />` : html`<${Kpi} label="CTR" value=${pct(t.ctr, 2)} hint=${kfmt(t.impr) + " impressões"} />`}
     </div>
     <div className="card card-pad"><div className="tbl-wrap" style=${{ marginTop: -18 }}><table className="tbl camp-tbl">
-      <thead><tr><th>Campanha</th><th>Ligada</th><th className="r">Orçamento/dia</th><th className="r">Investido</th><th className="r">CPA</th><th>ROAS x meta</th><th>7 dias</th><th>Recomendação</th><th>Ação</th></tr></thead>
-      <tbody>${list.map(c => { const roas = roasOf(c); const sp = series(c.revenue, c.id.length * 13 + c.spend % 97, c.d7 * 2, .3).slice(-14); const on = c.status === "ativa";
+      <thead><tr><th>Campanha</th><th>Ligada</th><th className="r">Orçamento/dia</th><th className="r">Investido</th><th className="r">${kindCost(kind)}</th>${sells ? html`<th>${hasTarget() ? "ROAS x meta" : "ROAS"}</th>` : html`<th className="r">CTR</th>`}<th>${ACTIVE.live ? "14 dias" : "7 dias"}</th><th>Recomendação</th><th>Ação</th></tr></thead>
+      <tbody>${list.map(c => { const roas = roasOf(c); const sp = c.daily ? c.daily : ACTIVE.live ? null : series(c.revenue, c.id.length * 13 + c.spend % 97, c.d7 * 2, .3).slice(-14); const on = c.status === "ativa";
         const sev = { pause: "var(--bad)", review: "var(--warn)", scale: "var(--good)", reactivate: "var(--accent)" }[c.rec.k];
         return html`<${Fragment} key=${c.id}><tr className=${on ? "" : "off"}>
           <td style=${{ boxShadow: sev ? "inset 3px 0 0 " + sev : "none" }}><span className="cname" title=${c.name}>${c.name}</span><span style=${{ display: "flex", gap: 8, alignItems: "center", marginTop: 3 }}><${ChTag} ch=${c.ch} />${c.limited ? html`<span className="pill pill-info" style=${{ height: 19, fontSize: 11 }}>Limitada pelo orçamento</span>` : null}</span></td>
           <td><span style=${{ display: "inline-flex", alignItems: "center", gap: 8 }}><${Toggle} on=${on} onChange=${v => setStatus(c, v)} label=${(on ? "Pausar " : "Ativar ") + c.name} /><span style=${{ fontSize: 12.5, fontWeight: 600, color: on ? "var(--good)" : "var(--muted)" }}>${on ? "Ativa" : "Pausada"}</span></span></td>
           <td className="r num">${on ? brl(c.budget) : "—"}</td><td className="r num">${brl(c.spend)}</td>
           <td className="r num">${brl2(c.spend / c.purchases)}</td>
-          <td><span style=${{ display: "inline-flex", alignItems: "center", gap: 8 }}><${RoasBar} roas=${roas} /><b className="num" style=${{ color: roas >= ACTIVE.target ? "var(--good)" : "var(--bad)", minWidth: 44 }}>${xroas(roas)}</b></span></td>
-          <td><span style=${{ display: "inline-flex", alignItems: "center", gap: 6 }}><${Spark} values=${sp} color=${c.d7 >= 0 ? "var(--good)" : "var(--bad)"} /><span className=${"delta " + (c.d7 >= 0 ? "up" : "down")}>${c.d7 >= 0 ? "+" : "−"}${pct(Math.abs(c.d7), 0)}</span></span></td>
+          ${sells ? html`<td><span style=${{ display: "inline-flex", alignItems: "center", gap: 8 }}><${RoasBar} roas=${roas} /><b className="num" style=${{ color: roasColor(roas), minWidth: 44 }}>${xroas(roas)}</b></span></td>` : html`<td className="r num">${pct(c.clicks / c.impr, 2)}</td>`}
+          <td><span style=${{ display: "inline-flex", alignItems: "center", gap: 6 }} title=${c.daily ? (c.dailyMetric === "receita" ? "Receita" : "Investimento") + " por dia, últimos 14 dias. A variação compara os últimos 7 dias com os 7 anteriores." : ""}>${sp && sp.some(v => v > 0) ? html`<${Spark} values=${sp} color=${c.d7 >= 0 ? "var(--good)" : "var(--bad)"} />` : null}<span className=${"delta " + (c.d7 >= 0 ? "up" : "down")}>${c.d7 >= 0 ? "+" : "−"}${pct(Math.abs(c.d7), 0)}</span></span></td>
           <td><span className=${"pill " + c.rec.pill}><${Icon} n=${c.rec.icon} s=${12} />${c.rec.label}</span><span className="rec-why">${c.rec.why}</span></td>
           <td>${act(c)}</td>
         </tr>
@@ -1696,7 +1773,7 @@ function useLiveData(client, enabled) {
 function liveHealth(camps, target) {
   const t = totals(camps); const act = camps.filter(c => c.status === "ativa");
   let h = 80;
-  if (isFinite(t.roas)) h += Math.max(-35, Math.min(15, (t.roas / target - 1) * 40));
+  if (isFinite(t.roas) && fin(target) && target > 0) h += Math.max(-35, Math.min(15, (t.roas / target - 1) * 40));
   const badSpend = act.filter(c => !c.noRev && roasOf(c) < 1.5).reduce((a, c) => a + c.spend, 0);
   h -= Math.min(20, badSpend / Math.max(1, t.spend) * 60);
   h -= Math.min(10, act.filter(c => c.d7 <= -0.2).length * 3);
@@ -1708,15 +1785,15 @@ function buildLiveInsights(camps) {
   const t = totals(camps);
   const act = camps.filter(c => c.status === "ativa" && c.spend > 0);
   const rev = act.filter(c => !c.noRev);
-  const bad = rev.filter(c => roasOf(c) < T).sort((a, b) => b.spend - a.spend)[0];
-  if (bad) list.push({ id: "l1", sev: roasOf(bad) < 1.5 ? "bad" : "warn", tag: "Atenção", icon: "alert", title: `“${bad.name}” está abaixo da meta de ROAS`, body: `${CH[bad.ch].label}: investiu ${brl(bad.spend)} em 30 dias e trouxe ${brl(bad.revenue)}, ROAS de ${xroas(roasOf(bad))}. A meta da conta é ${xroas(T)}.`, metric: xroas(roasOf(bad)), ask: `O que faço com a campanha “${bad.name}”?`, goto: "campaigns" });
+  const bad = rev.filter(c => roasOf(c) < (T || 1)).sort((a, b) => b.spend - a.spend)[0];
+  if (bad) list.push({ id: "l1", sev: roasOf(bad) < 1.5 ? "bad" : "warn", tag: "Atenção", icon: "alert", title: T ? `“${bad.name}” está abaixo da meta de ROAS` : `“${bad.name}” traz menos do que gasta`, body: `${CH[bad.ch].label}: investiu ${brl(bad.spend)} em 30 dias e trouxe ${brl(bad.revenue)}, ROAS de ${xroas(roasOf(bad))}. ${T ? "A meta da conta é " + xroas(T) + "." : "A conta não tem meta de ROAS definida."}`, metric: xroas(roasOf(bad)), ask: `O que faço com a campanha “${bad.name}”?`, goto: "campaigns" });
   const zero = act.filter(c => !c.noRev && c.purchases === 0 && c.spend >= Math.max(200, t.spend * 0.03)).sort((a, b) => b.spend - a.spend)[0];
   if (zero) list.push({ id: "l2", sev: "bad", tag: "Sem conversões", icon: "wallet", title: `“${zero.name}” gastou sem converter`, body: `${CH[zero.ch].label}: ${brl(zero.spend)} investidos em 30 dias sem nenhuma compra ou conversão registrada. Vale conferir a otimização e o rastreamento.`, metric: brl(zero.spend), ask: `Por que a campanha “${zero.name}” não converte?`, goto: "campaigns" });
   const fat = act.filter(c => c.ch === "meta" && c.freq >= 3.5).sort((a, b) => b.freq - a.freq)[0];
   if (fat) list.push({ id: "l3", sev: "warn", tag: "Risco", icon: "eye", title: `Frequência alta em “${fat.name}”`, body: `Frequência de ${dec(fat.freq, 1)} em 30 dias: o mesmo público está vendo o anúncio muitas vezes. A receita da campanha variou ${fat.d7 >= 0 ? "+" : "−"}${pct(Math.abs(fat.d7), 0)} na última semana.`, metric: "freq. " + dec(fat.freq, 1), ask: `Como resolvo a fadiga da campanha “${fat.name}”?`, goto: "campaigns" });
   const drop = act.filter(c => c.d7 <= -0.2 && c !== bad).sort((a, b) => b.spend - a.spend)[0];
   if (drop) list.push({ id: "l4", sev: "warn", tag: "Queda na semana", icon: "down", title: `“${drop.name}” caiu ${pct(-drop.d7, 0)} na semana`, body: `${CH[drop.ch].label}: comparando os últimos 7 dias com os 7 anteriores, ${drop.noRev ? "o investimento" : "a receita"} caiu ${pct(-drop.d7, 0)}.`, metric: "−" + pct(-drop.d7, 0), ask: `Por que a campanha “${drop.name}” caiu esta semana?`, goto: "campaigns" });
-  const best = rev.filter(c => roasOf(c) >= T * 1.3 && c.spend >= t.spend * 0.03).sort((a, b) => roasOf(b) - roasOf(a))[0];
+  const best = T && rev.filter(c => roasOf(c) >= T * 1.3 && c.spend >= t.spend * 0.03).sort((a, b) => roasOf(b) - roasOf(a))[0];
   if (best) list.push({ id: "l5", sev: "good", tag: "Oportunidade", icon: "up", title: `“${best.name}” tem espaço para escalar`, body: `ROAS de ${xroas(roasOf(best))}, acima da meta de ${xroas(T)}, com ${brl(best.spend)} investidos.${best.budget ? " Orçamento atual de " + brl(best.budget) + "/dia." : ""}`, metric: xroas(roasOf(best)), ask: `Quanto posso escalar a campanha “${best.name}”?`, goto: "campaigns" });
   if (ACTIVE.prev.purchases > 0 && t.purchases > 0) {
     const d = delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases);
@@ -1874,8 +1951,8 @@ function GoogleConnectDrawer({ client, onUpdate, onClose, toast }) {
 function AdIntegrations({ client, onUpdate, toast, isAgency, live }) {
   const [open, setOpen] = useState(null);
   const conn = client.conn || {};
-  const [target, setTarget] = useState(String(client.targetRoas || 3).replace(".", ","));
-  const saveTarget = e => { e.preventDefault(); const v = parseFloat(target.replace(",", ".")); if (!(v > 0 && v < 100)) return toast("Informe uma meta de ROAS entre 0,1 e 99"); onUpdate({ targetRoas: Math.round(v * 100) / 100 }); toast("Meta de ROAS salva: " + xroas(v)); };
+  const [target, setTarget] = useState(client.targetRoas ? String(client.targetRoas).replace(".", ",") : "");
+  const saveTarget = e => { e.preventDefault(); if (!target.trim()) { onUpdate({ targetRoas: null }); return toast("Conta sem meta de ROAS"); } const v = parseFloat(target.replace(",", ".")); if (!(v > 0 && v < 100)) return toast("Informe uma meta de ROAS entre 0,1 e 99, ou deixe em branco"); onUpdate({ targetRoas: Math.round(v * 100) / 100 }); toast("Meta de ROAS salva: " + xroas(v)); };
   const card = (key, title, sub, on, detail, err) => html`<article key=${key} className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
     <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title" style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: CH[key].color }}></span>${title}</div><div className="card-sub">${sub}</div></div>
       <span className=${"pill " + (err ? "pill-bad" : on ? "pill-good" : "pill-mute")}>${err ? "Com erro" : on ? html`<span className="dot"></span>Conectado` : "Não conectado"}</span></div>
@@ -1893,8 +1970,8 @@ function AdIntegrations({ client, onUpdate, toast, isAgency, live }) {
         <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title" style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: CH.tiktok.color }}></span>TikTok Ads</div><div className="card-sub">Campanhas e Spark Ads</div></div><span className="pill pill-violet">Em breve</span></div>
         <span className="mono" style=${{ color: "var(--muted)" }}>Ainda sem conector</span></article>
       <form className="card card-pad" onSubmit=${saveTarget} style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <div><div className="card-title">Meta de ROAS da conta</div><div className="card-sub">Base dos insights, das recomendações e do copilot</div></div>
-        <div style=${{ display: "flex", gap: 8, alignItems: "center" }}><input id="target-roas" className="input num" style=${{ maxWidth: 110 }} inputMode="decimal" value=${target} onInput=${e => setTarget(e.target.value)} aria-label="Meta de ROAS" /><span style=${{ color: "var(--muted)" }}>x</span><button className="btn btn-sm btn-line" type="submit">Salvar</button></div>
+        <div><div className="card-title">Meta de ROAS da conta <span style=${{ fontWeight: 500, color: "var(--muted)", fontSize: 13 }}>(opcional)</span></div><div className="card-sub">Quando preenchida, entra nos insights, nas recomendações e no copilot. Deixe em branco para não usar meta.</div></div>
+        <div style=${{ display: "flex", gap: 8, alignItems: "center" }}><input id="target-roas" className="input num" style=${{ maxWidth: 110 }} inputMode="decimal" value=${target} onInput=${e => setTarget(e.target.value)} placeholder="Sem meta" aria-label="Meta de ROAS" /><span style=${{ color: "var(--muted)" }}>x</span><button className="btn btn-sm btn-line" type="submit">Salvar</button></div>
       </form>
     </div>
     ${open === "meta" ? html`<${MetaConnectDrawer} client=${client} onUpdate=${onUpdate} onClose=${() => setOpen(null)} toast=${toast} agency=${isAgency} />` : null}
@@ -1951,7 +2028,7 @@ function livePortfolioRows(accounts, target) {
     let waste7 = 0;
     if (a.status === 1 && m.revenue > 0 && w1.spend >= 300 && r7 < 1.5) { waste7 = w1.spend; issues.push({ t: "waste", ch: "meta", text: "ROAS de " + xroas(r7) + " nos últimos 7 dias: " + brl(w1.spend) + " investidos", act: "Ver campanhas", go: "campaigns" }); }
     if (a.status === 1 && m.purchases > 0 && w1.spend >= 100 && w1.purchases === 0) issues.push({ t: "track", ch: "meta", text: "Nenhuma conversão registrada em 7 dias, com " + brl(w1.spend) + " de gasto", act: "Ver visão geral", go: "overview" });
-    if (a.status === 1 && t.roas >= target * 1.5 && w1.spend > 0 && (!w1.revenue || r7 >= target)) issues.push({ t: "opp", ch: "meta", text: "ROAS de " + xroas(t.roas) + " em 30 dias, bem acima da meta", act: "Escalar", go: "campaigns" });
+    if (a.status === 1 && target && t.roas >= target * 1.5 && w1.spend > 0 && (!w1.revenue || r7 >= target)) issues.push({ t: "opp", ch: "meta", text: "ROAS de " + xroas(t.roas) + " em 30 dias, bem acima da meta", act: "Escalar", go: "campaigns" });
     const base7 = m.revenue > 0 ? [w1.revenue, w0.revenue] : [w1.spend, w0.spend];
     const d7 = base7[1] > 0 ? (base7[0] - base7[1]) / base7[1] : 0;
     issues.sort((x, y) => ISSUE[x.t].rank - ISSUE[y.t].rank);
@@ -1996,7 +2073,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   const isAgency = allowed.has("portfolio");
   const [screen, setScreen] = useState(startScreen && allowed.has(startScreen) ? startScreen : isAgency ? "portfolio" : allowed.has("copilot") ? "copilot" : "overview");
   const [activeId, setActiveId] = useState(null);
-  const target = client.targetRoas || TARGET_ROAS;
+  const target = fin(client.targetRoas) && client.targetRoas > 0 ? client.targetRoas : null;
   const agencyMeta = isAgency && metaOn(client.conn);
   const pf = usePortfolio(client, agencyMeta);
   const livePf = agencyMeta && pf.status === "ready" && pf.accounts.length > 0;
@@ -2025,6 +2102,11 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   const openCopilot = () => { if (isNarrow()) setDockOpen(true); else setDockHidden(false); };
   const closeCopilot = () => { if (dockOpen) setDockOpen(false); else setDockHidden(true); };
   const [camps, setCamps] = useState(CAMPAIGNS0);
+  // quebras da Meta só são buscadas depois que a pessoa abre a Performance analítica
+  const [seenAnalytics, setSeenAnalytics] = useState(false);
+  useEffect(() => { if (screen === "analytics") setSeenAnalytics(true); }, [screen]);
+  const brkMeta = metaOn(liveSrc.conn) ? liveSrc.conn.meta : null;
+  const brk = useBreakdowns(brkMeta, resultKind(isLive ? live.camps.filter(c => c.ch === "meta") : []), isLive && seenAnalytics && !!brkMeta, live.at);
   useEffect(() => { if (isLive) setCamps(live.camps); else if (!isAgency) setCamps(CAMPAIGNS0); }, [isLive, live.at]);
   const [msgs, setMsgs] = useState([]); const [typing, setTyping] = useState(false);
   const [toastMsg, setToastMsg] = useState(null);
@@ -2081,7 +2163,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   let body;
   if (!can) body = html`<${Locked} mod=${screen} plan=${client.plan} />`;
   else if (screen === "overview") body = html`<${Overview} camps=${camps} />`;
-  else if (screen === "analytics") body = html`<${Analytics} camps=${camps} />`;
+  else if (screen === "analytics") body = html`<${Analytics} camps=${camps} brk=${brk} />`;
   else if (screen === "campaigns") body = html`<${Campaigns} camps=${camps} setCamps=${setCamps} toast=${toast} chat=${chat} />`;
   else if (screen === "creatives") body = html`<${Creatives} camps=${camps} />`;
   else if (screen === "report") body = html`<${Report} camps=${camps} toast=${toast} user=${client} account=${accountName} agency=${isAgency ? client.company : null} />`;
@@ -2304,7 +2386,7 @@ function ClientDrawer({ c, upd, api, inviteRes, setInviteRes, onClose, onImperso
         </section>` : null}
         <section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Contas de anúncio</div>
           ${[["meta", "Meta Ads", metaOn(c.conn) ? c.conn.meta.accountName + " · " + c.conn.meta.accountId : null], ["google", "Google Ads", googleOn(c.conn) ? c.conn.google.customerName : null]].map(([k, l, d]) => html`<div key=${k} className="mod-row"><div><b style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: CH[k].color }}></span>${l}</b><small>${d || "Não conectado"}</small></div><span className=${"pill " + (d ? "pill-good" : "pill-mute")}>${d ? "Conectado" : "Pendente"}</span></div>`)}
-          <div className="mod-row"><div><b>Meta de ROAS</b><small>Usada nos insights e no copilot</small></div><span className="num" style=${{ fontWeight: 700 }}>${xroas(c.targetRoas || TARGET_ROAS)}</span></div>
+          <div className="mod-row"><div><b>Meta de ROAS</b><small>Usada nos insights e no copilot</small></div><span className="num" style=${{ fontWeight: 700 }}>${c.targetRoas ? xroas(c.targetRoas) : "Não definida"}</span></div>
           <div><button className="btn btn-line btn-sm" disabled=${c.status === "suspenso"} onClick=${() => onImpersonate(c.id, "integrations")}><${Icon} n="plug" s=${14} />Conectar contas deste cliente</button></div>
           <div className="card-sub">Abre a plataforma como ${c.company}, direto em Integrações. ${api.server ? "As conexões ficam no cadastro do cliente e aparecem para ele em qualquer computador." : "As conexões ficam salvas neste navegador."}</div></section>
         <section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Plano</div>
@@ -2332,14 +2414,15 @@ function ClientDrawer({ c, upd, api, inviteRes, setInviteRes, onClose, onImperso
     </aside><//>`;
 }
 function NewClient({ onClose, onCreate, server }) {
-  const [f, setF] = useState({ company: "", name: "", email: "", plan: "pro", targetRoas: "3" }); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
+  const [f, setF] = useState({ company: "", name: "", email: "", plan: "pro", targetRoas: "" }); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
   const set = k => e => setF({ ...f, [k]: e.target.value });
   const submit = async e => {
     e.preventDefault(); if (busy) return;
     if (!f.company.trim() || !f.name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) { setErr("Preencha empresa, nome e um e-mail válido."); return; }
-    const tr = parseFloat(String(f.targetRoas).replace(",", ".")); if (!(tr > 0 && tr < 100)) { setErr("Informe a meta de ROAS, por exemplo 3."); return; }
+    const rawT = String(f.targetRoas).trim(); const tr = parseFloat(rawT.replace(",", "."));
+    if (rawT && !(tr > 0 && tr < 100)) { setErr("A meta de ROAS precisa ser um número entre 0,1 e 99, ou ficar em branco."); return; }
     setBusy(true); setErr("");
-    try { await onCreate({ company: f.company.trim(), name: f.name.trim(), email: f.email.trim().toLowerCase(), plan: f.plan, targetRoas: Math.round(tr * 100) / 100, modules: [...PLANS[f.plan].modules] }); }
+    try { await onCreate({ company: f.company.trim(), name: f.name.trim(), email: f.email.trim().toLowerCase(), plan: f.plan, targetRoas: rawT ? Math.round(tr * 100) / 100 : null, modules: [...PLANS[f.plan].modules] }); }
     catch (e2) { setErr(e2.message); setBusy(false); }
   };
   return html`<${Fragment}><div className="drawer-bg" onClick=${onClose}></div>
@@ -2349,7 +2432,7 @@ function NewClient({ onClose, onCreate, server }) {
         <div className="field"><label htmlFor="nc-co">Empresa</label><input id="nc-co" className="input" value=${f.company} onInput=${set("company")} placeholder="Ex.: Ótica Lumière" /></div>
         <div className="field"><label htmlFor="nc-n">Gestor de marketing</label><input id="nc-n" className="input" value=${f.name} onInput=${set("name")} placeholder="Nome completo" /></div>
         <div className="field"><label htmlFor="nc-e">E-mail de login</label><input id="nc-e" type="email" className="input" value=${f.email} onInput=${set("email")} placeholder="nome@empresa.com.br" />${server ? html`<span className="card-sub">O convite vai para este e-mail.</span>` : null}</div>
-        <div className="field"><label htmlFor="nc-roas">Meta de ROAS</label><input id="nc-roas" className="input num" inputMode="decimal" style=${{ maxWidth: 140 }} value=${f.targetRoas} onInput=${set("targetRoas")} /><span className="card-sub">Pode ser ajustada depois em Integrações.</span></div>
+        <div className="field"><label htmlFor="nc-roas">Meta de ROAS <span style=${{ fontWeight: 500, color: "var(--muted)" }}>(opcional)</span></label><input id="nc-roas" className="input num" inputMode="decimal" style=${{ maxWidth: 140 }} value=${f.targetRoas} onInput=${set("targetRoas")} placeholder="Ex.: 3" /><span className="card-sub">Pode ficar em branco e ser definida depois em Integrações.</span></div>
         <div className="field"><label htmlFor="nc-p">Plano</label><select id="nc-p" className="input" value=${f.plan} onChange=${set("plan")}>${Object.entries(PLANS).map(([k, p]) => html`<option key=${k} value=${k}>${p.name} · ${brl(p.price)}/mês</option>`)}</select></div>
         ${err ? html`<div className="err" role="alert">${err}</div>` : null}
       </div>
