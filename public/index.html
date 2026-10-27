@@ -1309,29 +1309,8 @@ const MEDIA_CH = {
   pinterest: { label: "Pinterest Ads", color: "var(--c-pinterest)" },
   kwai: { label: "Kwai Ads", color: "var(--c-kwai)" },
 };
-// Benchmarks de mercado: quanto o resultado custa em cada canal em relação ao Meta (1 = igual).
-// A razão é aplicada ao custo REAL do Meta na conta; sem Meta na conta, usa o custo absoluto de referência.
-const BENCH_SRC = {
-  wordstream: { label: "WordStream/LocaliQ, Google Ads e Facebook Ads Benchmarks 2025 (via Flyweel)", url: "https://www.flyweel.co/blog/lead-gen-cpl-cac-benchmark-index-2025" },
-  witu: { label: "Witu Digital, CPL B2B no Brasil por canal (2026)", url: "https://witu.digital/custo-por-lead-cpl-benchmarks-b2b/" },
-  triple: { label: "Triple Whale 2025, TikTok x Meta (via Influee)", url: "https://influee.co/br/blog/tiktok-ads-benchmarks" },
-  stopa: { label: "Eduardo Stopa, custo por conversa no Meta em clínicas (2026)", url: "https://eduardostopa.com.br/custo-por-conversa-clinicas-benchmark.html" },
-};
-const MEDIA_BENCH = {
-  leads: {
-    google: { ratio: 2, range: "1,65x a 2,5x", why: "o lead no Google custa entre 1,65x (B2B no Brasil) e 2,5x (média global) o do Meta", src: ["witu", "wordstream"] },
-    linkedin: { ratio: 2.75, range: "2,75x", why: "o lead no LinkedIn custa cerca de 2,75x o do Meta no B2B brasileiro; vale para público corporativo", src: ["witu"] },
-  },
-  compras: {
-    google: { ratio: 2, range: "1,65x a 2,5x", why: "estimado pela relação de custo por lead entre Google e Meta (não há benchmark de custo por venda comparável)", src: ["witu", "wordstream"] },
-    tiktok: { ratio: 0.86, range: "0,86x", why: "o custo por compra mediano no TikTok foi 14% menor que no Meta em 2025 (US$ 32,74 x US$ 38,19, e-commerce)", src: ["triple"] },
-  },
-  conversas: {
-    google: { ratio: 2, range: "1,65x a 2,5x", why: "estimado pela relação de custo por lead entre Google e Meta, para cliques no botão de WhatsApp vindos da busca", src: ["witu", "wordstream"] },
-  },
-};
-// custo absoluto do Meta quando a conta não tem histórico no Meta
-const META_ABS = { conversas: { v: 10, src: "stopa" }, leads: { v: 100, src: "witu" } };
+// Previsão só com fontes oficiais: o histórico da própria conta (APIs do Meta e do Google).
+// Canal sem histórico na conta só entra com o custo por resultado que a pessoa informar.
 // quanto o resultado cresce quando a verba cresce (1 = linear). 0,55 = dobrar a verba rende ~1,5x resultados,
 // faixa comum ao escalar mídia paga; público saturado (frequência alta) rende menos
 const ELAST_HIST = 0.55, ELAST_REF = 0.55;
@@ -1342,8 +1321,6 @@ const numIn = v => { const n = parseFloat(String(v == null ? "" : v).replace(/\.
 // Curva de cada canal: resultados(S) = R_ref * (S / S_ref)^b
 function mediaChannels(camps, inp, kind) {
   const base = k => { const hc = camps.filter(x => x.ch === k && x.spend > 0); const S0 = hc.reduce((a, x) => a + x.spend, 0), R0 = hc.reduce((a, x) => a + x.purchases, 0), Rev0 = hc.reduce((a, x) => a + (x.revenue || 0), 0); return { hc, S0, R0, Rev0, hist: S0 > 0 && R0 > 0 }; };
-  const meta = base("meta");
-  const metaCpr = meta.hist ? meta.S0 / meta.R0 : META_ABS[kind] ? META_ABS[kind].v : null;
   // receita por resultado: real quando a conta registra valor de venda (vale também para os canais de teste)
   const all = Object.keys(MEDIA_CH).map(base).filter(x => x.hist && x.Rev0 > 0);
   const realRpr = all.length ? all.reduce((a, x) => a + x.Rev0, 0) / all.reduce((a, x) => a + x.R0, 0) : null;
@@ -1357,14 +1334,11 @@ function mediaChannels(camps, inp, kind) {
     const fq = hc.filter(x => x.freq > 0);
     const freq = fq.length ? fq.reduce((a, x) => a + x.freq * x.spend, 0) / fq.reduce((a, x) => a + x.spend, 0) : null;
     const bHist = freq == null ? ELAST_HIST : freq >= 3.5 ? 0.45 : freq >= 2.5 ? 0.5 : freq < 1.8 ? 0.65 : ELAST_HIST;
-    const bench = !hist ? (k === "meta" ? (META_ABS[kind] ? { ratio: 1, abs: true, why: "custo de referência de mercado para o Meta", src: [META_ABS[kind].src] } : null) : (MEDIA_BENCH[kind] || {})[k] || null) : null;
-    const benchCpr = bench && metaCpr ? (bench.abs ? metaCpr : metaCpr * bench.ratio) : null;
-    const refCpr = numIn(c.cpr) || benchCpr;
-    const suggested = !hist && !!benchCpr;
+    const refCpr = numIn(c.cpr) || null;
     const usable = hist || !!refCpr;
-    const on = usable && (c.on !== undefined ? !!c.on : hist || suggested);
+    const on = usable && (c.on !== undefined ? !!c.on : hist || !!refCpr);
     out.push({
-      k, ...MEDIA_CH[k], on, usable, hist, suggested, bench, benchCpr, typedCpr: !!numIn(c.cpr), metaCpr, metaReal: meta.hist, camps: hc,
+      k, ...MEDIA_CH[k], on, usable, hist, typedCpr: !!numIn(c.cpr), camps: hc,
       S0, R0, Rev0,
       cpr0: hist ? S0 / R0 : refCpr,
       b: hist ? bHist : ELAST_REF, freq,
@@ -1379,7 +1353,7 @@ function mediaChannels(camps, inp, kind) {
   }
   return out;
 }
-// canal de teste: até a verba de referência o custo é o do benchmark (não fica mais barato com pouca verba)
+// canal de teste: até a verba de referência o custo é o informado (não fica mais barato com pouca verba)
 const mResults = (ch, S, pess = 1) => S <= 0 ? 0 : (!ch.hist && S <= ch.Sref ? S / ch.cpr0 : ch.Rref * Math.pow(S / ch.Sref, ch.b)) / pess;
 const mValue = (ch, S, margin, pess) => mResults(ch, S, pess) * ch.rpr * margin;
 const mProfit = (ch, S, margin, pess) => mValue(ch, S, margin, pess) - S;
@@ -1557,7 +1531,7 @@ function MediaPlanScreen({ camps, inp, setInp, stale }) {
   const needValue = chans.some(c => c.on && !c.realRevenue);
   const kind = plan.kind, unit = planUnit(kind);
   return html`<div className="stack">
-    <${PageHead} title="Planejamento de mídia" sub="Diga quanto quer investir e veja onde colocar a verba e a previsão de resultados. Calculado com os dados da conta e benchmarks de mercado, sem gastar IA." right=${html`<${DataNote} />`} />
+    <${PageHead} title="Planejamento de mídia" sub="Diga quanto quer investir e veja onde colocar a verba e a previsão de resultados. Calculado só com os dados oficiais da conta, sem gastar IA." right=${html`<${DataNote} />`} />
     <section className="bh card">
       <div className="bh-main">
         <label className="bh-q" htmlFor="mp-budget">Quanto você tem para investir nos próximos 30 dias?</label>
@@ -1615,10 +1589,7 @@ function planWhy(plan, ins, stale) {
   for (const r of rows.filter(r => r.hist && r.freq >= 2.5)) out.push("Frequência de " + dec(r.freq, 1) + " no " + r.label + ": o público já viu bastante os anúncios, então a previsão conta com retorno menor a cada real extra. Criativos ou públicos novos ajudam.");
   if (plan.unspent >= plan.step && plan.stop === "roi") out.push("Recomendo guardar " + pmoney(plan.unspent) + ": " + (T ? "além do que está no plano, cada lead extra custaria mais que " + pmoney(T) + "." : "além do que está no plano, o retorno ficaria abaixo do mínimo."));
   for (const r of plan.rows.filter(r => r.on && !r.hist)) {
-    const est = pmoney(r.cpr0) + " por " + one;
-    const basis = r.typedCpr ? "pelo custo que você informou (" + est + ")"
-      : r.bench && r.bench.abs ? "pelo custo de referência de mercado (" + est + ")"
-      : r.bench ? r.bench.why + "; aplicado ao " + (r.metaReal ? "seu custo no Meta (" + pmoney(r.metaCpr) + ")" : "custo de referência do Meta") + ", estimo " + est : "";
+    const basis = "com o custo que você informou (" + pmoney(r.cpr0) + " por " + one + "), já que a conta não tem histórico nesse canal";
     out.push(r.spend > 0 ? "Sugiro testar o " + r.label + " com " + pmoney(r.spend) + " (" + pct(r.spend / plan.tot.spend, 0) + " da verba): " + basis + ". Depois de 2 a 3 semanas, a previsão passa a usar os dados reais."
       : r.label + " ficou de fora: " + basis + (T && r.cpr0 > T ? ", acima da sua meta de " + pmoney(T) + " por lead." : ", e com esse custo não compensa frente aos outros canais."));
   }
@@ -1655,7 +1626,7 @@ function PlanCard({ m, camps, inp, live, setInp, onBudget, stale }) {
       </div>`)}
     </div>
     <div className="plan-sec"><b>Por quê</b><ul>${planWhy(plan, ins, stale).map((b, i) => html`<li key=${i}>${b}</li>`)}</ul>
-      ${(srcs => srcs.length ? html`<small className="card-sub">Benchmarks: ${srcs.map((k, i) => html`<${Fragment} key=${k}>${i ? " · " : ""}<a href=${BENCH_SRC[k].url} target="_blank" rel="noopener noreferrer">${BENCH_SRC[k].label}</a><//>`)}. São referências de mercado, não dados da sua conta.</small>` : null)([...new Set(plan.rows.filter(r => r.on && !r.hist && r.bench && !r.typedCpr).flatMap(r => r.bench.src))])}
+      <small className="card-sub">Previsão feita só com dados oficiais da conta${(l => l.length ? ", vindos " + (l.length > 1 ? "das APIs do " + l.slice(0, -1).join(", do ") + " e do " + l[l.length - 1] : "da API do " + l[0]) : "")(plan.rows.filter(r => r.hist).map(r => r.label.replace(" Ads", "")))}.${plan.rows.some(r => r.on && !r.hist) ? " Canais sem histórico usam o custo que você informou." : ""}</small>
     </div>
     ${ins.scen.length > 1 ? html`<div className="plan-sec"><b>Compare</b>
       <div className="plan-scen">${ins.scen.map(s => html`<button key=${s.label} className=${"plan-sc" + (s.B === plan.budget ? " on" : "")} onClick=${() => s.B !== plan.budget && onBudget(s.B)} disabled=${!live}>
@@ -1668,8 +1639,8 @@ function PlanCard({ m, camps, inp, live, setInp, onBudget, stale }) {
         ${plan.rows.some(r => r.on && !r.realRevenue) ? html`<label className="plan-lbl">Ticket médio<div className="m-in"><span>R$</span><input className="input num" inputMode="decimal" value=${inp.ticket} onInput=${e => setInp({ ...inp, ticket: e.target.value })} /></div></label>` : null}<//>`}
       </div>
       ${T ? null : html`<small className="card-sub">Margem de 100% calcula o ROI sobre a receita. O ROI mínimo vale para o último real investido.</small>`}
-      <div className="plan-chs">${plan.rows.map(r => html`<div key=${r.k}><${Toggle} on=${r.on} disabled=${!r.usable} onChange=${v => updCh(r.k, "on", v)} label=${(r.on ? "Tirar " : "Incluir ") + r.label} /><span>${r.label}${r.suggested ? html` <small style=${{ display: "block" }}>benchmark ${r.bench.range}</small>` : null}</span>${r.hist ? html`<small>${pmoney(r.cpr0)} por ${kindOne(plan.kind)}</small>` : html`<span className="m-in" style=${{ width: 116 }}><span>R$</span><input className="input num" inputMode="decimal" placeholder=${r.benchCpr ? "" : "informe"} value=${((inp.ch || {})[r.k] || {}).cpr != null ? inp.ch[r.k].cpr : r.benchCpr ? String(Math.round(r.benchCpr * 100) / 100).replace(".", ",") : ""} onInput=${e => updCh(r.k, "cpr", e.target.value)} aria-label=${"Custo por " + kindOne(plan.kind) + " no " + r.label} /></span>`}</div>`)}</div>
-      <small className="card-sub">Canais sem histórico entram como teste (até ${pct(TEST_CAP, 0)} da verba) com o custo estimado pelo benchmark. Para canais sem benchmark confiável, como Pinterest e Kwai, informe o custo esperado para incluí-los.</small>
+      <div className="plan-chs">${plan.rows.map(r => html`<div key=${r.k}><${Toggle} on=${r.on} disabled=${!r.usable} onChange=${v => updCh(r.k, "on", v)} label=${(r.on ? "Tirar " : "Incluir ") + r.label} /><span>${r.label}</span>${r.hist ? html`<small>${pmoney(r.cpr0)} por ${kindOne(plan.kind)}</small>` : html`<span className="m-in" style=${{ width: 116 }}><span>R$</span><input className="input num" inputMode="decimal" placeholder="informe" value=${((inp.ch || {})[r.k] || {}).cpr != null ? inp.ch[r.k].cpr : ""} onInput=${e => updCh(r.k, "cpr", e.target.value)} aria-label=${"Custo por " + kindOne(plan.kind) + " no " + r.label} /></span>`}</div>`)}</div>
+      <small className="card-sub">A previsão usa só dados oficiais da conta. Para testar um canal sem histórico, informe o custo por ${kindOne(plan.kind)} que você espera nele: ele entra como teste, com até ${pct(TEST_CAP, 0)} da verba.</small>
     </details>` : html`<small className="card-sub">Plano anterior. O mais recente fica no fim da conversa.</small>`}
   <//>`;
 }
@@ -1708,7 +1679,7 @@ function HomeCopilot({ user, client, chat, camps, insights, go }) {
         <div className="hello" style=${{ padding: "28px 0 6px" }}>
           <div style=${{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}><span className="badge-co" style=${{ marginBottom: 0 }}><${Icon} n="sparkles" s=${13} />Copilot de Marketing · ${client.company}</span><${AIBadge} /></div>
           <h1>${hour < 12 ? "Bom dia" : "Boa tarde"}, ${first}. O que vamos fazer pelas suas campanhas hoje?</h1>
-          <button className="plan-entry" onClick=${chat.startPlanner}><span className="bot-ico"><${Icon} n="chart" s=${15} /></span><span><b>Planejador de mídia com IA</b><small>Diga quanto quer investir e receba onde colocar a verba e a previsão de resultados, com base nos dados da conta e em benchmarks de mercado.</small></span><${Icon} n="arrowR" s=${16} /></button>
+          <button className="plan-entry" onClick=${chat.startPlanner}><span className="bot-ico"><${Icon} n="chart" s=${15} /></span><span><b>Planejador de mídia com IA</b><small>Diga quanto quer investir e receba onde colocar a verba e a previsão de resultados, com base nos dados oficiais da conta.</small></span><${Icon} n="arrowR" s=${16} /></button>
           <p>Analisei ${camps.length} campanhas em ${(l => l.length > 1 ? l.slice(0, -1).join(", ") + " e " + l[l.length - 1] : l[0])(chPresent(camps).map(k => CH[k].label.replace(" Ads", "")))}. Os pontos de atenção estão no painel de insights; clique em qualquer um para conversar sobre ele.</p>
         </div>
         <${ChatMessages} msgs=${chat.msgs} typing=${chat.typing} onAction=${chat.onAction} onConfirm=${chat.onConfirm} endRef=${end} custom=${chat.custom} />
