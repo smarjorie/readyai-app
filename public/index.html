@@ -481,6 +481,16 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .icon-btn.danger:hover{color:var(--bad);background:var(--bad-soft)}
 .confirm-row.del td{background:var(--bad-soft)!important}
 .confirm-row.del svg{color:var(--bad);flex:none}
+.ppl-row{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.ppl-row>div:nth-child(2){flex:1;min-width:0}
+.ppl-row b{display:flex;align-items:center;gap:6px;font-size:13.5px;flex-wrap:wrap}
+.ppl-row small{display:block;font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+.ppl-av{width:30px;height:30px;border-radius:50%;background:var(--accent-soft);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-size:12px;flex:none;text-transform:uppercase}
+.ppl-extra .ppl-av{background:var(--surface-2);color:var(--muted-2)}
+.ppl-acts{display:flex;gap:2px;flex:none}
+.ppl-acts .btn{padding:0 7px}
+.ppl-form{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--accent);border-radius:12px;background:var(--accent-soft)}
+.ppl-form .input{background:var(--surface)}
 .inv-box{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);font-size:13px}
 .inv-box b{display:block;font-size:13.5px;color:var(--ink)}
 .inv-box span{color:var(--muted-2);line-height:1.5}
@@ -705,6 +715,7 @@ const ICONS = {
   menu: ["M4 6h16", "M4 12h16", "M4 18h16"],
   msg: ["M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"],
   plus: ["M12 5v14", "M5 12h14"],
+  edit: ["M12 20h9", "M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"],
   check: ["M20 6 9 17l-5-5"],
   chevD: ["m6 9 6 6 6-6"],
   chevR: ["m9 18 6-6-6-6"],
@@ -3001,7 +3012,7 @@ function AdminConsole({ clients, api, onLogout, onImpersonate, adminName }) {
         <div className="card card-pad"><div className="tbl-wrap" style=${{ marginTop: -18 }}><table className="tbl"><thead><tr><th>Cliente</th><th>Plano</th><th>Módulos</th><th>Status</th><th>Último acesso</th><th className="r">Mensalidade</th><th></th></tr></thead>
           <tbody>${list.map(c => { const custom = c.modules.slice().sort().join() !== PLANS[c.plan].modules.slice().sort().join();
             return html`<${Fragment} key=${c.id}><tr style=${{ cursor: "pointer" }} onClick=${() => setSel(c.id)}>
-              <td><b style=${{ color: "var(--ink)", display: "block" }}>${c.company}</b><span style=${{ fontSize: 12 }}>${c.name} · ${c.email}</span></td>
+              <td><b style=${{ color: "var(--ink)", display: "block" }}>${c.company}</b><span style=${{ fontSize: 12 }}>${c.name} · ${c.email}${c.users && c.users.length ? " · +" + c.users.length + (c.users.length === 1 ? " acesso" : " acessos") : ""}</span></td>
               <td><span className="pill pill-info">${PLANS[c.plan].name}</span>${custom ? html` <span className="pill pill-violet">Personalizado</span>` : null}</td>
               <td className="num">${c.modules.filter(m => MODULES.find(x => x.key === m && !x.hidden)).length} de ${visibleMods.length}</td>
               <td>${statusPill(c.status)}${inviteNote(c)}</td><td>${fmtWhen(c.lastAccess)}</td><td className="r num">${brl(PLANS[c.plan].price)}</td>
@@ -3034,6 +3045,56 @@ function AdminConsole({ clients, api, onLogout, onImpersonate, adminName }) {
   </div>`;
 }
 
+// responsável pela conta e acessos extras (cada um entra com o próprio e-mail e senha)
+function PeopleSection({ c, api, toast }) {
+  const [edit, setEdit] = useState(null); // "owner" | id do acesso | "new"
+  const [f, setF] = useState({ name: "", email: "" });
+  const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
+  const [links, setLinks] = useState({}); const [secrets, setSecrets] = useState({}); const [confirmRm, setConfirmRm] = useState(null);
+  useEffect(() => { setEdit(null); setErr(""); setLinks({}); setSecrets({}); setConfirmRm(null); }, [c.id]);
+  const users = c.users || [];
+  const open = (who, name, email) => { setEdit(who); setF({ name: name || "", email: email || "" }); setErr(""); };
+  const valid = f.name.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim());
+  // devolve { ok, r }: ok=false quando o servidor recusou (o erro aparece no formulário)
+  const run = async (fn, ok) => { setBusy(true); setErr(""); try { const r = await fn(); if (ok) toast(typeof ok === "function" ? ok(r) : ok); return { ok: true, r }; } catch (e) { setErr(e.message); return { ok: false }; } finally { setBusy(false); } };
+  const save = async e => {
+    e.preventDefault(); if (!valid || busy) return;
+    const data = { name: f.name.trim(), email: f.email.trim().toLowerCase() };
+    if (edit === "owner") { const x = await run(() => api.update(c.id, data), "Responsável atualizado"); if (x.ok) setEdit(null); }
+    else if (edit === "new") { const x = await run(() => api.addUser(c.id, data)); const r = x.r; if (x.ok && r) { setEdit(null); if (r.invite) { setLinks(x => ({ ...x, [r.userId]: r.invite.link })); toast(r.invite.sent ? "Convite enviado para " + data.email : "Acesso criado, mas o e-mail não saiu. Copie o link do convite."); } else if (r.password) { setSecrets(x => ({ ...x, [r.userId]: r.password })); toast("Acesso criado"); } } }
+    else { const x = await run(() => api.updateUser(c.id, edit, data), "Acesso atualizado"); if (x.ok) setEdit(null); }
+  };
+  const form = (title, cta) => html`<form className="ppl-form" onSubmit=${save}>
+    <b>${title}</b>
+    <div className="grid g2"><div className="field"><label htmlFor="pp-n">Nome</label><input id="pp-n" className="input" value=${f.name} onInput=${e => setF({ ...f, name: e.target.value })} autoFocus /></div>
+      <div className="field"><label htmlFor="pp-e">E-mail de login</label><input id="pp-e" type="email" className="input" value=${f.email} onInput=${e => setF({ ...f, email: e.target.value })} /></div></div>
+    ${edit === "owner" && f.email.trim().toLowerCase() !== c.email.toLowerCase() ? html`<span className="card-sub">O login passa a ser o novo e-mail. ${c.hasPassword ? "A senha continua a mesma." : "O convite pendente continua valendo."}</span>` : null}
+    ${err ? html`<div className="err" role="alert">${err}</div>` : null}
+    <div className="msg-actions"><button className="btn btn-sm btn-primary" type="submit" disabled=${!valid || busy}>${busy ? "Salvando…" : cta}</button><button className="btn btn-sm btn-line" type="button" onClick=${() => setEdit(null)}>Cancelar</button></div>
+  </form>`;
+  const status = u => u.hasPassword || (u.invite && u.invite.acceptedAt) || u.password ? html`<span className="pill pill-good"><span className="dot"></span>${u.lastAccess && u.lastAccess !== "nunca" ? "Último acesso " + (/^\d{4}-/.test(u.lastAccess) ? fmtWhen(u.lastAccess) : u.lastAccess) : "Ativo"}</span>`
+    : u.invite && u.invite.emailError ? html`<span className="pill pill-bad">E-mail não enviado</span>` : html`<span className="pill pill-warn">Convite enviado</span>`;
+  return html`<section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Responsável e acessos</div>
+    ${edit === "owner" ? form("Editar responsável pela conta", "Salvar") : html`<div className="ppl-row"><span className="ppl-av">${(c.name || "?")[0]}</span><div><b>${c.name} <span className="pill pill-info" style=${{ height: 18, fontSize: 10.5 }}>Responsável</span></b><small>${c.email}</small></div>
+      <button className="btn btn-sm btn-ghost" onClick=${() => open("owner", c.name, c.email)} aria-label="Editar responsável"><${Icon} n="edit" s=${14} />Editar</button></div>`}
+    ${users.map(u => edit === u.id ? html`<div key=${u.id}>${form("Editar acesso", "Salvar")}</div>` : html`<div key=${u.id} className="ppl-row ppl-extra"><span className="ppl-av">${(u.name || "?")[0]}</span>
+      <div style=${{ minWidth: 0 }}><b>${u.name}</b><small>${u.email}</small><div style=${{ marginTop: 4 }}>${status(u)}</div>
+        ${links[u.id] ? html`<div style=${{ display: "flex", gap: 6, marginTop: 8 }}><input className="input mono" style=${{ fontSize: 11.5, height: 32 }} readOnly value=${links[u.id]} onFocus=${e => e.target.select()} aria-label="Link do convite" /><button className="btn btn-sm btn-line" onClick=${() => copyText(links[u.id], toast, "Link copiado")}><${Icon} n="copy" s=${13} />Copiar</button></div>` : null}
+        ${secrets[u.id] ? html`<div className="secret" style=${{ marginTop: 8 }}><span>Senha temporária:</span><code>${secrets[u.id]}</code><button className="btn btn-sm btn-line" onClick=${() => copyText(secrets[u.id], toast, "Senha copiada")}><${Icon} n="copy" s=${13} />Copiar</button></div>` : null}
+        ${confirmRm === u.id ? html`<div className="msg-actions" style=${{ marginTop: 8 }}><span className="card-sub" style=${{ flexBasis: "100%" }}>Remover o acesso de ${u.email}? A pessoa deixa de entrar na plataforma.</span><button className="btn btn-sm btn-danger" disabled=${busy} onClick=${async () => { const x = await run(() => api.removeUser(c.id, u.id), "Acesso removido"); if (x.ok) setConfirmRm(null); }}>Remover</button><button className="btn btn-sm btn-line" onClick=${() => setConfirmRm(null)}>Cancelar</button></div>` : null}
+      </div>
+      <div className="ppl-acts">
+        ${api.server && !u.hasPassword && !(u.invite && u.invite.acceptedAt) ? html`<button className="btn btn-sm btn-ghost" title="Reenviar convite" disabled=${busy} onClick=${async () => { const x = await run(() => api.resendUser(c.id, u.id), r => r.invite.sent ? "Convite reenviado para " + u.email : "Novo link criado, mas o e-mail não saiu. Copie o link."); if (x.ok) setLinks(l => ({ ...l, [u.id]: x.r.invite.link })); }}><${Icon} n="refresh" s=${14} /></button>` : null}
+        <button className="btn btn-sm btn-ghost" title="Gerar senha temporária" disabled=${busy} onClick=${async () => { const x = await run(() => api.resetUserPassword(c.id, u.id)); if (x.ok) setSecrets(l => ({ ...l, [u.id]: x.r })); }}><${Icon} n="key" s=${14} /></button>
+        <button className="btn btn-sm btn-ghost" title="Editar" onClick=${() => open(u.id, u.name, u.email)}><${Icon} n="edit" s=${14} /></button>
+        <button className="btn btn-sm btn-ghost" title="Remover acesso" onClick=${() => setConfirmRm(u.id)}><${Icon} n="trash" s=${14} /></button>
+      </div></div>`)}
+    ${edit === "new" ? form("Novo acesso", api.server ? "Enviar convite" : "Criar acesso")
+      : users.length < 5 ? html`<div><button className="btn btn-sm btn-line" onClick=${() => open("new")}><${Icon} n="plus" s=${14} />Adicionar acesso</button></div>` : null}
+    <span className="card-sub">Cada acesso entra com o próprio e-mail e senha e vê os mesmos dados de ${c.company}. ${api.server ? "A pessoa recebe um convite por e-mail para criar a senha." : "Uma senha temporária é gerada ao criar."}</span>
+    ${err && !edit ? html`<div className="err" role="alert">${err}</div>` : null}
+  </section>`;
+}
 function ClientDrawer({ c, upd, api, inviteRes, setInviteRes, onClose, onImpersonate, onDelete, busy, toast, visibleMods }) {
   const [secret, setSecret] = useState(c.newPass || null);
   const [confirmDel, setConfirmDel] = useState(false); const [sending, setSending] = useState(false);
@@ -3052,11 +3113,13 @@ function ClientDrawer({ c, upd, api, inviteRes, setInviteRes, onClose, onImperso
       <div className="drawer-head"><div><div className="eyebrow">Cliente</div><h2 style=${{ fontSize: 20, fontWeight: 700 }}>${c.company}</h2><div className="card-sub">${c.name} · ${c.email} · cliente desde ${c.since.split("-").reverse().join("/")}</div></div>
         <button className="btn btn-ghost btn-sm" onClick=${onClose} aria-label="Fechar"><${Icon} n="x" /></button></div>
       <div className="drawer-body">
+        <${PeopleSection} c=${c} api=${api} toast=${toast} />
         ${api.server && (c.status === "convite" || inv) ? html`<section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Convite por e-mail</div>
           ${inv && inv.acceptedAt ? html`<div className="inv-box good"><${Icon} n="check" s=${16} /><div><b>Convite aceito</b><span>${c.name} criou a senha em ${fmtDay(inv.acceptedAt)} às ${new Date(inv.acceptedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}.</span></div></div>`
             : html`<${Fragment}>
             ${inv && inv.emailError ? html`<div className="inv-box bad"><${Icon} n="alert" s=${16} /><div><b>O e-mail não foi enviado</b><span>${inv.emailError}</span></div></div>`
-              : inv && inv.sentAt ? html`<div className="inv-box"><${Icon} n="mail" s=${16} /><div><b>Enviado ${fmtWhen(inv.sentAt)} para ${c.email}</b><span>Aguardando a pessoa criar a senha. O link vale até ${fmtDay(inv.expiresAt)}.</span></div></div>`
+              : inv && inv.sentAt && inv.sentTo && inv.sentTo !== c.email ? html`<div className="inv-box bad"><${Icon} n="alert" s=${16} /><div><b>O e-mail do responsável mudou</b><span>O convite foi enviado para ${inv.sentTo}. Reenvie para ${c.email} criar a senha.</span></div></div>`
+              : inv && inv.sentAt ? html`<div className="inv-box"><${Icon} n="mail" s=${16} /><div><b>Enviado ${fmtWhen(inv.sentAt)} para ${inv.sentTo || c.email}</b><span>Aguardando a pessoa criar a senha. O link vale até ${fmtDay(inv.expiresAt)}.</span></div></div>`
               : html`<div className="inv-box"><${Icon} n="mail" s=${16} /><div><b>Nenhum convite enviado ainda</b><span>Envie o convite para ${c.email} criar a senha.</span></div></div>`}
             ${inviteRes && inviteRes.link ? html`<div className="field"><label htmlFor="inv-link">Link do convite</label><div style=${{ display: "flex", gap: 8 }}><input id="inv-link" className="input mono" style=${{ fontSize: 12 }} readOnly value=${inviteRes.link} onFocus=${e => e.target.select()} /><button className="btn btn-line" onClick=${() => copyText(inviteRes.link, toast, "Link copiado")}><${Icon} n="copy" s=${14} />Copiar</button></div><span className="card-sub">Ele aparece só agora. Reenviar o convite cria um link novo e invalida o anterior.</span></div>` : null}
             <div><button className="btn btn-line btn-sm" disabled=${sending || c.status === "suspenso"} onClick=${resend}><${Icon} n="refresh" s=${14} />${sending ? "Enviando…" : inv && inv.sentAt ? "Reenviar convite" : "Enviar convite"}</button></div>
@@ -3280,6 +3343,11 @@ function ServerApp({ welcome }) {
     remove: async id => { await call("/api/clients", { action: "delete", id }); setClients(cs => cs.filter(c => c.id !== id)); },
     resend: async id => { const j = await call("/api/clients", { action: "resend", id }); replace(j.client); return j; },
     resetPassword: async id => { const j = await call("/api/clients", { action: "reset_password", id }); replace(j.client); return j.password; },
+    addUser: async (id, user) => { const j = await call("/api/clients", { action: "add_user", id, user }); replace(j.client); const nu = (j.client.users || []).find(u => u.email === user.email); return { ...j, userId: nu && nu.id }; },
+    updateUser: async (id, userId, patch) => { const j = await call("/api/clients", { action: "update_user", id, userId, patch }); replace(j.client); return j; },
+    resendUser: async (id, userId) => { const j = await call("/api/clients", { action: "resend_user", id, userId }); replace(j.client); return j; },
+    resetUserPassword: async (id, userId) => { const j = await call("/api/clients", { action: "reset_user_password", id, userId }); replace(j.client); return j.password; },
+    removeUser: async (id, userId) => { const j = await call("/api/clients", { action: "remove_user", id, userId }); replace(j.client); return j; },
     importLegacy: async list => { const j = await call("/api/clients", { action: "import", clients: list }); setClients(j.clients); return j; },
   };
   const logout = () => { setSess(null); setClients([]); setAdmin(null); };
@@ -3306,8 +3374,9 @@ function LocalApp() {
   useEffect(() => { if (session && session.to) setSession(x => { const n = { ...x }; delete n.to; return n; }); }, [session && session.to]);
   const auth = async (email, pass) => {
     if (email === ADMIN.email) { let ok = false; try { ok = (await sha256(pass)) === ADMIN.passHash; } catch (x) {} if (ok) return setSession({ role: "admin" }); throw new Error("E-mail ou senha incorretos. Confira os dados e tente de novo."); }
-    const c = clients.find(x => x.email.toLowerCase() === email);
-    if (!c || c.password !== pass) throw new Error("E-mail ou senha incorretos. Confira os dados e tente de novo.");
+    const c = clients.find(x => x.email.toLowerCase() === email || (x.users || []).some(u => u.email.toLowerCase() === email && u.password === pass));
+    const okPass = c && (c.email.toLowerCase() === email ? c.password === pass : true);
+    if (!c || !okPass) throw new Error("E-mail ou senha incorretos. Confira os dados e tente de novo.");
     if (c.status === "suspenso") throw new Error("Seu acesso está suspenso. Fale com comercial@readyai.com para reativar.");
     setSession({ role: "client", clientId: c.id });
     setClients(cs => cs.map(x => x.id === c.id ? { ...x, lastAccess: "agora", status: x.status === "convite" ? "ativo" : x.status } : x));
@@ -3323,6 +3392,16 @@ function LocalApp() {
     update: async (id, patch) => setClients(cs => cs.map(c => c.id === id ? { ...c, ...patch } : c)),
     remove: async id => setClients(cs => cs.filter(c => c.id !== id)),
     resetPassword: async id => { const p = tempPass(); setClients(cs => cs.map(c => c.id === id ? { ...c, password: p, newPass: p } : c)); return p; },
+    // acessos extras no modo local: senha temporária em vez de convite
+    addUser: async (id, user) => {
+      const used = e => clients.some(c => c.email.toLowerCase() === e || (c.users || []).some(u => u.email.toLowerCase() === e));
+      if (used(user.email)) throw new Error("Esse e-mail já tem acesso.");
+      const p = tempPass(), u = { id: "u" + Date.now(), ...user, password: p, lastAccess: "nunca" };
+      setClients(cs => cs.map(c => c.id === id ? { ...c, users: [...(c.users || []), u] } : c)); return { userId: u.id, password: p };
+    },
+    updateUser: async (id, userId, patch) => setClients(cs => cs.map(c => c.id === id ? { ...c, users: (c.users || []).map(u => u.id === userId ? { ...u, ...patch } : u) } : c)),
+    resetUserPassword: async (id, userId) => { const p = tempPass(); setClients(cs => cs.map(c => c.id === id ? { ...c, users: (c.users || []).map(u => u.id === userId ? { ...u, password: p } : u) } : c)); return p; },
+    removeUser: async (id, userId) => setClients(cs => cs.map(c => c.id === id ? { ...c, users: (c.users || []).filter(u => u.id !== userId) } : c)),
   };
   if (!session) return html`<${Login} auth=${auth} showDemo=${true} />`;
   const logout = () => setSession(null);
