@@ -709,7 +709,9 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .tl-dot{width:8px;height:8px;border-radius:50%;background:var(--line-2);display:inline-block;flex:none}
 .tl-chip.on{border-color:var(--tc);background:color-mix(in srgb,var(--tc) 7%,var(--surface));box-shadow:inset 0 -2px 0 var(--tc)}
 .tl-chip.on .tl-dot{background:var(--tc)}
-.tl-plot{position:relative;width:100%}
+.tl{display:flex;flex-direction:column}
+.tl-plot{position:relative;width:100%;flex:1;min-height:250px}
+.tl-plot svg{position:absolute;left:0;top:0}
 @media (max-width:760px){.tl-chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}.tl-chip{flex:none;min-width:0}}
 .tl-plot svg{display:block;overflow:visible;cursor:crosshair}
 .tl-ax{font-size:11px;fill:var(--muted)}
@@ -726,6 +728,28 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .fnl-lb b{font-size:15px;line-height:1.3;color:var(--ink)}
 .fnl-svg{min-width:0}.fnl-svg svg{display:block;overflow:visible}
 .fnl-rate{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.has-tip{position:relative}
+.tip-b{position:absolute;left:12px;right:12px;top:calc(100% + 6px);z-index:30;background:var(--ink);color:var(--surface);border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.45;font-weight:400;text-align:left;box-shadow:0 10px 28px rgba(17,24,39,.22);opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .12s,transform .12s,visibility .12s;pointer-events:none;white-space:normal}
+.has-tip:hover>.tip-b,.has-tip:focus-visible>.tip-b{opacity:1;visibility:visible;transform:none;transition-delay:.15s}
+.tip-b p{margin:0;color:inherit;font-size:12.5px}
+.tip-b dl{margin:8px 0 0;display:flex;flex-direction:column;gap:3px;border-top:1px solid color-mix(in srgb,var(--surface) 20%,transparent);padding-top:8px}
+.tip-b dl:first-child{margin-top:0;border-top:0;padding-top:0}
+.tip-b dl div{display:flex;justify-content:space-between;gap:14px}
+.tip-b dt{opacity:.72}.tip-b dd{margin:0;font-weight:600}
+.kpi.has-tip{cursor:help}.kpi.has-tip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tl-chip .tip-b{left:0;right:auto;width:250px}
+.fnl-body{position:relative}
+.fnl-lb{cursor:help;border-radius:8px;transition:background .12s;padding-left:6px;margin-left:-6px}
+.fnl-lb.on{background:var(--surface-2)}
+.fnl-lb.miss b{color:var(--muted);font-weight:600;font-size:13px}
+.fnl-tip{position:absolute;left:0;width:min(280px,100%);z-index:30;background:var(--ink);color:var(--surface);border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.45;box-shadow:0 10px 28px rgba(17,24,39,.22);pointer-events:none}
+.fnl-tip>b{display:block;margin-bottom:4px}
+.fnl-tip p{margin:0 0 6px;font-size:12.5px;color:inherit;opacity:.85}
+.fnl-tip dl{margin:0;display:flex;flex-direction:column;gap:3px}
+.fnl-tip dl div{display:flex;justify-content:space-between;gap:14px}.fnl-tip dt{opacity:.72}.fnl-tip dd{margin:0;font-weight:600}
+.fnl-foot>.has-tip{cursor:help}
+.fnl-miss{display:flex;gap:8px;align-items:flex-start;margin-top:12px;padding:10px 12px;border-radius:10px;border:1px dashed var(--line-2);font-size:12.5px;color:var(--muted-2);line-height:1.45}
+.fnl-miss svg{color:var(--warn);flex:none;margin-top:2px}.fnl-miss b{color:var(--ink)}
 .fnl-foot{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
 .fnl-foot>div{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .fnl-foot small{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
@@ -1413,9 +1437,39 @@ function Delta({ v, invert }) {
   const good = invert ? v < 0 : v > 0;
   return html`<span className=${"delta " + (good ? "up" : "down")}><${Icon} n=${v > 0 ? "up" : "down"} s=${13} />${pct(Math.abs(v), 1)}</span>`;
 }
-function Kpi({ label, value, d, invert, hint }) {
-  return html`<div className="card kpi"><div className="kpi-l"><span>${label}</span>${d !== undefined ? html`<${Delta} v=${d} invert=${invert} />` : null}</div>
-    <div className="kpi-v num">${value}</div>${hint ? html`<div className="card-sub">${hint}</div>` : null}</div>`;
+// o que cada métrica quer dizer, mostrado ao passar o mouse
+const METRIC_DESC = {
+  "Investimento": "Soma do valor gasto em todas as campanhas no período.",
+  "Investido": "Valor gasto no período.",
+  "Impressões": "Quantas vezes os anúncios foram exibidos. A mesma pessoa pode contar mais de uma vez.",
+  "Cliques": "Cliques no anúncio (link, botão ou perfil), como a plataforma conta.",
+  "CTR": "Taxa de cliques: cliques ÷ impressões. Mostra o quanto o anúncio chama atenção.",
+  "CTR médio": "Taxa de cliques: cliques ÷ impressões. Mostra o quanto o anúncio chama atenção.",
+  "CPC": "Custo por clique: investimento ÷ cliques.",
+  "CPC médio": "Custo por clique: investimento ÷ cliques.",
+  "CPM": "Custo por mil impressões: investimento ÷ impressões × 1.000. Mostra o preço do leilão.",
+  "Receita": "Valor das compras registradas pelo pixel, pela API de conversões ou pela loja.",
+  "ROAS": "Retorno sobre o investimento: receita ÷ investimento. 3x quer dizer R$ 3 de receita para cada R$ 1 investido.",
+  "Taxa de conversão": "Resultados ÷ cliques.",
+  "Compras": "Compras registradas pelo pixel, pela API de conversões ou pela integração da loja.",
+  "Leads": "Cadastros: formulários instantâneos da Meta e leads registrados pelo pixel.",
+  "Conversas iniciadas": "Conversas abertas no WhatsApp, Messenger ou Direct a partir do anúncio.",
+  "Conversões": "Soma do resultado principal de cada campanha: compras, leads ou conversas.",
+  "Adições ao carrinho": "Produtos adicionados ao carrinho, registrados pelo pixel.",
+  "Checkouts iniciados": "Pessoas que começaram a finalizar a compra, registradas pelo pixel.",
+  "CPA": "Custo por aquisição: investimento ÷ compras.",
+  "Custo por lead": "Investimento ÷ leads.",
+  "Custo por conversa": "Investimento ÷ conversas iniciadas.",
+  "Custo por conversão": "Investimento ÷ conversões.",
+};
+function TipBox({ desc, rows }) {
+  const r = (rows || []).filter(Boolean);
+  return html`<div className="tip-b" role="tooltip">${desc ? html`<p>${desc}</p>` : null}${r.length ? html`<dl>${r.map(([k, v]) => html`<div key=${k}><dt>${k}</dt><dd className="num">${v}</dd></div>`)}</dl>` : null}</div>`;
+}
+function Kpi({ label, value, d, invert, hint, tip }) {
+  const desc = METRIC_DESC[label], has = !!(desc || tip);
+  return html`<div className=${"card kpi" + (has ? " has-tip" : "")} tabIndex=${has ? 0 : undefined}><div className="kpi-l"><span>${label}</span>${d !== undefined ? html`<${Delta} v=${d} invert=${invert} />` : null}</div>
+    <div className="kpi-v num">${value}</div>${hint ? html`<div className="card-sub">${hint}</div>` : null}${has ? html`<${TipBox} desc=${desc} rows=${tip} />` : null}</div>`;
 }
 function ChTag({ ch }) { return html`<span style=${{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "var(--muted-2)" }}><span className="ch-dot" style=${{ background: CH[ch].color }}></span>${CH[ch].label}</span>`; }
 function StatusPill({ s }) {
@@ -1887,16 +1941,16 @@ function InsightCard({ i, chat, go, full }) {
 
 /* ================= linha do tempo e funil da visão geral ================= */
 // largura real do elemento, para os gráficos desenharem em pixels (texto sempre no mesmo tamanho)
-function useWidth(init) {
-  const ref = useRef(null); const [w, setW] = useState(init);
+function useWidth(init, initH) {
+  const ref = useRef(null); const [w, setW] = useState(init); const [h, setH] = useState(initH || 0);
   useEffect(() => {
     if (!ref.current) return;
-    const upd = () => { const x = ref.current && ref.current.getBoundingClientRect().width; if (x) setW(Math.round(x)); };
+    const upd = () => { const r = ref.current && ref.current.getBoundingClientRect(); if (r && r.width) { setW(Math.round(r.width)); setH(Math.round(r.height)); } };
     upd();
     let ro; try { ro = new ResizeObserver(upd); ro.observe(ref.current); } catch (e) { window.addEventListener("resize", upd); }
     return () => { if (ro) ro.disconnect(); else window.removeEventListener("resize", upd); };
   }, []);
-  return [ref, w];
+  return [ref, w, h];
 }
 // taxa com casas decimais que fazem sentido (0,46% em vez de 0%)
 const pctA = v => !fin(v) ? "—" : v < 0.01 ? pct(v, 2) : v < 0.1 ? pct(v, 1) : pct(v, 0);
@@ -1946,9 +2000,10 @@ function Timeline({ days, kind, sells, sub }) {
     if (n.includes(k)) { if (n.length > 1) n = n.filter(x => x !== k); } else n = n.length >= 2 ? [n[0], k] : [...n, k];
     setSelS(n); store.set("readyai_tl2", n);
   };
-  const [ref, W] = useWidth(700);
+  const [ref, W, PH] = useWidth(700, 250);
   const [hov, setHov] = useState(null);
-  const H = 250, T = 14, B = 28, L = 58, R = act.length > 1 ? 58 : 16;
+  // o gráfico ocupa a altura que sobra no card (fica alinhado com o funil ao lado)
+  const H = Math.max(250, PH || 250), T = 14, B = 28, L = 58, R = act.length > 1 ? 58 : 16;
   const n = days.length, iw = Math.max(10, W - L - R), ih = H - T - B;
   const x = i => L + (n > 1 ? iw * i / (n - 1) : iw / 2);
   const scales = act.map(m => { const vals = days.map(m.get).filter(v => fin(v)); const mx = vals.length ? Math.max(...vals) : 0; return mx > 0 ? niceMax(mx) : 1; });
@@ -1960,8 +2015,8 @@ function Timeline({ days, kind, sells, sub }) {
   return html`<div className="card card-pad tl">
     <div className="card-head" style=${{ marginBottom: 12 }}><div><div className="card-title">Linha do tempo</div><div className="card-sub">${sub}</div></div>
       <span className="card-sub hide-sm">Escolha até 2 métricas</span></div>
-    <div className="tl-chips" role="group" aria-label="Métricas da linha do tempo">${metrics.map(m => { const idx = act.findIndex(a => a.k === m.k); return html`<button key=${m.k} type="button" className=${"tl-chip" + (idx >= 0 ? " on" : "")} style=${idx >= 0 ? { "--tc": TL_COLORS[idx] } : null} aria-pressed=${idx >= 0} onClick=${() => toggle(m.k)}>
-      <span className="tl-l"><span className="tl-dot"></span>${m.l}</span><b className="num">${m.tot(days)}</b></button>`; })}</div>
+    <div className="tl-chips" role="group" aria-label="Métricas da linha do tempo">${metrics.map(m => { const idx = act.findIndex(a => a.k === m.k); return html`<button key=${m.k} type="button" className=${"tl-chip has-tip" + (idx >= 0 ? " on" : "")} style=${idx >= 0 ? { "--tc": TL_COLORS[idx] } : null} aria-pressed=${idx >= 0} onClick=${() => toggle(m.k)}>
+      <span className="tl-l"><span className="tl-dot"></span>${m.l}</span><b className="num">${m.tot(days)}</b>${METRIC_DESC[m.l] ? html`<${TipBox} desc=${METRIC_DESC[m.l] + (idx >= 0 ? " Clique para tirar do gráfico." : " Clique para comparar no gráfico.")} />` : null}</button>`; })}</div>
     <div className="tl-plot" ref=${ref}>
       ${empty ? html`<div className="tl-empty">Sem veiculação no período: a linha aparece quando houver investimento.</div>` : null}
       <svg width=${W} height=${H} role="img" aria-label=${"Linha do tempo de " + act.map(m => m.l.toLowerCase()).join(" e ")} onMouseMove=${move} onMouseLeave=${() => setHov(null)}>
@@ -1984,33 +2039,55 @@ function Timeline({ days, kind, sells, sub }) {
     </div>
   </div>`;
 }
-// funil com barras arredondadas ligadas por fluxos suaves; a taxa de passagem fica no meio do fluxo
-function Funnel({ stages, kind, note }) {
+const STAGE_ONE = { "Impressões": "mil impressões", "Cliques": "clique", "Leads": "lead", "Compras": "compra", "Conversas iniciadas": "conversa", "Adições ao carrinho": "adição ao carrinho", "Checkouts iniciados": "checkout", "Conversões": "conversão" };
+// funil com barras arredondadas ligadas por fluxos suaves; a taxa de passagem fica no meio do fluxo.
+// Etapa sem dado (ex.: compras numa conta de leads) aparece tracejada e fora das contas.
+function Funnel({ stages, kind, note, spend }) {
   const [ref, W] = useWidth(240);
+  const [hov, setHov] = useState(null);
   const ROW = 72, BAR = 30, n = stages.length, H = ROW * (n - 1) + BAR;
   const v0 = stages[0].v || 1;
+  const real = stages.filter(s => !s.missing), last = real[real.length - 1];
   // largura: metade pela posição da etapa (forma de funil), metade pelo volume real; as taxas mostram o número exato
-  const bw = (v, i) => (0.5 * (1 - i * 0.75 / Math.max(1, n - 1)) + 0.5 * Math.pow(Math.max(0, v) / v0, 0.25)) * W;
+  const bw = (s, i) => (0.5 * (1 - i * 0.75 / Math.max(1, n - 1)) + 0.5 * (s.missing ? 0.12 : Math.pow(Math.max(0, s.v) / v0, 0.25))) * W;
   const cx = W / 2;
-  const rates = stages.map((s, i) => i ? (stages[i - 1].v > 0 ? s.v / stages[i - 1].v : NaN) : null);
-  const total = stages[n - 1].v / v0;
-  const worst = rates.reduce((a, r, i) => i && fin(r) && (a == null || r < rates[a]) ? i : a, null);
+  const rates = stages.map((s, i) => i && !s.missing && !stages[i - 1].missing && stages[i - 1].v > 0 ? s.v / stages[i - 1].v : NaN);
+  const total = last.v / v0;
+  const worst = rates.reduce((a, r, i) => fin(r) && (a == null || r < rates[a]) ? i : a, null);
+  const missing = stages.find(s => s.missing);
+  const on = i => ({ onMouseEnter: () => setHov(i), onMouseLeave: () => setHov(null) });
+  const hs = hov != null ? stages[hov] : null;
+  const costOf = (s, i) => !spend || !(s.v > 0) ? null : i === 0 ? ["CPM", brl2(spend / s.v * 1000)] : ["Custo por " + (STAGE_ONE[s.l] || s.l.toLowerCase()), brl2(spend / s.v)];
   return html`<div className="fnl">
     <div className="fnl-body">
-      <div className="fnl-labels" style=${{ height: H }}>${stages.map((s, i) => html`<div key=${s.l} className="fnl-lb" style=${{ top: i * ROW - 8, height: BAR + 16 }}><span>${s.l}</span><b className="num">${kfmt(s.v)}</b></div>`)}</div>
+      <div className="fnl-labels" style=${{ height: H }}>${stages.map((s, i) => html`<div key=${s.l} className=${"fnl-lb" + (s.missing ? " miss" : "") + (hov === i ? " on" : "")} style=${{ top: i * ROW - 8, height: BAR + 16 }} ...${on(i)}><span>${s.l}</span><b className="num">${s.missing ? "sem dados" : kfmt(s.v)}</b></div>`)}</div>
       <div className="fnl-svg" ref=${ref}><svg width=${W} height=${H} aria-hidden="true">
         <defs><linearGradient id="fnl-g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="var(--accent)" /><stop offset="1" stopColor="var(--violet)" /></linearGradient></defs>
-        ${stages.slice(0, -1).map((s, i) => { const a = bw(s.v, i) / 2, b = bw(stages[i + 1].v, i + 1) / 2, y1 = i * ROW + BAR, y2 = (i + 1) * ROW, ym = (y1 + y2) / 2;
-          return html`<path key=${"c" + i} d=${`M${cx - a},${y1} C${cx - a},${ym} ${cx - b},${ym} ${cx - b},${y2} L${cx + b},${y2} C${cx + b},${ym} ${cx + a},${ym} ${cx + a},${y1} Z`} fill="var(--accent)" opacity=".1" />`; })}
-        ${stages.map((s, i) => html`<rect key=${"b" + i} x=${cx - bw(s.v, i) / 2} y=${i * ROW} width=${bw(s.v, i)} height=${BAR} rx=${BAR / 2} fill="url(#fnl-g)" opacity=${1 - i * (0.42 / Math.max(1, n - 1))} />`)}
-        ${stages.slice(1).map((s, j) => { const i = j + 1, ym = (i - 1) * ROW + BAR + (ROW - BAR) / 2, t = pctA(rates[i]), w = t.length * 6.6 + 16;
-          return html`<g key=${"r" + i}><rect x=${cx - w / 2} y=${ym - 10} width=${w} height="20" rx="10" fill="var(--surface)" stroke=${i === worst && n > 2 ? "var(--warn)" : "var(--line-2)"} /><text x=${cx} y=${ym + 4} textAnchor="middle" className="fnl-rate" fill=${i === worst && n > 2 ? "var(--warn)" : "var(--ink)"}>${t}</text></g>`; })}
+        ${stages.slice(0, -1).map((s, i) => { const nx = stages[i + 1], a = bw(s, i) / 2, b = bw(nx, i + 1) / 2, y1 = i * ROW + BAR, y2 = (i + 1) * ROW, ym = (y1 + y2) / 2;
+          return html`<path key=${"c" + i} d=${`M${cx - a},${y1} C${cx - a},${ym} ${cx - b},${ym} ${cx - b},${y2} L${cx + b},${y2} C${cx + b},${ym} ${cx + a},${ym} ${cx + a},${y1} Z`} fill=${nx.missing ? "none" : "var(--accent)"} opacity=${nx.missing ? 1 : hov === i + 1 ? .2 : .1} stroke=${nx.missing ? "var(--line-2)" : "none"} strokeDasharray="4 4" />`; })}
+        ${stages.map((s, i) => s.missing
+          ? html`<rect key=${"b" + i} x=${cx - bw(s, i) / 2} y=${i * ROW + 1} width=${bw(s, i)} height=${BAR - 2} rx=${BAR / 2} fill="var(--surface-2)" stroke="var(--muted)" strokeDasharray="4 3" style=${{ cursor: "help" }} ...${on(i)} />`
+          : html`<rect key=${"b" + i} x=${cx - bw(s, i) / 2} y=${i * ROW} width=${bw(s, i)} height=${BAR} rx=${BAR / 2} fill="url(#fnl-g)" opacity=${(1 - i * (0.42 / Math.max(1, n - 1))) * (hov != null && hov !== i ? .55 : 1)} style=${{ cursor: "help", transition: "opacity .15s" }} ...${on(i)} />`)}
+        ${stages.slice(1).map((s, j) => { const i = j + 1; if (!fin(rates[i])) return null; const ym = (i - 1) * ROW + BAR + (ROW - BAR) / 2, t = pctA(rates[i]), w = t.length * 6.6 + 16;
+          return html`<g key=${"r" + i}><rect x=${cx - w / 2} y=${ym - 10} width=${w} height="20" rx="10" fill="var(--surface)" stroke=${i === worst && real.length > 2 ? "var(--warn)" : "var(--line-2)"} /><text x=${cx} y=${ym + 4} textAnchor="middle" className="fnl-rate" fill=${i === worst && real.length > 2 ? "var(--warn)" : "var(--ink)"}>${t}</text></g>`; })}
       </svg></div>
+      ${hs ? html`<div className="fnl-tip" style=${{ top: Math.min(hov * ROW + BAR + 8, H - 20) }} role="tooltip">
+        <b>${hs.l}</b>
+        ${hs.missing ? html`<p>${hs.why || "Sem dados desta etapa no período."}</p>` : html`
+          ${METRIC_DESC[hs.l] ? html`<p>${METRIC_DESC[hs.l]}</p>` : null}
+          <dl><div><dt>Total no período</dt><dd className="num">${fmtInt(hs.v)}</dd></div>
+          ${hov > 0 && fin(rates[hov]) ? html`<div><dt>Da etapa anterior (${stages[hov - 1].l.toLowerCase()})</dt><dd className="num">${pctA(rates[hov])}</dd></div><div><dt>Não avançaram</dt><dd className="num">${fmtInt(stages[hov - 1].v - hs.v)}</dd></div>` : null}
+          ${hov > 1 ? html`<div><dt>Das impressões</dt><dd className="num">${pctA(hs.v / v0)}</dd></div>` : null}
+          ${costOf(hs, hov) ? html`<div><dt>${costOf(hs, hov)[0]}</dt><dd className="num">${costOf(hs, hov)[1]}</dd></div>` : null}</dl>`}
+      </div>` : null}
     </div>
     <div className="fnl-foot">
-      <div><small>Conversão total</small><b className="num">${pctA(total)}</b><span>das impressões viraram ${stages[n - 1].l.toLowerCase()}</span></div>
-      ${worst != null ? html`<div><small>Maior perda</small><b>${stages[worst - 1].l} → ${stages[worst].l}</b><span>${pctA(1 - rates[worst])} não avançam</span></div>` : null}
+      <div className="has-tip" tabIndex="0"><small>Conversão total</small><b className="num">${pctA(total)}</b><span>das impressões viraram ${last.l.toLowerCase()}</span>
+        <div className="tip-b" role="tooltip"><p>${last.l} ÷ impressões no período: ${fmtInt(last.v)} de ${fmtInt(v0)}.</p></div></div>
+      ${worst != null ? html`<div className="has-tip" tabIndex="0"><small>Maior perda</small><b>${stages[worst - 1].l} → ${stages[worst].l}</b><span>${pctA(1 - rates[worst])} não avançam</span>
+        <div className="tip-b" role="tooltip"><p>A passagem com a menor taxa do funil: ${fmtInt(stages[worst - 1].v - stages[worst].v)} de ${fmtInt(stages[worst - 1].v)} ${stages[worst - 1].l.toLowerCase()} não viraram ${stages[worst].l.toLowerCase()}.</p></div></div>` : null}
     </div>
+    ${missing ? html`<div className="fnl-miss"><${Icon} n="alert" s=${14} /><span><b>${missing.l} sem dados.</b> ${missing.why}</span></div>` : null}
     ${note ? html`<p className="card-sub" style=${{ marginTop: 10 }}>${note}</p>` : null}
   </div>`;
 }
@@ -2022,20 +2099,30 @@ function Overview({ camps, days }) {
   const byCh = chPresent(camps).map(k => [k, totals(camps.filter(c => c.ch === k))]);
   // sem receita (campanhas de conversa ou lead), a tabela ordena por investimento
   const top = [...camps].sort((a, b) => sells ? b.revenue - a.revenue : b.spend - a.spend).slice(0, 5);
-  const funnel = ACTIVE.live ? [["Impressões", t.impr], ["Cliques", t.clicks], [kl, t.purchases]] : [["Impressões", t.impr], ["Cliques", t.clicks], ["Adições ao carrinho", 8640], ["Checkouts iniciados", 3910], ["Compras", t.purchases]];
+  const nDays = ACTIVE.period ? ACTIVE.period.days : 30;
+  // compras fecham o funil; numa conta de leads ou conversas, entram quando a conta registra compras
+  const buys = camps.reduce((a, c) => a + (c.buys || 0), 0);
+  const funnel = !ACTIVE.live ? [["Impressões", t.impr], ["Cliques", t.clicks], ["Adições ao carrinho", 8640], ["Checkouts iniciados", 3910], ["Compras", t.purchases]].map(([l, v]) => ({ l, v }))
+    : kind === "compras" ? [{ l: "Impressões", v: t.impr }, { l: "Cliques", v: t.clicks }, { l: "Compras", v: t.purchases }]
+    : [{ l: "Impressões", v: t.impr }, { l: "Cliques", v: t.clicks }, { l: kl, v: t.purchases },
+      buys > 0 ? { l: "Compras", v: buys } : { l: "Compras", v: 0, missing: true, why: "A conta não registrou compras no período. Para fechar o funil, configure o evento de compra no Pixel ou na API de Conversões da Meta, ou envie as vendas do CRM como conversões offline." }];
   const prevCtr = ACTIVE.prev.clicks / ACTIVE.prev.impr;
   return html`<div className="stack">
     <${PageHead} title="Visão geral" sub=${ACTIVE.period ? "Todos os canais somados em " + (ACTIVE.period.custom ? ACTIVE.period.dates : ACTIVE.period.label.toLowerCase()) + ", comparados com os " + ACTIVE.period.days + " dias anteriores." : "Todos os canais somados nos últimos 30 dias, comparados com os 30 dias anteriores."} right=${html`<${DataNote} />`} />
     <div className="grid g4">
-      <${Kpi} label="Investimento" value=${brl(t.spend)} d=${fin(delta(t.spend, ACTIVE.prev.spend)) ? delta(t.spend, ACTIVE.prev.spend) : undefined} invert />
-      <${Kpi} label="Impressões" value=${kfmt(t.impr)} d=${fin(delta(t.impr, ACTIVE.prev.impr)) ? delta(t.impr, ACTIVE.prev.impr) : undefined} hint=${fmtInt(t.clicks) + " cliques"} />
-      <${Kpi} label="CTR" value=${pct(t.ctr, 2)} d=${fin(delta(t.ctr, prevCtr)) ? delta(t.ctr, prevCtr) : undefined} hint=${"CPC " + brl2(t.spend / t.clicks)} />
-      <${Kpi} label=${kindCost(kind)} value=${brl2(t.cpa)} d=${fin(delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases)) ? delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases) : undefined} invert hint=${fmtInt(t.purchases) + " " + kl.toLowerCase()} />
+      <${Kpi} label="Investimento" value=${brl(t.spend)} d=${fin(delta(t.spend, ACTIVE.prev.spend)) ? delta(t.spend, ACTIVE.prev.spend) : undefined} invert
+        tip=${[fin(ACTIVE.prev.spend) && ["Período anterior", brl(ACTIVE.prev.spend)], ["Média por dia", brl(t.spend / nDays)], ...(byCh.length > 1 ? byCh.map(([k, v]) => [CH[k].label, brl(v.spend)]) : [])]} />
+      <${Kpi} label="Impressões" value=${kfmt(t.impr)} d=${fin(delta(t.impr, ACTIVE.prev.impr)) ? delta(t.impr, ACTIVE.prev.impr) : undefined} hint=${fmtInt(t.clicks) + " cliques"}
+        tip=${[["Total", fmtInt(t.impr)], fin(ACTIVE.prev.impr) && ["Período anterior", fmtInt(ACTIVE.prev.impr)], t.impr > 0 && ["CPM", brl2(t.spend / t.impr * 1000)]]} />
+      <${Kpi} label="CTR" value=${pct(t.ctr, 2)} d=${fin(delta(t.ctr, prevCtr)) ? delta(t.ctr, prevCtr) : undefined} hint=${"CPC " + brl2(t.spend / t.clicks)}
+        tip=${[["Cliques", fmtInt(t.clicks)], ["Impressões", fmtInt(t.impr)], fin(prevCtr) && ["CTR anterior", pct(prevCtr, 2)], t.clicks > 0 && ["CPC", brl2(t.spend / t.clicks)]]} />
+      <${Kpi} label=${kindCost(kind)} value=${brl2(t.cpa)} d=${fin(delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases)) ? delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases) : undefined} invert hint=${fmtInt(t.purchases) + " " + kl.toLowerCase()}
+        tip=${[[kl, fmtInt(t.purchases)], ["Investimento", brl(t.spend)], fin(ACTIVE.prev.spend / ACTIVE.prev.purchases) && ["Período anterior", brl2(ACTIVE.prev.spend / ACTIVE.prev.purchases)]]} />
     </div>
     <div className=${days && days.length > 1 ? "grid g-21 tl-row" : "grid"}>
       ${days && days.length > 1 ? html`<${Timeline} days=${days} kind=${kind} sells=${sells} sub=${"Dia a dia, " + (ACTIVE.period ? (ACTIVE.period.custom ? ACTIVE.period.dates : ACTIVE.period.label.toLowerCase() + " (" + ACTIVE.period.dates + ")") : "últimos 30 dias (19/09 a 18/10)") + (ACTIVE.live && ACTIVE.dayCh && ACTIVE.dayCh.length < chPresent(camps).length ? " · só " + ACTIVE.dayCh.map(k => CH[k].label).join(" e ") : ACTIVE.live ? "" : " · Meta, Google e TikTok")} />` : null}
       <div className="card card-pad"><div className="card-head"><div><div className="card-title">Funil de tráfego</div><div className="card-sub">Quanto passa de uma etapa para a outra</div></div></div>
-        <${Funnel} stages=${funnel.map(([l, v]) => ({ l, v }))} kind=${kind} note=${ACTIVE.live && kind !== "compras" ? (kind === "conversas" ? "As campanhas desta conta otimizam para conversas no WhatsApp ou no Messenger, então a última etapa conta conversas iniciadas, não compras." : kind === "leads" ? "As campanhas desta conta otimizam para cadastros, então a última etapa conta leads, não compras." : "A última etapa soma o resultado principal de cada campanha (compras, leads ou conversas).") : null} />
+        <${Funnel} stages=${funnel} kind=${kind} spend=${t.spend} note=${ACTIVE.live && kind !== "compras" ? (kind === "conversas" ? "As campanhas desta conta otimizam para conversas no WhatsApp ou no Messenger, então a última etapa conta conversas iniciadas, não compras." : kind === "leads" ? "As campanhas desta conta otimizam para cadastros, então a última etapa conta leads, não compras." : "A última etapa soma o resultado principal de cada campanha (compras, leads ou conversas).") : null} />
       </div>
     </div>
     <div className="card card-pad"><div className="card-head"><div><div className="card-title">${sells ? "Campanhas com mais receita" : "Campanhas com mais investimento"}</div></div></div>

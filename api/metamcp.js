@@ -115,7 +115,7 @@ async function data(c, accountId, period) {
       status: e.effective_status === "ACTIVE" ? "ativa" : "pausada",
       budget: Math.round(val(e.daily_budget)),
       spend: Math.round(val(e.amount_spent) * 100) / 100,
-      purchases: Math.round(res.n), result: res.kind,
+      purchases: Math.round(res.n), result: res.kind, buys: Math.round(val(e.omni_purchase)),
       revenue, noRev: revenue === 0 && !isSalesObj(e.objective) ? true : undefined,
       clicks: Math.round(val(e.clicks)), impr: Math.round(val(e.impressions)),
       freq: Math.round(val(e.frequency) * 10) / 10,
