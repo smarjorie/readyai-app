@@ -722,11 +722,10 @@ const NAV = [
   { id: "painel", label: "Painel analítico", icon: "chart", children: [{ key: "overview", label: "Visão geral" }, { key: "analytics", label: "Performance analítica" }] },
   { id: "whatsapp", label: "WhatsApp", icon: "msg", hidden: true, children: [{ key: "whatsapp", label: "WhatsApp CRM" }] },
   { id: "gerenciador", label: "Gerenciador de campanhas", icon: "megaphone", children: [{ key: "campaigns", label: "Campanhas" }, { key: "creatives", label: "Criativos" }, { key: "report", label: "Relatórios" }] },
-  { id: "inteligencias", label: "Inteligências do agente", icon: "zap", children: [{ key: "skills", label: "Habilidades" }, { key: "insights", label: "Insights" }] },
+  { id: "inteligencias", label: "Inteligências do agente", icon: "zap", children: [{ key: "media", label: "Planejamento de mídia" }, { key: "skills", label: "Habilidades" }, { key: "insights", label: "Insights" }] },
 ];
 const FOOT_NAV = [{ id: "integracoes", label: "Integrações", icon: "plug", key: "integrations" }];
 function routeInfo(key) {
-  if (key === "media") return { group: "Assistente de Marketing", label: "Copilot de mídia" };
   for (const g of [...NAV, ...FOOT_NAV]) {
     if (g.key === key) return { group: g.label, label: g.label };
     const c = (g.children || []).find(x => x.key === key);
@@ -1115,6 +1114,7 @@ function AIConnectDrawer({ toast }) {
 
 const SUGGESTIONS = {
   portfolio: ["O que preciso resolver hoje?", "Quais contas estão com entrega travada?", "Quem vai estourar ou sobrar verba?"],
+  media: ["Por que essa divisão de verba?", "Vale testar outro canal?", "Até quanto vale investir com lucro?"],
   copilot: ["Resuma minhas campanhas", "Onde estou perdendo dinheiro?", "Quanto posso escalar no Google?"],
   overview: ["Explique a variação da receita", "Qual canal tem melhor ROAS?"],
   analytics: ["Qual o melhor horário para anunciar?", "Qual público converte mais?"],
@@ -1258,13 +1258,29 @@ const MEDIA_CH = {
   pinterest: { label: "Pinterest Ads", color: "var(--c-pinterest)" },
   kwai: { label: "Kwai Ads", color: "var(--c-kwai)" },
 };
-// Valores iniciais de custo por resultado para canais sem histórico. Não são dados da conta:
-// servem de ponto de partida e a pessoa ajusta para a realidade do mercado dela.
-const MEDIA_START_CPR = {
-  conversas: { meta: 6, google: 12, tiktok: 8, linkedin: 40, pinterest: 15, kwai: 5 },
-  leads: { meta: 25, google: 35, tiktok: 30, linkedin: 90, pinterest: 40, kwai: 20 },
-  compras: { meta: 60, google: 55, tiktok: 75, linkedin: 180, pinterest: 70, kwai: 50 },
+// Benchmarks de mercado: quanto o resultado custa em cada canal em relação ao Meta (1 = igual).
+// A razão é aplicada ao custo REAL do Meta na conta; sem Meta na conta, usa o custo absoluto de referência.
+const BENCH_SRC = {
+  wordstream: { label: "WordStream/LocaliQ, Google Ads e Facebook Ads Benchmarks 2025 (via Flyweel)", url: "https://www.flyweel.co/blog/lead-gen-cpl-cac-benchmark-index-2025" },
+  witu: { label: "Witu Digital, CPL B2B no Brasil por canal (2026)", url: "https://witu.digital/custo-por-lead-cpl-benchmarks-b2b/" },
+  triple: { label: "Triple Whale 2025, TikTok x Meta (via Influee)", url: "https://influee.co/br/blog/tiktok-ads-benchmarks" },
+  stopa: { label: "Eduardo Stopa, custo por conversa no Meta em clínicas (2026)", url: "https://eduardostopa.com.br/custo-por-conversa-clinicas-benchmark.html" },
 };
+const MEDIA_BENCH = {
+  leads: {
+    google: { ratio: 2, range: "1,65x a 2,5x", why: "o lead no Google custa entre 1,65x (B2B no Brasil) e 2,5x (média global) o do Meta", src: ["witu", "wordstream"] },
+    linkedin: { ratio: 2.75, range: "2,75x", why: "o lead no LinkedIn custa cerca de 2,75x o do Meta no B2B brasileiro; vale para público corporativo", src: ["witu"] },
+  },
+  compras: {
+    google: { ratio: 2, range: "1,65x a 2,5x", why: "estimado pela relação de custo por lead entre Google e Meta (não há benchmark de custo por venda comparável)", src: ["witu", "wordstream"] },
+    tiktok: { ratio: 0.86, range: "0,86x", why: "o custo por compra mediano no TikTok foi 14% menor que no Meta em 2025 (US$ 32,74 x US$ 38,19, e-commerce)", src: ["triple"] },
+  },
+  conversas: {
+    google: { ratio: 2, range: "1,65x a 2,5x", why: "estimado pela relação de custo por lead entre Google e Meta, para cliques no botão de WhatsApp vindos da busca", src: ["witu", "wordstream"] },
+  },
+};
+// custo absoluto do Meta quando a conta não tem histórico no Meta
+const META_ABS = { conversas: { v: 10, src: "stopa" }, leads: { v: 100, src: "witu" } };
 // quanto o resultado cresce quando a verba cresce (1 = linear). 0,55 = dobrar a verba rende ~1,5x resultados,
 // faixa comum ao escalar mídia paga; público saturado (frequência alta) rende menos
 const ELAST_HIST = 0.55, ELAST_REF = 0.55;
@@ -1274,28 +1290,36 @@ const numIn = v => { const n = parseFloat(String(v == null ? "" : v).replace(/\.
 
 // Curva de cada canal: resultados(S) = R_ref * (S / S_ref)^b
 function mediaChannels(camps, inp, kind) {
+  const base = k => { const hc = camps.filter(x => x.ch === k && x.spend > 0); const S0 = hc.reduce((a, x) => a + x.spend, 0), R0 = hc.reduce((a, x) => a + x.purchases, 0), Rev0 = hc.reduce((a, x) => a + (x.revenue || 0), 0); return { hc, S0, R0, Rev0, hist: S0 > 0 && R0 > 0 }; };
+  const meta = base("meta");
+  const metaCpr = meta.hist ? meta.S0 / meta.R0 : META_ABS[kind] ? META_ABS[kind].v : null;
+  // receita por resultado: real quando a conta registra valor de venda (vale também para os canais de teste)
+  const all = Object.keys(MEDIA_CH).map(base).filter(x => x.hist && x.Rev0 > 0);
+  const realRpr = all.length ? all.reduce((a, x) => a + x.Rev0, 0) / all.reduce((a, x) => a + x.R0, 0) : null;
+  const typedRpr = (numIn(inp.ticket) || 0) * (kind === "compras" ? 1 : (numIn(inp.close) || 0) / 100);
   const out = [];
   for (const k of Object.keys(MEDIA_CH)) {
     const c = (inp.ch && inp.ch[k]) || {};
-    const hc = camps.filter(x => x.ch === k && x.spend > 0);
-    const S0 = hc.reduce((a, x) => a + x.spend, 0), R0 = hc.reduce((a, x) => a + x.purchases, 0), Rev0 = hc.reduce((a, x) => a + (x.revenue || 0), 0);
-    const hist = S0 > 0 && R0 > 0;
+    const { hc, S0, R0, Rev0, hist } = base(k);
     // frequência média (ponderada pelo gasto): público saturado rende menos a cada real extra
     const fq = hc.filter(x => x.freq > 0);
     const freq = fq.length ? fq.reduce((a, x) => a + x.freq * x.spend, 0) / fq.reduce((a, x) => a + x.spend, 0) : null;
     const bHist = freq == null ? ELAST_HIST : freq >= 3.5 ? 0.45 : freq >= 2.5 ? 0.5 : freq < 1.8 ? 0.65 : ELAST_HIST;
-    const refCpr = numIn(c.cpr) || (MEDIA_START_CPR[kind] || MEDIA_START_CPR.conversas)[k];
-    const on = c.on !== undefined ? !!c.on : hist;
+    const bench = !hist ? (k === "meta" ? (META_ABS[kind] ? { ratio: 1, abs: true, why: "custo de referência de mercado para o Meta", src: [META_ABS[kind].src] } : null) : (MEDIA_BENCH[kind] || {})[k] || null) : null;
+    const benchCpr = bench && metaCpr ? (bench.abs ? metaCpr : metaCpr * bench.ratio) : null;
+    const refCpr = numIn(c.cpr) || benchCpr;
+    const suggested = !hist && !!benchCpr;
+    const usable = hist || !!refCpr;
+    const on = usable && (c.on !== undefined ? !!c.on : hist || suggested);
     out.push({
-      k, ...MEDIA_CH[k], on, hist, camps: hc,
+      k, ...MEDIA_CH[k], on, usable, hist, suggested, bench, benchCpr, typedCpr: !!numIn(c.cpr), metaCpr, metaReal: meta.hist, camps: hc,
       S0, R0, Rev0,
       cpr0: hist ? S0 / R0 : refCpr,
       b: hist ? bHist : ELAST_REF, freq,
       Sref: hist ? S0 : REF_SPEND,
-      Rref: hist ? R0 : REF_SPEND / refCpr,
-      // receita por resultado: real quando a conta registra valor de compra; senão ticket x fechamento
-      rpr: hist && Rev0 > 0 ? Rev0 / R0 : (numIn(inp.ticket) || 0) * (kind === "compras" ? 1 : (numIn(inp.close) || 0) / 100),
-      realRevenue: hist && Rev0 > 0,
+      Rref: hist ? R0 : refCpr ? REF_SPEND / refCpr : 0,
+      rpr: hist && Rev0 > 0 ? Rev0 / R0 : realRpr != null ? realRpr : typedRpr,
+      realRevenue: (hist && Rev0 > 0) || realRpr != null,
       min: Math.max(0, numIn(c.min) || 0),
       max: numIn(c.max) != null ? numIn(c.max) : null,
       fixed: numIn(c.fixed),
@@ -1303,7 +1327,8 @@ function mediaChannels(camps, inp, kind) {
   }
   return out;
 }
-const mResults = (ch, S, pess = 1) => S > 0 ? ch.Rref * Math.pow(S / ch.Sref, ch.b) / pess : 0;
+// canal de teste: até a verba de referência o custo é o do benchmark (não fica mais barato com pouca verba)
+const mResults = (ch, S, pess = 1) => S <= 0 ? 0 : (!ch.hist && S <= ch.Sref ? S / ch.cpr0 : ch.Rref * Math.pow(S / ch.Sref, ch.b)) / pess;
 const mValue = (ch, S, margin, pess) => mResults(ch, S, pess) * ch.rpr * margin;
 const mProfit = (ch, S, margin, pess) => mValue(ch, S, margin, pess) - S;
 
@@ -1445,33 +1470,37 @@ function parseMoney(t) {
 const pmoney = v => fin(v) ? (Math.abs(v) < 1000 ? brl2(v) : brl(v)) : "—";
 const proi = v => fin(v) ? (v >= 0 ? "+" : "−") + pct(Math.abs(v), 0) : "—";
 
-function PlanAskBudget({ m, camps, inp, onBudget }) {
-  const [v, setV] = useState("");
+function MediaPlanScreen({ camps, inp, setInp, stale }) {
+  const [v, setV] = useState(inp.budget ? Number(inp.budget).toLocaleString("pt-BR") : "");
+  useEffect(() => { setV(inp.budget ? Number(inp.budget).toLocaleString("pt-BR") : ""); }, [inp.budget]);
+  const plan = useMemo(() => buildMediaPlan(camps, inp), [camps, inp]);
   const cur = Math.round(camps.filter(c => c.spend > 0).reduce((a, c) => a + c.spend, 0) / 10) * 10;
-  const sugs = [];
-  if (cur > 0) { sugs.push(["Manter o ritmo atual", cur]); sugs.push(["Crescer 50%", Math.round(cur * 1.5 / 100) * 100]); sugs.push(["Dobrar", cur * 2]); }
-  const go = B => B > 0 && onBudget(B);
-  return html`<${Fragment}>
-    <p>${cur > 0 ? html`Nos últimos 30 dias a conta investiu <b>${pmoney(cur)}</b>. Quanto você tem para investir nos próximos 30 dias?` : "Quanto você tem para investir nos próximos 30 dias?"}</p>
-    ${m.answered ? null : html`<${Fragment}>
-      ${sugs.length ? html`<div className="msg-actions">${sugs.map(([l, B]) => html`<button key=${l} className="btn btn-sm btn-line" onClick=${() => go(B)}>${l} · ${pmoney(B)}</button>`)}</div>` : null}
-      <form className="plan-form" onSubmit=${e => { e.preventDefault(); go(parseMoney(v)); }}>
-        <div className="m-in"><span>R$</span><input className="input num" inputMode="decimal" placeholder="Ex.: 10.000" value=${v} onInput=${e => setV(e.target.value)} aria-label="Verba para os próximos 30 dias" /></div>
-        <button className="btn btn-sm btn-primary" type="submit" disabled=${!parseMoney(v)}>Continuar</button>
-      </form><//>`}
-  <//>`;
-}
-function PlanAskValue({ m, kind, inp, onValue }) {
-  const [t, setT] = useState(inp.ticket || ""); const [c, setC] = useState(inp.close || "");
-  const ok = numIn(t) > 0 && (kind === "compras" || numIn(c) > 0);
-  return html`<${Fragment}>
-    <p>${kind === "compras" ? "As campanhas registram compras, mas não o valor delas. Qual é o ticket médio de uma venda?" : html`As campanhas desta conta geram <b>${kindLabel(kind).toLowerCase()}</b>, e a Meta não sabe quanto cada uma vale em vendas. Com dois números eu calculo o ROI:`}</p>
-    ${m.answered ? null : html`<form className="plan-form" onSubmit=${e => { e.preventDefault(); ok && onValue(t, c); }}>
-      <label className="plan-lbl">Ticket médio<div className="m-in"><span>R$</span><input className="input num" inputMode="decimal" placeholder="Ex.: 250" value=${t} onInput=${e => setT(e.target.value)} /></div></label>
-      ${kind !== "compras" ? html`<label className="plan-lbl">De cada 100 ${kindLabel(kind).toLowerCase()}, quantas viram venda<div className="m-in"><input className="input num" inputMode="decimal" placeholder="Ex.: 8" value=${c} onInput=${e => setC(e.target.value)} /><span>%</span></div></label>` : null}
-      <button className="btn btn-sm btn-primary" type="submit" disabled=${!ok}>Calcular plano</button>
-    </form>`}
-  <//>`;
+  const rnd = v => Math.round(v / (cur < 2000 ? 10 : 100)) * (cur < 2000 ? 10 : 100);
+  const sugs = cur > 0 ? [["Manter o ritmo atual", cur], ["Crescer 50%", rnd(cur * 1.5)], ["Dobrar", rnd(cur * 2)]] : [];
+  const setBudget = B => B > 0 && setInp({ ...inp, budget: String(B) });
+  const chans = plan.ready ? plan.rows : plan.chans;
+  const needValue = chans.some(c => c.on && !c.realRevenue);
+  const kind = plan.kind, unit = kindLabel(kind).toLowerCase();
+  return html`<div className="stack">
+    <${PageHead} title="Planejamento de mídia" sub="Diga quanto quer investir e veja onde colocar a verba, a previsão de resultados e o ROI esperado. Calculado com os dados da conta e benchmarks de mercado, sem gastar IA." right=${html`<${DataNote} />`} />
+    <div className="card card-pad stack" style=${{ gap: 14 }}>
+      <div><div className="card-title" style=${{ fontSize: 17 }}>Quanto você tem para investir nos próximos 30 dias?</div>
+        ${cur > 0 ? html`<div className="card-sub">Nos últimos 30 dias a conta investiu ${pmoney(cur)}.</div>` : null}</div>
+      <form className="plan-form" onSubmit=${e => { e.preventDefault(); setBudget(parseMoney(v)); }}>
+        <div className="m-in" style=${{ minWidth: 200 }}><span>R$</span><input id="mp-budget" className="input num" inputMode="decimal" placeholder="Ex.: 10.000" value=${v} onInput=${e => setV(e.target.value)} onBlur=${() => setBudget(parseMoney(v))} aria-label="Verba para os próximos 30 dias" /></div>
+        <button className="btn btn-primary" type="submit" disabled=${!parseMoney(v)}>Calcular</button>
+        ${sugs.map(([l, B]) => html`<button key=${l} type="button" className=${"btn btn-sm " + (Number(inp.budget) === B ? "btn-accent" : "btn-line")} onClick=${() => setBudget(B)}>${l} · ${pmoney(B)}</button>`)}
+      </form>
+      ${needValue ? html`<div className="stack" style=${{ gap: 8, borderTop: "1px solid var(--line)", paddingTop: 14 }}>
+        <div><b>${kind === "compras" ? "Quanto vale uma venda?" : "Quanto vale cada " + kindOne(kind) + "?"}</b><div className="card-sub">${kind === "compras" ? "As campanhas registram compras, mas não o valor." : "A Meta conta " + unit + ", mas não sabe quantas viram venda."} Com isso o ROI é calculado.</div></div>
+        <div className="plan-form">
+          <label className="plan-lbl">Ticket médio da venda<div className="m-in"><span>R$</span><input id="mp-ticket" className="input num" inputMode="decimal" placeholder="Ex.: 250" value=${inp.ticket} onInput=${e => setInp({ ...inp, ticket: e.target.value })} /></div></label>
+          ${kind !== "compras" ? html`<label className="plan-lbl">De cada 100 ${unit}, quantas viram venda<div className="m-in"><input id="mp-close" className="input num" inputMode="decimal" placeholder="Ex.: 8" value=${inp.close} onInput=${e => setInp({ ...inp, close: e.target.value })} /><span>%</span></div></label>` : null}
+        </div></div>` : null}
+    </div>
+    ${Number(inp.budget) > 0 ? html`<div className="card card-pad"><div className="eyebrow" style=${{ marginBottom: 10 }}>Proposta</div><div className="bot-body plan" style=${{ width: "100%" }}>
+      <${PlanCard} m=${{ inp }} camps=${camps} inp=${inp} live=${true} setInp=${setInp} onBudget=${setBudget} stale=${stale} /></div></div>` : null}
+  </div>`;
 }
 function planWhy(plan, ins, stale) {
   const kl = kindLabel(plan.kind).toLowerCase(), one = kindOne(plan.kind);
@@ -1487,7 +1516,14 @@ function planWhy(plan, ins, stale) {
   }
   for (const r of rows.filter(r => r.hist && r.freq >= 2.5)) out.push("Frequência de " + dec(r.freq, 1) + " no " + r.label + ": o público já viu bastante os anúncios, então a previsão conta com retorno menor a cada real extra. Criativos ou públicos novos ajudam.");
   if (plan.unspent >= plan.step && plan.stop === "roi") out.push("Recomendo guardar " + pmoney(plan.unspent) + ": além do que está no plano, o retorno ficaria abaixo do mínimo.");
-  if (rows.some(r => !r.hist)) out.push("Canais sem histórico entram como teste, com custo de referência. Depois de 2 a 3 semanas, a previsão passa a usar os dados reais.");
+  for (const r of plan.rows.filter(r => r.on && !r.hist)) {
+    const est = pmoney(r.cpr0) + " por " + one;
+    const basis = r.typedCpr ? "pelo custo que você informou (" + est + ")"
+      : r.bench && r.bench.abs ? "pelo custo de referência de mercado (" + est + ")"
+      : r.bench ? r.bench.why + "; aplicado ao " + (r.metaReal ? "seu custo no Meta (" + pmoney(r.metaCpr) + ")" : "custo de referência do Meta") + ", estimo " + est : "";
+    out.push(r.spend > 0 ? "Sugiro testar o " + r.label + " com " + pmoney(r.spend) + " (" + pct(r.spend / plan.tot.spend, 0) + " da verba): " + basis + ". Depois de 2 a 3 semanas, a previsão passa a usar os dados reais."
+      : r.label + " ficou de fora: " + basis + ", e com esse custo o retorno não compensa frente aos outros canais.");
+  }
   if (stale) out.push("A conta está sem veicular desde " + stale + ": os primeiros dias podem custar mais enquanto as campanhas reaprendem.");
   out.push("Ritmo sugerido: " + pmoney(plan.tot.spend / 30) + " por dia.");
   return out;
@@ -1517,7 +1553,9 @@ function PlanCard({ m, camps, inp, live, setInp, onBudget, stale }) {
         <small className="num">${fmtInt(r.results)} ${unit} · ${pmoney(r.cpr)} cada · ROI ${proi(r.roi)}${r.split && r.split.length ? " · " + r.split.slice(0, 2).map(x => x.name + " " + pmoney(x.spend)).join(", ") : ""}</small>
       </div>`)}
     </div>
-    <div className="plan-sec"><b>Por quê</b><ul>${planWhy(plan, ins, stale).map((b, i) => html`<li key=${i}>${b}</li>`)}</ul></div>
+    <div className="plan-sec"><b>Por quê</b><ul>${planWhy(plan, ins, stale).map((b, i) => html`<li key=${i}>${b}</li>`)}</ul>
+      ${(srcs => srcs.length ? html`<small className="card-sub">Benchmarks: ${srcs.map((k, i) => html`<${Fragment} key=${k}>${i ? " · " : ""}<a href=${BENCH_SRC[k].url} target="_blank" rel="noopener noreferrer">${BENCH_SRC[k].label}</a><//>`)}. São referências de mercado, não dados da sua conta.</small>` : null)([...new Set(plan.rows.filter(r => r.on && !r.hist && r.bench && !r.typedCpr).flatMap(r => r.bench.src))])}
+    </div>
     ${ins.scen.length > 1 ? html`<div className="plan-sec"><b>Compare</b>
       <div className="plan-scen">${ins.scen.map(s => html`<button key=${s.label} className=${"plan-sc" + (s.B === plan.budget ? " on" : "")} onClick=${() => s.B !== plan.budget && onBudget(s.B)} disabled=${!live}>
         <span>${s.label}</span><b className="num">${pmoney(s.p.tot.spend)}</b><small className="num">${fmtInt(s.p.tot.results)} ${unit} · ROI ${proi(s.p.tot.roi)} · lucro ${pmoney(s.p.tot.profit)}</small></button>`)}</div></div>` : null}
@@ -1529,8 +1567,8 @@ function PlanCard({ m, camps, inp, live, setInp, onBudget, stale }) {
         ${plan.kind !== "compras" && plan.rows.some(r => r.on && !r.realRevenue) ? html`<label className="plan-lbl">Fechamento<div className="m-in"><input className="input num" inputMode="decimal" value=${inp.close} onInput=${e => setInp({ ...inp, close: e.target.value })} /><span>%</span></div></label>` : null}
       </div>
       <small className="card-sub">Margem de 100% calcula o ROI sobre a receita. O ROI mínimo vale para o último real investido.</small>
-      <div className="plan-chs">${plan.rows.map(r => html`<div key=${r.k}><${Toggle} on=${r.on} onChange=${v => updCh(r.k, "on", v)} label=${(r.on ? "Tirar " : "Incluir ") + r.label} /><span>${r.label}</span>${r.hist ? html`<small>${pmoney(r.cpr0)} por ${kindOne(plan.kind)}</small>` : html`<span className="m-in" style=${{ width: 110 }}><span>R$</span><input className="input num" inputMode="decimal" value=${((inp.ch || {})[r.k] || {}).cpr != null ? inp.ch[r.k].cpr : String(r.cpr0).replace(".", ",")} onInput=${e => updCh(r.k, "cpr", e.target.value)} aria-label=${"Custo de referência no " + r.label} /></span>`}</div>`)}</div>
-      <small className="card-sub">Canais sem histórico usam o custo de referência ao lado (valor inicial, ajuste à sua realidade) e recebem no máximo ${pct(TEST_CAP, 0)} da verba.</small>
+      <div className="plan-chs">${plan.rows.map(r => html`<div key=${r.k}><${Toggle} on=${r.on} disabled=${!r.usable} onChange=${v => updCh(r.k, "on", v)} label=${(r.on ? "Tirar " : "Incluir ") + r.label} /><span>${r.label}${r.suggested ? html` <small style=${{ display: "block" }}>benchmark ${r.bench.range}</small>` : null}</span>${r.hist ? html`<small>${pmoney(r.cpr0)} por ${kindOne(plan.kind)}</small>` : html`<span className="m-in" style=${{ width: 116 }}><span>R$</span><input className="input num" inputMode="decimal" placeholder=${r.benchCpr ? "" : "informe"} value=${((inp.ch || {})[r.k] || {}).cpr != null ? inp.ch[r.k].cpr : r.benchCpr ? String(Math.round(r.benchCpr * 100) / 100).replace(".", ",") : ""} onInput=${e => updCh(r.k, "cpr", e.target.value)} aria-label=${"Custo por " + kindOne(plan.kind) + " no " + r.label} /></span>`}</div>`)}</div>
+      <small className="card-sub">Canais sem histórico entram como teste (até ${pct(TEST_CAP, 0)} da verba) com o custo estimado pelo benchmark. Para canais sem benchmark confiável, como Pinterest e Kwai, informe o custo esperado para incluí-los.</small>
     </details>` : html`<small className="card-sub">Plano anterior. O mais recente fica no fim da conversa.</small>`}
   <//>`;
 }
@@ -2604,7 +2642,8 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   const boundTo = useRef(null);
   if (boundTo.current !== client.id) { aiStore.bind(client.id, client.ai, conn => updRef.current({ ai: conn })); boundTo.current = client.id; }
   useEffect(() => () => aiStore.reset(), []);
-  const allowed = new Set([...client.modules, "integrations"]);
+  // planejamento de mídia vem junto com o copilot (clientes antigos não têm o módulo salvo)
+  const allowed = new Set([...client.modules, "integrations", ...(client.modules.includes("copilot") ? ["media"] : [])]);
   const isAgency = allowed.has("portfolio");
   const [screen, setScreen] = useState(startScreen && allowed.has(startScreen) ? startScreen : isAgency ? "portfolio" : allowed.has("copilot") ? "copilot" : "overview");
   const [activeId, setActiveId] = useState(null);
@@ -2659,35 +2698,9 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   const insights = useMemo(() => isLive ? buildLiveInsights(camps) : buildInsights(camps), [camps, isLive, client.targetRoas]);
   const go = key => { setScreen(key); setSideOpen(false); setDockOpen(false); const g = NAV.find(n => (n.children || []).some(c => c.key === key)); if (g) setOpen(o => ({ ...o, [g.id]: true })); };
   const ai = useAI();
-  // planejador de mídia: conversa guiada (verba -> valor do resultado -> proposta)
-  const nid = () => Date.now() + Math.random();
-  const lastAsk = [...msgs].reverse().find(m => m.kind && !m.answered);
-  const answer = (pred, extra) => setMsgs(ms => ms.map(m => pred(m) ? { ...m, answered: true } : m).concat(extra));
-  const startPlanner = () => {
-    if (screen !== "copilot") go("copilot");
-    setMsgs(ms => ms.map(m => m.kind && !m.answered ? { ...m, answered: true } : m).concat([{ id: nid(), role: "user", text: "Planejar minha mídia" }, { id: nid(), role: "bot", kind: "media-ask-budget" }]));
-  };
-  const planMsg = inp => ({ id: nid(), role: "bot", kind: "media-plan", inp });
-  const plannerBudget = B => {
-    const inp = { ...mediaIn, budget: String(B) };
-    setMediaIn(inp);
-    const p = buildMediaPlan(camps, inp);
-    const needValue = !p.ready && p.missing.some(x => x === "ticket médio" || x === "taxa de fechamento");
-    answer(m => m.kind && !m.answered, [{ id: nid(), role: "user", text: "Tenho " + pmoney(B) + " para investir" }, needValue ? { id: nid(), role: "bot", kind: "media-ask-value" } : planMsg(inp)]);
-  };
-  const plannerValue = (t, c) => {
-    const inp = { ...mediaIn, ticket: t, close: c };
-    setMediaIn(inp);
-    answer(m => m.kind === "media-ask-value" && !m.answered, [{ id: nid(), role: "user", text: "Ticket de " + pmoney(numIn(t)) + (c ? ", " + c + "% viram venda" : "") }, planMsg(inp)]);
-  };
-  const lastPlanId = ([...msgs].reverse().find(m => m.kind === "media-plan") || {}).id;
+  const startPlanner = () => go("media");
   const staleTxt = isLive ? staleSince(live.lastSpend) : null;
-  const custom = m => m.kind === "media-ask-budget" ? html`<${PlanAskBudget} m=${m} camps=${camps} inp=${mediaIn} onBudget=${plannerBudget} />`
-    : m.kind === "media-ask-value" ? html`<${PlanAskValue} m=${m} kind=${mediaPlan.kind} inp=${mediaIn} onValue=${plannerValue} />`
-    : m.kind === "media-plan" ? html`<${PlanCard} m=${m} camps=${camps} inp=${mediaIn} live=${m.id === lastPlanId} setInp=${setMediaIn} onBudget=${plannerBudget} stale=${staleTxt} />` : null;
   const send = async (text, openDock) => {
-    // respondendo a pergunta de verba pelo campo de mensagem
-    if (lastAsk && lastAsk.kind === "media-ask-budget" && parseMoney(text) && /^[\sR$\d.,kmil]+$/i.test(text.trim())) { plannerBudget(parseMoney(text)); return; }
     if (openDock && screen !== "copilot") openCopilot();
     if (!ai.conn) { aiStore.open(); return; }
     if (typing) return;
@@ -2696,7 +2709,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
     setMsgs(history); setTyping(true);
     const screens = [...allowed].filter(k => k !== "whatsapp");
     const budget = isLive || livePf ? null : isAgency ? { total: activeAcc.budget, spent: activeAcc.spent } : { total: MONTH_BUDGET, spent: MONTH_SPENT };
-    const inMedia = msgs.some(m => m.kind === "media-plan");
+    const inMedia = screen === "media";
     const data = aiContext({ media: inMedia ? mediaPlanContext(mediaPlan, mediaIn) : null, camps, screen, account: accountName, isAgency, rows: pfRows, insights, budget, detail: !isLive && !livePf && (!isAgency || activeRow.id === "aurora"), live: isLive || livePf });
     try {
       const j = await aiCall({ provider: ai.conn.provider, model: ai.conn.model, system: aiSystem(data, screens, isAgency), messages: history.filter(m => !m.error).map(toAIMessage) }, ai.conn.key);
@@ -2719,7 +2732,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   };
   const openClient = (id, to) => { const p = pfRows.find(x => x.id === id); if (!p) return; setActiveId(id); if (!livePf) setCamps(scaleCamps(PORTFOLIO.find(x => x.id === id))); setMsgs([]); go(to || "copilot"); toast("Você entrou no ambiente de " + p.name); };
   const toPortfolio = () => { setMsgs([]); go("portfolio"); };
-  const chat = { msgs, typing, send, onConfirm, ai: !!ai.conn, custom, startPlanner, onAction: a => { if (a.connect) aiStore.open(); else if (a.open) openClient(a.open, a.go); else if (a.goto) go(a.goto); } };
+  const chat = { msgs, typing, send, onConfirm, ai: !!ai.conn, startPlanner, onAction: a => { if (a.connect) aiStore.open(); else if (a.open) openClient(a.open, a.go); else if (a.goto) go(a.goto); } };
   const info = routeInfo(screen);
   const isHome = screen === "copilot";
   // na agência, Integrações sem conta aberta é a tela da agência (fica no nível da carteira)
@@ -2742,6 +2755,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   else if (screen === "creatives") body = html`<${Creatives} camps=${camps} cre=${cre} />`;
   else if (screen === "report") body = html`<${Report} camps=${camps} toast=${toast} user=${client} account=${accountName} agency=${isAgency ? client.company : null} />`;
   else if (screen === "portfolio") body = html`<${Portfolio} chat=${chat} openClient=${openClient} toast=${toast} agency=${client.company} rows=${pfRows} />`;
+  else if (screen === "media") body = html`<${MediaPlanScreen} camps=${camps} inp=${mediaIn} setInp=${setMediaIn} stale=${staleTxt} />`;
   else if (screen === "skills") body = html`<${Skills} chat=${chat} toast=${toast} />`;
   else if (screen === "insights") body = html`<${Insights} insights=${insights} chat=${chat} go=${go} />`;
   else if (screen === "integrations") body = html`<${Integrations} client=${client} onUpdate=${onUpdate} toast=${toast} isAgency=${isAgency} live=${live} />`;
