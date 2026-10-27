@@ -95,12 +95,26 @@ async function accounts(token) {
   };
 }
 
+function dailySeries(P, rows) {
+  const by = Object.fromEntries(rows.map(r => [r.date_start, r]));
+  const out = [];
+  for (let d = new Date(P.since + "T00:00:00Z"); ymd(d) <= P.until; d.setUTCDate(d.getUTCDate() + 1)) {
+    const r = by[ymd(d)] || {};
+    out.push({
+      d: ymd(d), spend: Math.round(num(r.spend) * 100) / 100, impr: Math.round(num(r.impressions)), clicks: Math.round(num(r.clicks)),
+      compras: Math.round(pick(r.actions)), leads: Math.round(pick(r.actions, LEAD_TYPES)), conversas: Math.round(pick(r.actions, CHAT_TYPES)),
+      revenue: Math.round(pick(r.action_values) * 100) / 100,
+    });
+  }
+  return out;
+}
+
 async function data(token, accountId, period) {
   const act = accountId.startsWith("act_") ? accountId : "act_" + accountId;
   const insFields = "campaign_id,campaign_name,spend,impressions,clicks,frequency,actions,action_values";
   const P = periodOf(period);
 
-  const [info, camps, cur, last7, prev7, prev30, daily, acctDays] = await Promise.all([
+  const [info, camps, cur, last7, prev7, prev30, daily, acctDays, periodDays] = await Promise.all([
     graph("/" + act, { fields: "name,currency,account_status" }, token),
     graphAll("/" + act + "/campaigns", {
       fields: "id,name,effective_status,daily_budget,lifetime_budget,objective",
@@ -115,6 +129,8 @@ async function data(token, accountId, period) {
     graphAll("/" + act + "/insights", { level: "campaign", time_range: tr(P.last14), time_increment: 1, fields: "campaign_id,spend,actions,action_values", limit: 500 }, token, 8).catch(() => []),
     // dia a dia da conta no último ano, só para saber a última data com veiculação
     graphAll("/" + act + "/insights", { level: "account", time_range: tr(P.year), time_increment: 1, fields: "spend", limit: 100 }, token, 4).catch(() => []),
+    // dia a dia da conta no período, para a linha do tempo da visão geral
+    graphAll("/" + act + "/insights", { level: "account", time_range: tr(P), time_increment: 1, fields: "spend,impressions,clicks,actions,action_values", limit: 100 }, token, 4).catch(() => null),
   ]);
   const lastSpend = acctDays.filter(r => num(r.spend) > 0).map(r => r.date_start).sort().pop() || null;
   const days14 = P.days14;
@@ -174,6 +190,8 @@ async function data(token, accountId, period) {
     prev,
     period: { since: P.since, until: P.until, days: P.days },
     lastSpend,
+    // um ponto por dia do período (dias sem veiculação vêm zerados); resultados separados por tipo
+    days: periodDays ? dailySeries(P, periodDays) : null,
   };
 }
 

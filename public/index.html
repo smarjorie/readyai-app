@@ -340,13 +340,34 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .client-switch:hover{border-color:var(--accent);color:var(--accent-ink)}
 .view-seg button{display:grid;place-items:center;width:34px;padding:0}
 .cre-list{overflow:hidden}
-.cre-row{display:grid;grid-template-columns:52px minmax(0,2.4fr) minmax(110px,1fr) 70px 60px 90px 90px;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted-2)}
+.cre-row{display:grid;grid-template-columns:52px minmax(0,1fr) 126px 116px 64px 92px 104px;align-items:center;gap:14px;padding:10px 18px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted-2)}
+.cre-meta{display:flex;gap:8px;align-items:center;margin-top:2px;min-width:0}.cre-meta>span:last-child{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.th-sort{font:inherit;color:inherit;background:none;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:3px;letter-spacing:inherit;text-align:left}
+.th-sort.r{justify-content:flex-end;text-align:right}.th-sort:hover,.th-sort.on{color:var(--ink)}
+.th-arr{display:grid}.th-arr.up{transform:rotate(180deg)}
+.cre-tools{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.cre-tools-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cre-search{flex:1 1 240px;display:flex;align-items:center;gap:8px;height:36px;padding:0 10px;border:1px solid var(--line-2);border-radius:10px;color:var(--muted);background:var(--surface)}
+.cre-search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.cre-search input{flex:1;border:0;outline:none;background:none;font:inherit;font-size:13.5px;color:var(--ink);min-width:0}
+.cre-search button{display:grid;color:var(--muted);padding:2px}
+.cre-sel{height:36px;width:auto;max-width:220px;font-size:13px}
+.cre-sel-camp{max-width:260px}
+.cre-chips{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.cre-chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid var(--line);border-radius:99px;font-size:12.5px;font-weight:600;color:var(--muted-2);background:var(--surface);cursor:pointer}
+.cre-chip:hover{border-color:var(--line-2);color:var(--ink)}
+.cre-chip span{font-size:11.5px;color:var(--muted);font-weight:600;background:var(--surface-2);border-radius:99px;padding:1px 7px}
+.cre-chip i{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.cre-chip.c-good i{background:var(--good)}.cre-chip.c-warn i{background:var(--warn)}.cre-chip.c-bad i{background:var(--bad)}
+.cre-chip.on{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.cre-chip.on span{background:rgba(255,255,255,.18);color:var(--surface)}
+.cre-count{font-size:12.5px;color:var(--muted);margin-left:auto;white-space:nowrap}
 .cre-row:last-child{border-bottom:0}
 .cre-row:not(.cre-row-head):hover{background:var(--surface-2)}
 .cre-row .r{text-align:right}
 .cre-row-head{font-size:11.5px;font-weight:600;color:var(--muted);padding-top:12px;padding-bottom:10px;letter-spacing:.02em}
 .mini-thumb{position:relative;width:52px;height:52px;border-radius:10px;overflow:hidden;display:block}
-@media (max-width:760px){.cre-row{grid-template-columns:52px minmax(0,1fr) 70px}.cre-row>:nth-child(3),.cre-row>:nth-child(5),.cre-row>:nth-child(6),.cre-row>:nth-child(7){display:none}}
+@media (max-width:760px){.cre-row{grid-template-columns:52px minmax(0,1fr) 88px}.cre-row>:nth-child(3),.cre-row>:nth-child(5),.cre-row>:nth-child(6),.cre-row>:nth-child(7){display:none}}
 .cre-art{position:absolute;inset:0;width:100%;height:100%;display:block}
 .btn-danger{background:var(--bad);color:var(--on-bad)}
 .btn-danger:hover{filter:brightness(1.08)}
@@ -677,6 +698,39 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .bh-marks i{width:2px;height:14px;background:var(--ink);opacity:.35;border-radius:2px}
 .bh-marks span{font-size:11px;font-weight:600;color:var(--muted-2);white-space:nowrap;margin-top:8px}
 .bh-marks button:hover span{color:var(--accent-ink)}
+.bh-marks button.edge-l{transform:translateX(-1px);align-items:flex-start}
+.bh-marks button.edge-r{transform:translateX(calc(-100% + 1px));align-items:flex-end}
+.bh-marks button.low span{margin-top:24px}
+.tl-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.tl-chip{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:8px 12px 9px;border:1px solid var(--line);border-radius:12px;background:var(--surface);min-width:112px;text-align:left;cursor:pointer;transition:border-color .15s,background .15s;position:relative}
+.tl-chip:hover{border-color:var(--line-2)}
+.tl-chip .tl-l{font-size:12px;color:var(--muted-2);display:flex;align-items:center;gap:6px}
+.tl-chip b{font-size:15px;color:var(--ink)}
+.tl-dot{width:8px;height:8px;border-radius:50%;background:var(--line-2);display:inline-block;flex:none}
+.tl-chip.on{border-color:var(--tc);background:color-mix(in srgb,var(--tc) 7%,var(--surface));box-shadow:inset 0 -2px 0 var(--tc)}
+.tl-chip.on .tl-dot{background:var(--tc)}
+.tl-plot{position:relative;width:100%}
+@media (max-width:760px){.tl-chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}.tl-chip{flex:none;min-width:0}}
+.tl-plot svg{display:block;overflow:visible;cursor:crosshair}
+.tl-ax{font-size:11px;fill:var(--muted)}
+.tl-tip{position:absolute;top:6px;min-width:170px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(17,24,39,.14);padding:10px 12px;font-size:12.5px;pointer-events:none;display:flex;flex-direction:column;gap:5px;z-index:2}
+.tl-tip>b{font-size:12px;color:var(--muted-2);text-transform:capitalize;font-weight:600}
+.tl-tip>div{display:flex;align-items:center;gap:7px;color:var(--muted-2)}
+.tl-tip>div b{margin-left:auto;color:var(--ink)}
+.tl-tip-sub{border-top:1px solid var(--line);padding-top:5px}
+.tl-empty{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;color:var(--muted);z-index:1;pointer-events:none}
+.fnl-body{display:grid;grid-template-columns:minmax(96px,40%) minmax(0,1fr);gap:12px;align-items:start}
+.fnl-labels{position:relative}
+.fnl-lb{position:absolute;left:0;right:0;display:flex;flex-direction:column;justify-content:center;line-height:1.2}
+.fnl-lb span{font-size:12.5px;line-height:1.35;color:var(--muted-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fnl-lb b{font-size:15px;line-height:1.3;color:var(--ink)}
+.fnl-svg{min-width:0}.fnl-svg svg{display:block;overflow:visible}
+.fnl-rate{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.fnl-foot{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.fnl-foot>div{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.fnl-foot small{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.fnl-foot b{font-size:14px;color:var(--ink)}
+.fnl-foot span{font-size:12px;color:var(--muted-2)}
 .bh-ends{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);position:absolute;left:0;right:0;bottom:0}
 .bh-diff{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px 16px;padding:14px 16px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);max-width:620px}
 .bh-diff .eyebrow{grid-column:1/-1}
@@ -1648,7 +1702,8 @@ function MediaPlanScreen({ camps, inp, setInp, stale }) {
         <div className="bh-ctx">${cur > 0 ? html`${planBasisShort()}: <b>${pmoney(cur)}</b>${B0 > 0 ? html` · <span className=${B0 >= cur ? "up" : "down"}>${B0 >= cur ? "+" : "−"}${pct(Math.abs(B0 / cur - 1), 0)} em relação ao atual</span>` : null}` : "A conta ainda não tem investimento nos últimos 30 dias."}</div>
         ${smax > smin ? html`<div className="bh-range">
           <input type="range" min=${smin} max=${smax} step=${sstep} value=${Math.min(smax, Math.max(smin, B0 || cur || smin))} onInput=${e => { const B = Number(e.target.value); setV(B.toLocaleString("pt-BR")); setBudgetSoon(B); }} aria-label="Ajustar verba" style=${{ "--p": ((Math.min(smax, Math.max(smin, B0 || smin)) - smin) / (smax - smin) * 100) + "%" }} />
-          <div className="bh-marks">${marks.map(([l, B]) => html`<button key=${l} type="button" style=${{ left: ((B - smin) / (smax - smin) * 100) + "%" }} onClick=${() => setBudget(B)} title=${l + ": " + pmoney(B)}><i></i><span>${l}</span></button>`)}</div>
+          <div className="bh-marks">${marks.map(([l, B], mi) => { const p = (B - smin) / (smax - smin) * 100; const near = marks.some(([, B2], j) => j < mi && Math.abs((B2 - smin) / (smax - smin) * 100 - p) < 14);
+            return html`<button key=${l} type="button" className=${(p < 12 ? "edge-l" : p > 88 ? "edge-r" : "") + (near ? " low" : "")} style=${{ left: p + "%" }} onClick=${() => setBudget(B)} title=${l + ": " + pmoney(B)}><i></i><span>${l}</span></button>`; })}</div>
         </div>` : null}
         ${(() => { const base = picks.find(x => x.label === "Manter o ritmo"); if (!plan.ready || !base || !base.p || Math.abs(base.B - B0) < 10) return null;
           const d = plan.tot.results - base.p.tot.results, dB = plan.tot.spend - base.p.tot.spend;
@@ -1830,12 +1885,147 @@ function InsightCard({ i, chat, go, full }) {
   </article>`;
 }
 
-function Overview({ camps }) {
+/* ================= linha do tempo e funil da visão geral ================= */
+// largura real do elemento, para os gráficos desenharem em pixels (texto sempre no mesmo tamanho)
+function useWidth(init) {
+  const ref = useRef(null); const [w, setW] = useState(init);
+  useEffect(() => {
+    if (!ref.current) return;
+    const upd = () => { const x = ref.current && ref.current.getBoundingClientRect().width; if (x) setW(Math.round(x)); };
+    upd();
+    let ro; try { ro = new ResizeObserver(upd); ro.observe(ref.current); } catch (e) { window.addEventListener("resize", upd); }
+    return () => { if (ro) ro.disconnect(); else window.removeEventListener("resize", upd); };
+  }, []);
+  return [ref, w];
+}
+// taxa com casas decimais que fazem sentido (0,46% em vez de 0%)
+const pctA = v => !fin(v) ? "—" : v < 0.01 ? pct(v, 2) : v < 0.1 ? pct(v, 1) : pct(v, 0);
+const WD3 = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+// série de exemplo, no mesmo formato da série real
+function demoDays(camps) {
+  const t = totals(camps);
+  const sp = series(t.spend, 11, .1, .12), rv = series(t.revenue, 7, .18, .22), im = series(t.impr, 3, .05, .15), cl = series(t.clicks, 5, .08, .18), pu = series(t.purchases, 9, .12, .2);
+  return DAYS.map((d, i) => ({ d: pYmd(d), spend: sp[i], revenue: rv[i], impr: im[i], clicks: cl[i], compras: pu[i], leads: 0, conversas: 0 }));
+}
+// rótulos do eixo com a precisão que a escala pede
+const axNum = (v, mx) => mx < 20 ? dec(v, v % 1 ? 1 : 0) : mx < 10000 ? fmtInt(v) : kfmt(v);
+const axMoney = (v, mx) => "R$ " + (mx < 10 ? dec(v, 2) : mx < 100 ? dec(v, v % 1 ? 1 : 0) : mx < 10000 ? fmtInt(v) : kfmt(v));
+function tlMetrics(kind, sells) {
+  const res = d => kind === "compras" ? d.compras : kind === "leads" ? d.leads : kind === "conversas" ? d.conversas : d.compras + d.leads + d.conversas;
+  const sum = (days, f) => days.reduce((a, d) => a + (f(d) || 0), 0);
+  const m = [
+    { k: "spend", l: "Investimento", get: d => d.spend, fmt: brl2, ax: axMoney, tot: days => brl(sum(days, d => d.spend)) },
+    { k: "results", l: kindLabel(kind), get: res, fmt: v => fmtInt(v), ax: axNum, tot: days => fmtInt(sum(days, res)) },
+    { k: "cpr", l: kindCost(kind), get: d => res(d) > 0 ? d.spend / res(d) : null, fmt: brl2, ax: axMoney, tot: days => { const r = sum(days, res); return r > 0 ? brl2(sum(days, d => d.spend) / r) : "—"; } },
+    { k: "clicks", l: "Cliques", get: d => d.clicks, fmt: v => fmtInt(v), ax: axNum, tot: days => kfmt(sum(days, d => d.clicks)) },
+    { k: "impr", l: "Impressões", get: d => d.impr, fmt: v => fmtInt(v), ax: axNum, tot: days => kfmt(sum(days, d => d.impr)) },
+    { k: "ctr", l: "CTR", get: d => d.impr > 0 ? d.clicks / d.impr : null, fmt: v => pct(v, 2), ax: v => pct(v, 1), tot: days => { const i = sum(days, d => d.impr); return i > 0 ? pct(sum(days, d => d.clicks) / i, 2) : "—"; } },
+    { k: "cpc", l: "CPC", get: d => d.clicks > 0 ? d.spend / d.clicks : null, fmt: brl2, ax: axMoney, tot: days => { const c = sum(days, d => d.clicks); return c > 0 ? brl2(sum(days, d => d.spend) / c) : "—"; } },
+  ];
+  if (sells) m.splice(1, 0, { k: "revenue", l: "Receita", get: d => d.revenue, fmt: brl2, ax: axMoney, tot: days => brl(sum(days, d => d.revenue)) },
+    { k: "roas", l: "ROAS", get: d => d.spend > 0 && d.revenue > 0 ? d.revenue / d.spend : null, fmt: xroas, ax: v => dec(v, 1) + "x", tot: days => { const s = sum(days, d => d.spend); return s > 0 ? xroas(sum(days, d => d.revenue) / s) : "—"; } });
+  return m;
+}
+// curva suave (Catmull-Rom) que quebra nos dias sem valor e nunca passa do eixo
+function smoothPath(pts, floor) {
+  const segs = []; let cur = [];
+  pts.forEach(p => { if (p) cur.push(p); else if (cur.length) { segs.push(cur); cur = []; } });
+  if (cur.length) segs.push(cur);
+  return segs.map(s => {
+    if (s.length === 1) return `M${s[0][0] - 2},${s[0][1]}h4`;
+    let d = `M${s[0][0]},${s[0][1]}`;
+    for (let i = 0; i < s.length - 1; i++) {
+      const p0 = s[i - 1] || s[i], p1 = s[i], p2 = s[i + 1], p3 = s[i + 2] || p2, k = 0.18;
+      const c1 = [p1[0] + (p2[0] - p0[0]) * k, Math.min(floor, p1[1] + (p2[1] - p0[1]) * k)], c2 = [p2[0] - (p3[0] - p1[0]) * k, Math.min(floor, p2[1] - (p3[1] - p1[1]) * k)];
+      d += ` C${c1[0]},${c1[1]} ${c2[0]},${c2[1]} ${p2[0]},${p2[1]}`;
+    }
+    return d;
+  });
+}
+const TL_COLORS = ["var(--accent)", "var(--violet)"];
+function Timeline({ days, kind, sells, sub }) {
+  const metrics = useMemo(() => tlMetrics(kind, sells), [kind, sells]);
+  const [sel, setSelS] = useState(() => { const s = store.get("readyai_tl", ["spend", "results"]); return Array.isArray(s) && s.length ? s : ["spend", "results"]; });
+  const on = sel.map(k => metrics.find(m => m.k === k)).filter(Boolean);
+  const act = on.length ? on : [metrics[0]];
+  const toggle = k => {
+    let n = sel.filter(x => metrics.some(m => m.k === x));
+    if (n.includes(k)) { if (n.length > 1) n = n.filter(x => x !== k); } else n = n.length >= 2 ? [n[0], k] : [...n, k];
+    setSelS(n); store.set("readyai_tl", n);
+  };
+  const [ref, W] = useWidth(700);
+  const [hov, setHov] = useState(null);
+  const H = 250, T = 14, B = 28, L = 58, R = act.length > 1 ? 58 : 16;
+  const n = days.length, iw = Math.max(10, W - L - R), ih = H - T - B;
+  const x = i => L + (n > 1 ? iw * i / (n - 1) : iw / 2);
+  const scales = act.map(m => { const vals = days.map(m.get).filter(v => fin(v)); const mx = vals.length ? Math.max(...vals) : 0; return mx > 0 ? niceMax(mx) : 1; });
+  const y = (v, s) => T + ih * (1 - v / scales[s]);
+  const step = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(iw / 70))));
+  const empty = !days.some(d => d.spend > 0 || d.impr > 0);
+  const move = e => { const r = e.currentTarget.getBoundingClientRect(); const px = e.clientX - r.left; const i = Math.round((px - L) / (n > 1 ? iw / (n - 1) : 1)); setHov(Math.max(0, Math.min(n - 1, i))); };
+  const dd = hov != null ? days[hov] : null, dt = dd ? pDate(dd.d) : null;
+  return html`<div className="card card-pad tl">
+    <div className="card-head" style=${{ marginBottom: 12 }}><div><div className="card-title">Linha do tempo</div><div className="card-sub">${sub}</div></div>
+      <span className="card-sub hide-sm">Escolha até 2 métricas</span></div>
+    <div className="tl-chips" role="group" aria-label="Métricas da linha do tempo">${metrics.map(m => { const idx = act.findIndex(a => a.k === m.k); return html`<button key=${m.k} type="button" className=${"tl-chip" + (idx >= 0 ? " on" : "")} style=${idx >= 0 ? { "--tc": TL_COLORS[idx] } : null} aria-pressed=${idx >= 0} onClick=${() => toggle(m.k)}>
+      <span className="tl-l"><span className="tl-dot"></span>${m.l}</span><b className="num">${m.tot(days)}</b></button>`; })}</div>
+    <div className="tl-plot" ref=${ref}>
+      ${empty ? html`<div className="tl-empty">Sem veiculação no período: a linha aparece quando houver investimento.</div>` : null}
+      <svg width=${W} height=${H} role="img" aria-label=${"Linha do tempo de " + act.map(m => m.l.toLowerCase()).join(" e ")} onMouseMove=${move} onMouseLeave=${() => setHov(null)}>
+        <defs><linearGradient id="tl-g0" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--accent)" stopOpacity=".22" /><stop offset="1" stopColor="var(--accent)" stopOpacity="0" /></linearGradient></defs>
+        ${[0, .25, .5, .75, 1].map((f, i) => html`<g key=${"g" + i}><line x1=${L} x2=${W - R} y1=${T + ih * (1 - f)} y2=${T + ih * (1 - f)} stroke="var(--line)" strokeDasharray=${f === 0 ? "none" : "3 4"} />
+          <text x=${L - 8} y=${T + ih * (1 - f) + 4} textAnchor="end" className="tl-ax" fill=${TL_COLORS[0]}>${act[0].ax(scales[0] * f, scales[0])}</text>
+          ${act[1] ? html`<text x=${W - R + 8} y=${T + ih * (1 - f) + 4} className="tl-ax" fill=${TL_COLORS[1]}>${act[1].ax(scales[1] * f, scales[1])}</text>` : null}</g>`)}
+        ${days.map((d, i) => i % step === 0 || i === n - 1 && (n - 1) % step > step / 2 ? html`<text key=${"x" + i} x=${x(i)} y=${H - 8} textAnchor="middle" className="tl-ax">${pFmt(d.d)}</text>` : null)}
+        ${act.map((m, s) => { const pts = days.map((d, i) => { const v = m.get(d); return fin(v) ? [x(i), y(v, s)] : null; }); const paths = smoothPath(pts, T + ih);
+          return html`<g key=${m.k}>${s === 0 ? paths.map((p, j) => { const seg = pts.filter(Boolean); return seg.length > 1 && j === 0 && paths.length === 1 ? html`<path key=${"a" + j} d=${p + ` L${seg[seg.length - 1][0]},${T + ih} L${seg[0][0]},${T + ih} Z`} fill="url(#tl-g0)" />` : null; }) : null}
+            ${paths.map((p, j) => html`<path key=${"l" + j} d=${p} fill="none" stroke=${TL_COLORS[s]} strokeWidth=${s === 0 ? 2.4 : 2} strokeDasharray=${s === 1 ? "5 4" : "none"} strokeLinecap="round" strokeLinejoin="round" />`)}</g>`; })}
+        ${hov != null ? html`<g><line x1=${x(hov)} x2=${x(hov)} y1=${T} y2=${T + ih} stroke="var(--ink)" strokeOpacity=".25" />
+          ${act.map((m, s) => { const v = m.get(days[hov]); return fin(v) ? html`<circle key=${m.k} cx=${x(hov)} cy=${y(v, s)} r="4.5" fill="var(--surface)" stroke=${TL_COLORS[s]} strokeWidth="2.5" />` : null; })}</g>` : null}
+      </svg>
+      ${dd ? html`<div className="tl-tip" style=${{ left: Math.max(0, x(hov) + 12 > W - 180 ? x(hov) - 182 : x(hov) + 12) }}>
+        <b>${WD3[dt.getDay()]}, ${pFmt(dd.d, true)}</b>
+        ${act.map((m, s) => html`<div key=${m.k}><span className="tl-dot" style=${{ background: TL_COLORS[s] }}></span>${m.l}<b className="num">${fin(m.get(dd)) ? m.fmt(m.get(dd)) : "—"}</b></div>`)}
+        ${act.every(m => m.k !== "spend") ? html`<div className="tl-tip-sub">Investimento <b className="num">${brl2(dd.spend)}</b></div>` : null}
+      </div>` : null}
+    </div>
+  </div>`;
+}
+// funil com barras arredondadas ligadas por fluxos suaves; a taxa de passagem fica no meio do fluxo
+function Funnel({ stages, kind, note }) {
+  const [ref, W] = useWidth(240);
+  const ROW = 72, BAR = 30, n = stages.length, H = ROW * (n - 1) + BAR;
+  const v0 = stages[0].v || 1;
+  // largura: metade pela posição da etapa (forma de funil), metade pelo volume real; as taxas mostram o número exato
+  const bw = (v, i) => (0.5 * (1 - i * 0.75 / Math.max(1, n - 1)) + 0.5 * Math.pow(Math.max(0, v) / v0, 0.25)) * W;
+  const cx = W / 2;
+  const rates = stages.map((s, i) => i ? (stages[i - 1].v > 0 ? s.v / stages[i - 1].v : NaN) : null);
+  const total = stages[n - 1].v / v0;
+  const worst = rates.reduce((a, r, i) => i && fin(r) && (a == null || r < rates[a]) ? i : a, null);
+  return html`<div className="fnl">
+    <div className="fnl-body">
+      <div className="fnl-labels" style=${{ height: H }}>${stages.map((s, i) => html`<div key=${s.l} className="fnl-lb" style=${{ top: i * ROW - 8, height: BAR + 16 }}><span>${s.l}</span><b className="num">${kfmt(s.v)}</b></div>`)}</div>
+      <div className="fnl-svg" ref=${ref}><svg width=${W} height=${H} aria-hidden="true">
+        <defs><linearGradient id="fnl-g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="var(--accent)" /><stop offset="1" stopColor="var(--violet)" /></linearGradient></defs>
+        ${stages.slice(0, -1).map((s, i) => { const a = bw(s.v, i) / 2, b = bw(stages[i + 1].v, i + 1) / 2, y1 = i * ROW + BAR, y2 = (i + 1) * ROW, ym = (y1 + y2) / 2;
+          return html`<path key=${"c" + i} d=${`M${cx - a},${y1} C${cx - a},${ym} ${cx - b},${ym} ${cx - b},${y2} L${cx + b},${y2} C${cx + b},${ym} ${cx + a},${ym} ${cx + a},${y1} Z`} fill="var(--accent)" opacity=".1" />`; })}
+        ${stages.map((s, i) => html`<rect key=${"b" + i} x=${cx - bw(s.v, i) / 2} y=${i * ROW} width=${bw(s.v, i)} height=${BAR} rx=${BAR / 2} fill="url(#fnl-g)" opacity=${1 - i * (0.42 / Math.max(1, n - 1))} />`)}
+        ${stages.slice(1).map((s, j) => { const i = j + 1, ym = (i - 1) * ROW + BAR + (ROW - BAR) / 2, t = pctA(rates[i]), w = t.length * 6.6 + 16;
+          return html`<g key=${"r" + i}><rect x=${cx - w / 2} y=${ym - 10} width=${w} height="20" rx="10" fill="var(--surface)" stroke=${i === worst && n > 2 ? "var(--warn)" : "var(--line-2)"} /><text x=${cx} y=${ym + 4} textAnchor="middle" className="fnl-rate" fill=${i === worst && n > 2 ? "var(--warn)" : "var(--ink)"}>${t}</text></g>`; })}
+      </svg></div>
+    </div>
+    <div className="fnl-foot">
+      <div><small>Conversão total</small><b className="num">${pctA(total)}</b><span>das impressões viraram ${stages[n - 1].l.toLowerCase()}</span></div>
+      ${worst != null ? html`<div><small>Maior perda</small><b>${stages[worst - 1].l} → ${stages[worst].l}</b><span>${pctA(1 - rates[worst])} não avançam</span></div>` : null}
+    </div>
+    ${note ? html`<p className="card-sub" style=${{ marginTop: 10 }}>${note}</p>` : null}
+  </div>`;
+}
+
+function Overview({ camps, days }) {
   const t = totals(camps);
   const kind = resultKind(camps), kl = kindLabel(kind);
   const sells = t.revenue > 0;
-  const rev = useMemo(() => series(t.revenue, 7, .18, .22), [t.revenue]);
-  const spend = useMemo(() => series(t.spend, 11, .1, .12), [t.spend]);
   const byCh = chPresent(camps).map(k => [k, totals(camps.filter(c => c.ch === k))]);
   // sem receita (campanhas de conversa ou lead), a tabela ordena por investimento
   const top = [...camps].sort((a, b) => sells ? b.revenue - a.revenue : b.spend - a.spend).slice(0, 5);
@@ -1849,29 +2039,21 @@ function Overview({ camps }) {
       <${Kpi} label="CTR" value=${pct(t.ctr, 2)} d=${fin(delta(t.ctr, prevCtr)) ? delta(t.ctr, prevCtr) : undefined} hint=${"CPC " + brl2(t.spend / t.clicks)} />
       <${Kpi} label=${kindCost(kind)} value=${brl2(t.cpa)} d=${fin(delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases)) ? delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases) : undefined} invert hint=${fmtInt(t.purchases) + " " + kl.toLowerCase()} />
     </div>
-    <div className=${ACTIVE.live ? "grid" : "grid g-21"}>
-      ${ACTIVE.live ? null : html`<div className="card card-pad"><div className="card-head"><div><div className="card-title">Receita x investimento por dia</div><div className="card-sub">Soma de Meta, Google e TikTok</div></div>
-        <div style=${{ display: "flex", gap: 14, fontSize: 12.5, color: "var(--muted-2)" }}><span style=${{ display: "inline-flex", gap: 6, alignItems: "center" }}><span className="ch-dot" style=${{ background: "var(--accent)" }}></span>Receita</span><span style=${{ display: "inline-flex", gap: 6, alignItems: "center" }}><span className="ch-dot" style=${{ background: "var(--c-spend)" }}></span>Investimento</span></div></div>
-        <${LineChart} labels=${DAYS.map(dayLbl)} sets=${[{ values: rev, color: "var(--accent)", area: true }, { values: spend, color: "var(--c-spend)", dash: true }]} />
-      </div>`}
-      <div className="card card-pad"><div className="card-head"><div><div className="card-title">Investimento por canal</div><div className="card-sub">Participação no investimento e resultado de cada canal</div></div></div>
-        <div className="stack" style=${{ gap: 14 }}>${byCh.map(([k, v]) => { const ck = resultKind(camps.filter(c => c.ch === k)); return html`<div key=${k} className="stack" style=${{ gap: 6 }}>
-          <div style=${{ display: "flex", justifyContent: "space-between", gap: 8 }}><${ChTag} ch=${k} /><span className="num" style=${{ fontSize: 13 }}><b>${brl(v.spend)}</b> · ${pct(v.spend / t.spend, 0)}</span></div>
-          <div className="bar-track"><div className="bar-fill" style=${{ width: (v.spend / t.spend * 100) + "%", background: CH[k].color }}></div></div>
-          <div className="card-sub num">${fmtInt(v.purchases)} ${kindLabel(ck).toLowerCase()} · ${kindCost(ck)} ${brl2(v.cpa)} · CTR ${pct(v.ctr, 2)}${v.revenue > 0 ? html` · Receita ${brl(v.revenue)} · ROAS <b style=${{ color: roasColor(v.roas) }}>${xroas(v.roas)}</b>` : null}</div></div>`; })}</div>
-      </div>
-    </div>
+    ${days && days.length > 1 ? html`<${Timeline} days=${days} kind=${kind} sells=${sells} sub=${"Dia a dia, " + (ACTIVE.period ? (ACTIVE.period.custom ? ACTIVE.period.dates : ACTIVE.period.label.toLowerCase() + " (" + ACTIVE.period.dates + ")") : "últimos 30 dias (19/09 a 18/10)") + (ACTIVE.live && ACTIVE.dayCh && ACTIVE.dayCh.length < chPresent(camps).length ? " · só " + ACTIVE.dayCh.map(k => CH[k].label).join(" e ") : ACTIVE.live ? "" : " · Meta, Google e TikTok")} />` : null}
     <div className="grid g-21">
       <div className="card card-pad"><div className="card-head"><div><div className="card-title">${sells ? "Campanhas com mais receita" : "Campanhas com mais investimento"}</div></div></div>
         <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Campanha</th><th>Canal</th><th className="r">Investido</th><th className="r">${kl}</th>${sells ? html`<th className="r">Receita</th><th className="r">ROAS</th>` : html`<th className="r">${kindCost(kind)}</th><th className="r">CTR</th>`}</tr></thead>
         <tbody>${top.map(c => html`<tr key=${c.id}><td><span className="cname">${c.name}</span></td><td><${ChTag} ch=${c.ch} /></td><td className="r num">${brl(c.spend)}</td><td className="r num">${fmtInt(c.purchases)}</td>${sells ? html`<td className="r num">${brl(c.revenue)}</td><td className="r num"><b style=${{ color: "var(--ink)" }}>${xroas(roasOf(c))}</b></td>` : html`<td className="r num">${brl2(c.spend / c.purchases)}</td><td className="r num">${pct(c.clicks / c.impr, 2)}</td>`}</tr>`)}</tbody></table></div>
       </div>
-      <div className="card card-pad"><div className="card-head"><div><div className="card-title">Funil de tráfego</div><div className="card-sub">Taxa em relação à etapa anterior</div></div></div>
-        <div className="stack" style=${{ gap: 10 }}>${funnel.map(([l, v], i) => html`<div key=${l} className="stack" style=${{ gap: 4 }}>
-          <div style=${{ display: "flex", justifyContent: "space-between", fontSize: 13 }}><span style=${{ color: "var(--muted-2)" }}>${l}</span><span className="num"><b>${kfmt(v)}</b>${i > 0 ? html` <span style=${{ color: "var(--muted)" }}>· ${pct(v / funnel[i - 1][1], i === 1 ? 1 : 0)}</span>` : null}</span></div>
-          <div className="bar-track" style=${{ height: 8 }}><div className="bar-fill" style=${{ width: Math.max(4, Math.pow(v / funnel[0][1], .28) * 100) + "%", background: "var(--accent)", opacity: 1 - i * .14 }}></div></div></div>`)}</div>
-        ${ACTIVE.live && kind !== "compras" ? html`<p className="card-sub" style=${{ marginTop: 12 }}>${kind === "conversas" ? "As campanhas desta conta otimizam para conversas no WhatsApp ou no Messenger, então a última etapa conta conversas iniciadas, não compras." : kind === "leads" ? "As campanhas desta conta otimizam para cadastros, então a última etapa conta leads, não compras." : "A última etapa soma o resultado principal de cada campanha (compras, leads ou conversas)."}</p>` : null}
+      <div className="card card-pad"><div className="card-head"><div><div className="card-title">Funil de tráfego</div><div className="card-sub">Quanto passa de uma etapa para a outra</div></div></div>
+        <${Funnel} stages=${funnel.map(([l, v]) => ({ l, v }))} kind=${kind} note=${ACTIVE.live && kind !== "compras" ? (kind === "conversas" ? "As campanhas desta conta otimizam para conversas no WhatsApp ou no Messenger, então a última etapa conta conversas iniciadas, não compras." : kind === "leads" ? "As campanhas desta conta otimizam para cadastros, então a última etapa conta leads, não compras." : "A última etapa soma o resultado principal de cada campanha (compras, leads ou conversas).") : null} />
       </div>
+    </div>
+    <div className="card card-pad"><div className="card-head"><div><div className="card-title">Investimento por canal</div><div className="card-sub">Participação no investimento e resultado de cada canal</div></div></div>
+      <div className=${byCh.length > 1 ? "grid g3" : "stack"} style=${{ gap: 18 }}>${byCh.map(([k, v]) => { const ck = resultKind(camps.filter(c => c.ch === k)); return html`<div key=${k} className="stack" style=${{ gap: 6 }}>
+        <div style=${{ display: "flex", justifyContent: "space-between", gap: 8 }}><${ChTag} ch=${k} /><span className="num" style=${{ fontSize: 13 }}><b>${brl(v.spend)}</b> · ${pct(v.spend / t.spend, 0)}</span></div>
+        <div className="bar-track"><div className="bar-fill" style=${{ width: (v.spend / t.spend * 100) + "%", background: CH[k].color }}></div></div>
+        <div className="card-sub num">${fmtInt(v.purchases)} ${kindLabel(ck).toLowerCase()} · ${kindCost(ck)} ${brl2(v.cpa)} · CTR ${pct(v.ctr, 2)}${v.revenue > 0 ? html` · Receita ${brl(v.revenue)} · ROAS <b style=${{ color: roasColor(v.roas) }}>${xroas(v.roas)}</b>` : null}</div></div>`; })}</div>
     </div>
   </div>`;
 }
@@ -2216,39 +2398,70 @@ function creStatus(k, sells) {
 function LiveCreatives({ cre }) {
   const [view, setViewS] = useState(() => store.get("readyai_cre_view", "grid"));
   const setView = v => { setViewS(v); store.set("readyai_cre_view", v); };
+  const [q, setQ] = useState(""); const [stF, setStF] = useState("all"); const [fmtF, setFmtF] = useState("all"); const [campF, setCampF] = useState("all");
+  const [sort, setSort] = useState({ k: "rank", dir: 1 });
   const d = cre && cre.status === "ready" ? cre.data : null;
   const ads = d ? d.ads : [];
   const kind = d ? d.kind : "resultados", kl = kindLabel(kind);
   const sells = ads.some(a => a.revenue > 0);
   // ranking: ROAS quando vende; senão menor custo por resultado; sem resultado vai para o fim
-  const list = [...ads].sort((a, b) => sells ? (b.revenue / b.spend) - (a.revenue / a.spend) : ((a.results > 0 ? a.spend / a.results : 1e9) - (b.results > 0 ? b.spend / b.results : 1e9)) || b.spend - a.spend);
+  const ranked = useMemo(() => [...ads].sort((a, b) => sells ? (b.revenue / b.spend) - (a.revenue / a.spend) : ((a.results > 0 ? a.spend / a.results : 1e9) - (b.results > 0 ? b.spend / b.results : 1e9)) || b.spend - a.spend)
+    .map((k, i) => ({ ...k, rank: i + 1, st: creStatus(k, sells) })), [ads, sells]);
   const main = k => sells ? ["ROAS", xroas(k.revenue / k.spend)] : [kindCost(kind), k.results > 0 ? brl2(k.spend / k.results) : "—"];
   const third = k => k.hook != null ? ["Retenção 3s", pct(k.hook, 0)] : ["Investido", brl2(k.spend)];
   const thumb = (k, cls) => k.thumb ? html`<img className=${cls} src=${k.thumb} alt="" loading="lazy" referrerPolicy="no-referrer" onError=${e => { e.target.style.display = "none"; }} />` : null;
+  // opções dos filtros vêm dos próprios anúncios
+  const stOpts = [...new Set(ranked.map(k => k.st[1]))].map(l => [l, ranked.filter(k => k.st[1] === l).length, ranked.find(k => k.st[1] === l).st[0]]);
+  const fmts = [...new Set(ranked.map(k => k.format).filter(Boolean))].sort();
+  const campsL = [...new Set(ranked.map(k => k.campaign).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const norm = t => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const SORTS = { rank: k => k.rank, main: k => sells ? -(k.revenue / k.spend) : (k.results > 0 ? k.spend / k.results : 1e9), ctr: k => -(k.clicks / k.impr || 0), results: k => -k.results, spend: k => -k.spend };
+  const list = ranked.filter(k => (stF === "all" || k.st[1] === stF) && (fmtF === "all" || k.format === fmtF) && (campF === "all" || k.campaign === campF) && (!q || norm(k.name + " " + k.campaign).includes(norm(q))))
+    .sort((a, b) => (SORTS[sort.k](a) - SORTS[sort.k](b)) * sort.dir || a.rank - b.rank);
+  const filtered = stF !== "all" || fmtF !== "all" || campF !== "all" || q;
+  const clear = () => { setQ(""); setStF("all"); setFmtF("all"); setCampF("all"); };
+  const sortBy = k => setSort(s => s.k === k ? { k, dir: -s.dir } : { k, dir: 1 });
+  const th = (k, l) => html`<button type="button" className=${"r th-sort" + (sort.k === k ? " on" : "")} onClick=${() => sortBy(k)} title="Ordenar">${l}${sort.k === k ? html`<span className=${"th-arr" + (sort.dir < 0 ? " up" : "")}><${Icon} n="chevD" s=${12} /></span>` : null}</button>`;
   const head = html`<${PageHead} title="Criativos" sub=${sells ? "Anúncios ranqueados por ROAS, com sinais de fadiga." : "Anúncios ranqueados pelo menor " + kindCost(kind).toLowerCase() + ", com sinais de fadiga."} right=${html`<div className="seg view-seg" role="group" aria-label="Visualização"><button className=${view === "grid" ? "on" : ""} onClick=${() => setView("grid")} aria-label="Ver em grade" aria-pressed=${view === "grid"} title="Grade"><${Icon} n="grid" s=${15} /></button><button className=${view === "list" ? "on" : ""} onClick=${() => setView("list")} aria-label="Ver em lista" aria-pressed=${view === "list"} title="Lista"><${Icon} n="list" s=${15} /></button></div>`} />`;
   if (!cre || cre.status === "loading" || cre.status === "idle") return html`<div className="stack">${head}<div className="card card-pad"><${BreakNote}>Buscando os anúncios na Meta…<//></div></div>`;
   if (cre.status === "error") return html`<div className="stack">${head}<div className="card card-pad"><${BreakNote}>Não consegui buscar os anúncios: ${cre.error}<//></div></div>`;
   if (!ads.length) return html`<div className="stack">${head}<div className="card card-pad"><${BreakNote}>Nenhum anúncio da Meta teve investimento no período selecionado.<//></div></div>`;
   return html`<div className="stack">${head}
-    ${view === "list" ? html`<div className="card cre-list">
-      <div className="cre-row cre-row-head"><span></span><span>Anúncio</span><span>Status</span><span className="r">${main(list[0])[0]}</span><span className="r">CTR</span><span className="r">${kl}</span><span className="r">Investido</span></div>
-      ${list.map((k, idx) => { const s = creStatus(k, sells); return html`<div key=${k.id} className="cre-row">
+    <div className="cre-tools">
+      <div className="cre-tools-row">
+        <label className="cre-search"><${Icon} n="search" s=${15} /><input value=${q} onInput=${e => setQ(e.target.value)} placeholder="Buscar anúncio ou campanha" aria-label="Buscar anúncio ou campanha" />${q ? html`<button type="button" onClick=${() => setQ("")} aria-label="Limpar busca"><${Icon} n="x" s=${13} /></button>` : null}</label>
+        ${fmts.length > 1 ? html`<select className="input cre-sel" value=${fmtF} onChange=${e => setFmtF(e.target.value)} aria-label="Formato"><option value="all">Todos os formatos</option>${fmts.map(f => html`<option key=${f} value=${f}>${f}</option>`)}</select>` : null}
+        ${campsL.length > 1 ? html`<select className="input cre-sel cre-sel-camp" value=${campF} onChange=${e => setCampF(e.target.value)} aria-label="Campanha"><option value="all">Todas as campanhas</option>${campsL.map(c => html`<option key=${c} value=${c}>${c}</option>`)}</select>` : null}
+        <select className="input cre-sel" value=${sort.k + ":" + sort.dir} onChange=${e => { const [k, dir] = e.target.value.split(":"); setSort({ k, dir: Number(dir) }); }} aria-label="Ordenar"><option value="rank:1">Ordenar: ranking</option><option value="main:1">${sells ? "Maior ROAS" : "Menor " + kindCost(kind).toLowerCase()}</option><option value="ctr:1">Maior CTR</option><option value="results:1">Mais ${kl.toLowerCase()}</option><option value="spend:1">Maior investimento</option></select>
+      </div>
+      <div className="cre-tools-row">
+        <div className="cre-chips" role="group" aria-label="Status">
+          <button type="button" className=${"cre-chip" + (stF === "all" ? " on" : "")} onClick=${() => setStF("all")}>Todos<span>${ranked.length}</span></button>
+          ${stOpts.map(([l, nn, cls]) => html`<button key=${l} type="button" className=${"cre-chip " + cls.replace("pill-", "c-") + (stF === l ? " on" : "")} onClick=${() => setStF(stF === l ? "all" : l)} aria-pressed=${stF === l}><i></i>${l}<span>${nn}</span></button>`)}
+        </div>
+        <span className="cre-count">${filtered ? html`${list.length} de ${ranked.length} anúncios · <button type="button" className="link-btn" onClick=${clear}>Limpar filtros</button>` : ranked.length + " anúncios"}</span>
+      </div>
+    </div>
+    ${!list.length ? html`<div className="card card-pad"><${BreakNote}>Nenhum anúncio com esses filtros. <button type="button" className="link-btn" onClick=${clear}>Limpar filtros</button><//></div>`
+    : view === "list" ? html`<div className="card cre-list">
+      <div className="cre-row cre-row-head"><span></span><button type="button" className=${"th-sort" + (sort.k === "rank" ? " on" : "")} onClick=${() => setSort({ k: "rank", dir: 1 })}>Anúncio</button><span>Status</span>${th("main", main(ranked[0])[0])}${th("ctr", "CTR")}${th("results", kl)}${th("spend", "Investido")}</div>
+      ${list.map(k => html`<div key=${k.id} className="cre-row">
         <span className="mini-thumb" style=${{ background: "var(--surface-2)" }}>${thumb(k)}</span>
-        <span style=${{ minWidth: 0 }}><b className="cname" style=${{ fontSize: 13.5 }} title=${k.name}>#${idx + 1} · ${k.name}</b><span style=${{ display: "flex", gap: 8, alignItems: "center", marginTop: 2, flexWrap: "wrap" }}><${ChTag} ch="meta" /><span style=${{ fontSize: 12, color: "var(--muted)" }}>${k.format} · ${k.campaign}</span></span></span>
-        <span><span className=${"pill " + s[0]} title=${s[2]}>${s[1]}</span></span>
+        <span style=${{ minWidth: 0 }}><b className="cname" style=${{ fontSize: 13.5 }} title=${k.name}>#${k.rank} · ${k.name}</b><span className="cre-meta"><${ChTag} ch="meta" /><span title=${k.campaign}>${k.format} · ${k.campaign}</span></span></span>
+        <span><span className=${"pill " + k.st[0]} title=${k.st[2]}>${k.st[1]}</span></span>
         <span className="r num"><b>${main(k)[1]}</b></span>
         <span className="r num">${pct(k.clicks / k.impr, 1)}</span>
         <span className="r num">${fmtInt(k.results)}</span>
         <span className="r num">${brl2(k.spend)}</span>
-      </div>`; })}
-    </div>` : html`<div className="cre-grid">${list.map((k, idx) => { const s = creStatus(k, sells); return html`<article key=${k.id} className="card cre">
+      </div>`)}
+    </div>` : html`<div className="cre-grid">${list.map(k => html`<article key=${k.id} className="card cre">
       <div className=${"thumb" + (k.thumb ? "" : " noimg")}>${thumb(k, "real")}<span className="fmt">${k.format}</span>${k.text ? html`<span className="hl" style=${{ maxWidth: "20ch", fontSize: 14 }}>${k.text.length > 60 ? k.text.slice(0, 58) + "…" : k.text}</span>` : html`<span></span>`}</div>
       <div className="cre-body">
-        <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><b style=${{ fontSize: 13.5, lineHeight: 1.3, overflowWrap: "anywhere" }}>${k.name}</b><span className="mono" style=${{ color: "var(--muted)" }}>#${idx + 1}</span></div>
+        <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><b style=${{ fontSize: 13.5, lineHeight: 1.3, overflowWrap: "anywhere" }}>${k.name}</b><span className="mono" style=${{ color: "var(--muted)" }}>#${k.rank}</span></div>
         <div className="card-sub" style=${{ marginTop: -4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title=${k.campaign}>${k.campaign}</div>
-        <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, flexWrap: "wrap" }}><span style=${{ fontSize: 12.5, color: "var(--muted-2)" }}>${fmtInt(k.results)} ${kl.toLowerCase()}</span><span className=${"pill " + s[0]} title=${s[2]}>${s[1]}</span></div>
+        <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, flexWrap: "wrap" }}><span style=${{ fontSize: 12.5, color: "var(--muted-2)" }}>${fmtInt(k.results)} ${kl.toLowerCase()}</span><span className=${"pill " + k.st[0]} title=${k.st[2]}>${k.st[1]}</span></div>
         <div className="cre-stats"><div><small>${main(k)[0]}</small><b className="num">${main(k)[1]}</b></div><div><small>CTR</small><b className="num">${pct(k.clicks / k.impr, 1)}</b></div><div><small>${third(k)[0]}</small><b className="num">${third(k)[1]}</b></div></div>
-      </div></article>`; })}</div>`}
+      </div></article>`)}</div>`}
     <p className="demo-note"><${Icon} n="check" s=${13} />${d.total > ads.length ? "Os " + ads.length + " anúncios com mais investimento, de " + d.total + "," : ads.length + (ads.length === 1 ? " anúncio" : " anúncios")} da Meta com investimento no período. Passe o mouse no status para ver o motivo. O Google Ads ainda não entrega criativos.</p>
   </div>`;
 }
@@ -2591,12 +2804,16 @@ function useLiveData(client, enabled, period) {
         const v = r.value || {};
         camps.push(...(v.campaigns || []));
         if (v.prev) Object.keys(prev).forEach(k => { prev[k] += v.prev[k] || 0; });
-        sources.push({ ch, label: ch === "meta" ? (c.accountName || c.accountId) : (c.customerName || c.customerId), n: (v.campaigns || []).length, note: v.note, lastSpend: v.lastSpend || null, period: v.period || null, idle: v.idleActive || [] });
+        sources.push({ ch, label: ch === "meta" ? (c.accountName || c.accountId) : (c.customerName || c.customerId), n: (v.campaigns || []).length, note: v.note, lastSpend: v.lastSpend || null, period: v.period || null, idle: v.idleActive || [], days: v.days || null });
       });
       const lastSpend = sources.map(x => x.lastSpend).filter(Boolean).sort().pop() || null;
       const period = (sources.find(x => x.period) || {}).period || null;
       const idle = sources.flatMap(x => x.idle.map(c => ({ ...c, ch: x.ch })));
-      setSt({ status: sources.length ? "ready" : "error", camps, prev, errors, sources, lastSpend, period, idle, at: new Date() });
+      // linha do tempo: soma, dia a dia, os canais que mandam a série diária
+      const withDays = sources.filter(x => x.days && x.days.length);
+      let days = null;
+      if (withDays.length) { const by = {}; withDays.forEach(x => x.days.forEach(d => { const o = by[d.d] || (by[d.d] = { d: d.d, spend: 0, impr: 0, clicks: 0, compras: 0, leads: 0, conversas: 0, revenue: 0 }); for (const k in o) if (k !== "d") o[k] += d[k] || 0; })); days = Object.values(by).sort((a, b) => a.d < b.d ? -1 : 1); }
+      setSt({ status: sources.length ? "ready" : "error", camps, prev, errors, sources, lastSpend, period, idle, days, dayCh: withDays.map(x => x.ch), at: new Date() });
     });
     return () => { dead = true; };
   }, [key]);
@@ -3135,7 +3352,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   const jumpTo = last => { const u = pDate(last); setPeriod({ id: "custom", since: pYmd(pAdd(u, -29)), until: last }); };
   const live = useLiveData(liveSrc, isAgency ? !!(livePf && activeId && screen !== "portfolio") : true, periodR);
   const isLive = live.status === "ready" && live.camps.length > 0 && (!isAgency || !!(livePf && activeId && screen !== "portfolio"));
-  if (!isAgency || livePf) ACTIVE = isLive ? { prev: live.prev, target, health: liveHealth(live.camps, target), live: true, period: periodR }
+  if (!isAgency || livePf) ACTIVE = isLive ? { prev: live.prev, target, health: liveHealth(live.camps, target), live: true, period: periodR, dayCh: live.dayCh }
     : isAgency ? { prev: { spend: NaN, revenue: NaN, purchases: NaN, clicks: NaN, impr: NaN }, target, health: activeRow ? activeRow.health : 70, live: true }
     : demo ? { prev: PREV, target: TARGET_ROAS, health: 78 } : EMPTY_ACTIVE;
   const dataSt = dataStateOf(demo, live, isLive);
@@ -3236,7 +3453,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   if (!can) body = html`<${Locked} mod=${screen} plan=${client.plan} />`;
   else if (noData && DATA_SCREENS.includes(screen)) body = html`<${EmptyState} screen=${screen} ...${emptyProps} />`;
   else if (screen === "portfolio" && noRows) body = html`<${PortfolioEmpty} pf=${pf} hasToken=${agencyMeta} connect=${connect} agency=${client.company} />`;
-  else if (screen === "overview") body = html`<${Overview} camps=${camps} />`;
+  else if (screen === "overview") body = html`<${Overview} camps=${camps} days=${isLive ? live.days : demoDays(camps)} />`;
   else if (screen === "analytics") body = html`<${Analytics} camps=${camps} brk=${brk} />`;
   else if (screen === "campaigns") body = html`<${Campaigns} camps=${camps} setCamps=${setCamps} toast=${toast} chat=${chat} idle=${isLive ? live.idle : null} />`;
   else if (screen === "creatives") body = html`<${Creatives} camps=${camps} cre=${cre} />`;
