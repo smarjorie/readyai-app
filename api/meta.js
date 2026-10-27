@@ -95,6 +95,13 @@ async function accounts(token) {
   };
 }
 
+// na conta inteira aparecem vários tipos do mesmo resultado (ex.: lead do formulário e lead do pixel);
+// o maior deles é o total, como na soma das campanhas
+function pickMax(list, types) {
+  const map = {};
+  for (const a of list || []) map[a.action_type] = num(a.value);
+  return Math.max(0, ...types.map(t => map[t] || 0));
+}
 function dailySeries(P, rows) {
   const by = Object.fromEntries(rows.map(r => [r.date_start, r]));
   const out = [];
@@ -102,7 +109,7 @@ function dailySeries(P, rows) {
     const r = by[ymd(d)] || {};
     out.push({
       d: ymd(d), spend: Math.round(num(r.spend) * 100) / 100, impr: Math.round(num(r.impressions)), clicks: Math.round(num(r.clicks)),
-      compras: Math.round(pick(r.actions)), leads: Math.round(pick(r.actions, LEAD_TYPES)), conversas: Math.round(pick(r.actions, CHAT_TYPES)),
+      compras: Math.round(pickMax(r.actions, PURCHASE_TYPES)), leads: Math.round(pickMax(r.actions, LEAD_TYPES)), conversas: Math.round(pickMax(r.actions, CHAT_TYPES)),
       revenue: Math.round(pick(r.action_values) * 100) / 100,
     });
   }
