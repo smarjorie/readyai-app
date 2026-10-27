@@ -6,6 +6,7 @@
 // POST /api/metamcp { action: "accounts" | "data" | "portfolio", account_id? }   header: x-meta-token
 
 import { openMcp, McpError } from "./_mcp.js";
+import { periodOf, tr } from "./_period.js";
 
 const MCP_URL = process.env.META_MCP_URL || "https://mcp.facebook.com/ads";
 
@@ -91,15 +92,16 @@ async function accounts(c) {
   };
 }
 
-async function data(c, accountId) {
+async function data(c, accountId, period) {
   const id = String(accountId).replace(/^act_/, "");
+  const P = periodOf(period);
   const F = ["id", "name", "effective_status", "objective", "daily_budget", "amount_spent", "impressions", "clicks", "frequency", "omni_purchase", "purchase_roas", "results"];
   const W = ["id", "objective", "amount_spent", "impressions", "clicks", "omni_purchase", "purchase_roas", "results"];
   const [cur, w1, w0, p30] = await Promise.all([
-    c.entities({ ad_account_id: id, level: "campaign", fields: F, date_preset: "last_30d", limit: 200 }),
-    c.entities({ ad_account_id: id, level: "campaign", fields: W, date_preset: "last_7d", limit: 200 }),
-    c.entities({ ad_account_id: id, level: "campaign", fields: W, time_range: range(14, 8), limit: 200 }),
-    c.entities({ ad_account_id: id, level: "campaign", fields: W, time_range: range(60, 31), limit: 200 }),
+    c.entities({ ad_account_id: id, level: "campaign", fields: F, time_range: tr(P), limit: 200 }),
+    c.entities({ ad_account_id: id, level: "campaign", fields: W, time_range: tr(P.w1), limit: 200 }),
+    c.entities({ ad_account_id: id, level: "campaign", fields: W, time_range: tr(P.w0), limit: 200 }),
+    c.entities({ ad_account_id: id, level: "campaign", fields: W, time_range: tr(P.prev), limit: 200 }),
   ]);
   const rev = e => Math.round(val(e.amount_spent) * val(e.purchase_roas) * 100) / 100;
   const by = list => Object.fromEntries(list.map(e => [e.id, e]));
@@ -125,7 +127,7 @@ async function data(c, accountId) {
     const r = rev(e), sp = val(e.amount_spent);
     return { spend: a.spend + sp, revenue: a.revenue + r, purchases: a.purchases + resultOf(e).n, clicks: a.clicks + val(e.clicks), impr: a.impr + val(e.impressions), tracked: a.tracked + (r > 0 || isSalesObj(e.objective) ? sp : 0) };
   }, { spend: 0, revenue: 0, purchases: 0, clicks: 0, impr: 0, tracked: 0 });
-  return { account: { id: "act_" + id, name: "act_" + id, currency: "BRL" }, campaigns, prev, period: { since: ymd(daysAgo(30)), until: ymd(daysAgo(1)) }, via: "mcp" };
+  return { account: { id: "act_" + id, name: "act_" + id, currency: "BRL" }, campaigns, prev, period: { since: P.since, until: P.until, days: P.days }, via: "mcp" };
 }
 
 async function portfolio(c) {
@@ -167,7 +169,7 @@ export default async function handler(req, res) {
     if (body.action === "portfolio") return send(res, 200, await portfolio(c));
     if (body.action === "data") {
       if (!/^(act_)?\d{5,}$/.test(String(body.account_id || ""))) return send(res, 400, { error: "Escolha uma conta de anúncio." });
-      return send(res, 200, await data(c, String(body.account_id)));
+      return send(res, 200, await data(c, String(body.account_id), body.period));
     }
     return send(res, 400, { error: "Ação desconhecida." });
   } catch (e) {
