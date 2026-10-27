@@ -167,8 +167,6 @@ async function data(token, accountId, period) {
       spend: Math.round(num(r.spend) * 100) / 100,
       purchases: Math.round(res.n),
       result: res.kind,
-      // compras registradas, mesmo quando o resultado principal é lead ou conversa (etapa final do funil)
-      buys: Math.round(pick(r.actions)),
       revenue: Math.round(revenue * 100) / 100,
       // campanha que não é de venda (leads, conversas, alcance) não é julgada pelo ROAS
       noRev: revenue === 0 && !/SALES|CONVERSIONS|PRODUCT_CATALOG/.test(c.objective || "") ? true : undefined,
