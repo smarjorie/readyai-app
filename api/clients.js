@@ -62,6 +62,7 @@ function applyAdminPatch(c, p) {
   if (p.targetRoas !== undefined) c.targetRoas = cleanRoas(p.targetRoas); // meta é opcional: vazio ou null apaga
   if (p.conn !== undefined) c.conn = cleanConn(p.conn);
   if (p.ai !== undefined) c.ai = cleanAi(p.ai);
+  if (p.demo !== undefined) c.demo = p.demo === null ? undefined : !!p.demo; // conta de demonstração: mostra dados de exemplo
   return c;
 }
 
