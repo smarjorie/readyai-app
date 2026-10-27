@@ -1290,7 +1290,7 @@ function buildMediaPlan(camps, inp) {
   if (!(budget > 0)) missing.push("verba do período");
   if (needsTicket && !(numIn(inp.ticket) > 0)) missing.push("ticket médio");
   if (needsTicket && kindN !== "compras" && !(numIn(inp.close) > 0)) missing.push("taxa de fechamento");
-  if (!active.length) missing.push("pelo menos um canal");
+  if (!active.length) missing.push("canal");
   if (missing.length) return { ready: false, missing, chans, kind: kindN };
 
   const step = Math.max(10, Math.round(budget / 200));
@@ -1375,12 +1375,12 @@ function MediaCopilot({ camps, inp, setInp, plan, chat, live }) {
         ${needsTicket ? html`<${MInput} id="m-ticket" label="Ticket médio da venda" prefix="R$" value=${inp.ticket} onChange=${v => upd("ticket", v)} placeholder="Ex.: 250" hint="Valor médio de cada venda" />` : null}
         ${needsTicket && kind !== "compras" ? html`<${MInput} id="m-close" label=${"De cada 100 " + unit + ", quantas viram venda"} suffix="%" value=${inp.close} onChange=${v => upd("close", v)} placeholder="Ex.: 8" hint="Taxa de fechamento do time comercial" />` : null}
         <${MInput} id="m-margin" label="Margem bruta" suffix="%" value=${inp.margin} onChange=${v => upd("margin", v)} hint="Sobre a receita. Com 100%, o ROI é calculado sobre a receita" />
-        <${MInput} id="m-roi" label="ROI mínimo do último real" suffix="%" value=${inp.minRoi} onChange=${v => upd("minRoi", v)} hint="0% = investe enquanto cada real ainda se paga" />
+        <${MInput} id="m-roi" label="ROI mínimo do último real" suffix="%" value=${inp.minRoi} onChange=${v => upd("minRoi", v)} hint=${"Vale para o último real investido, não para a média. 0% = investe enquanto cada real ainda se paga" + (numIn(inp.minRoi) >= 100 ? ". Com " + inp.minRoi + "%, cada real a mais precisa trazer " + money(1 + numIn(inp.minRoi) / 100) + " de receita × margem" : "")} />
       </div>
       ${!needsTicket && chans.some(c => c.on) ? html`<p className="card-sub"><${Icon} n="check" s=${12} /> A receita vem do valor de compra registrado nas campanhas, então não precisa de ticket nem taxa de fechamento.</p>` : null}
     </div>
 
-    ${!plan.ready ? html`<div className="card card-pad" style=${{ borderStyle: "dashed" }}><div style=${{ display: "flex", gap: 10, alignItems: "center" }}><span className="bot-ico"><${Icon} n="sparkles" s=${14} /></span><div><b>Falta pouco para montar o plano</b><div className="card-sub">Preencha ${plan.missing.join(", ").replace(/, ([^,]*)$/, " e $1")}.</div></div></div></div>` : html`<${Fragment}>
+    ${!plan.ready ? html`<div className="card card-pad" style=${{ borderStyle: "dashed" }}><div style=${{ display: "flex", gap: 10, alignItems: "center" }}><span className="bot-ico"><${Icon} n="sparkles" s=${14} /></span><div><b>Falta pouco para montar o plano</b><div className="card-sub">${plan.missing.includes("canal") ? "Nenhum canal está ligado. Ligue pelo menos um em Canais e limites" + (chans.some(c => c.hist) ? ": " + chans.filter(c => c.hist).map(c => c.label).join(" e ") + " já tem histórico na conta" : "") + "." : ""}${plan.missing.filter(m => m !== "canal").length ? " Preencha " + plan.missing.filter(m => m !== "canal").join(", ").replace(/, ([^,]*)$/, " e $1") + "." : ""}</div></div></div></div>` : html`<${Fragment}>
     <div className="grid g4">
       <${Kpi} label="Verba recomendada" value=${money(plan.tot.spend)} hint=${plan.unspent >= plan.step ? money(plan.unspent) + " ficam de fora" : "Toda a verba de " + money(plan.budget)} />
       <${Kpi} label=${kl + (kind === "leads" ? " esperados" : " esperadas")} value=${fmtInt(plan.tot.results)} hint=${"Conservador: " + fmtInt(plan.tot.resultsP)} />
