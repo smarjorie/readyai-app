@@ -8,6 +8,12 @@
 //   { action: "resend", id }                              -> { client, invite: { sent, error?, link } }
 //   { action: "reset_password", id }                      -> { client, password }
 //   { action: "import", clients: [...] }                  -> { imported, skipped, clients }
+//   { action: "update", id, patch: { name?, email? } }    -> também troca nome e e-mail do responsável
+//   { action: "add_user", id, user: { name, email } }     -> { client, invite }   segundo acesso, com convite
+//   { action: "update_user", id, userId, patch }          -> { client }
+//   { action: "resend_user", id, userId }                 -> { client, invite }
+//   { action: "reset_user_password", id, userId }         -> { client, password }
+//   { action: "remove_user", id, userId }                 -> { client }
 // Cliente (sessão do próprio cliente):
 //   { action: "self_update", patch: { conn?, ai?, targetRoas? } } -> { client }
 
@@ -15,7 +21,7 @@ import crypto from "node:crypto";
 import {
   HttpError, send, readBody, fail, readSession,
   listClients, getClient, getClientByEmail, saveClient, deleteClient,
-  newInvite, hashPassword, tempPassword, sendEmail, inviteEmail, appUrl, publicClient,
+  newInvite, dropInvite, hashPassword, tempPassword, sendEmail, inviteEmail, appUrl, publicClient,
 } from "./_store.js";
 
 const PLANS = { starter: "Starter", pro: "Pro", scale: "Scale" };
@@ -59,14 +65,29 @@ function applyAdminPatch(c, p) {
   return c;
 }
 
-async function inviteAndEmail(req, c) {
-  const token = await newInvite(c);
+// convite do responsável (u ausente) ou de um acesso extra (u)
+async function inviteAndEmail(req, c, u) {
+  const who = u || c;
+  const token = await newInvite(c, u);
   const link = appUrl(req) + "/?convite=" + token;
-  const mail = inviteEmail(c, link, PLANS[c.plan] || c.plan);
-  const r = await sendEmail({ to: c.email, ...mail, key: "invite-" + c.invite.tokenHash.slice(0, 32) });
-  c.invite = { ...c.invite, sentAt: new Date().toISOString(), emailId: r.id || null, emailError: r.sent ? null : r.error };
+  const mail = inviteEmail(c, link, PLANS[c.plan] || c.plan, u);
+  const r = await sendEmail({ to: who.email, ...mail, key: "invite-" + who.invite.tokenHash.slice(0, 32) });
+  who.invite = { ...who.invite, sentAt: new Date().toISOString(), sentTo: who.email, emailId: r.id || null, emailError: r.sent ? null : r.error };
   await saveClient(c);
   return { sent: r.sent, error: r.error || null, link };
+}
+const MAX_USERS = 5;
+function mustUser(c, userId) {
+  const u = (c.users || []).find(x => x.id === String(userId || ""));
+  if (!u) throw new HttpError(404, "Esse acesso não existe mais.");
+  return u;
+}
+// e-mail livre para uso (não pode ser de outro cliente nem de outro acesso)
+async function emailFree(email, c, exceptSelf) {
+  const lc = email.toLowerCase();
+  if (lc === String(exceptSelf || "").toLowerCase()) return;
+  if (lc === c.email.toLowerCase() || (c.users || []).some(u => u.email.toLowerCase() === lc)) throw new HttpError(409, "Esse e-mail já tem acesso a este cliente.");
+  if (await getClientByEmail(email)) throw new HttpError(409, "Esse e-mail já é usado por outro cliente.");
 }
 
 async function mustGet(id) {
@@ -115,8 +136,70 @@ export default async function handler(req, res) {
 
     if (body.action === "update") {
       const c = await mustGet(body.id);
-      applyAdminPatch(c, body.patch || {});
+      const p = body.patch || {};
+      let prev = null;
+      if (p.email !== undefined) {
+        const email = txt(p.email).toLowerCase();
+        if (!isEmail(email)) throw new HttpError(400, "Informe um e-mail válido para o responsável.");
+        if (email !== c.email.toLowerCase()) { await emailFree(email, c); prev = c.email; c.email = email; }
+      }
+      applyAdminPatch(c, p);
+      await saveClient(c, prev);
+      return send(res, 200, { client: publicClient(c) });
+    }
+
+    if (body.action === "add_user") {
+      const c = await mustGet(body.id);
+      const f = body.user || {};
+      const email = txt(f.email).toLowerCase(), name = txt(f.name);
+      if (!name || !isEmail(email)) throw new HttpError(400, "Preencha nome e um e-mail válido.");
+      if ((c.users || []).length >= MAX_USERS) throw new HttpError(400, "Cada cliente pode ter até " + MAX_USERS + " acessos extras.");
+      await emailFree(email, c);
+      const u = { id: "u" + crypto.randomBytes(5).toString("hex"), name, email, status: "convite", createdAt: new Date().toISOString(), lastAccess: null, invite: null };
+      c.users = [...(c.users || []), u];
       await saveClient(c);
+      const invite = await inviteAndEmail(req, c, u);
+      return send(res, 200, { client: publicClient(c), invite });
+    }
+
+    if (body.action === "update_user") {
+      const c = await mustGet(body.id);
+      const u = mustUser(c, body.userId);
+      const p = body.patch || {};
+      let prev = null;
+      if (p.name !== undefined) u.name = txt(p.name) || u.name;
+      if (p.email !== undefined) {
+        const email = txt(p.email).toLowerCase();
+        if (!isEmail(email)) throw new HttpError(400, "Informe um e-mail válido.");
+        if (email !== u.email.toLowerCase()) { await emailFree(email, c); prev = u.email; u.email = email; }
+      }
+      await saveClient(c, prev);
+      return send(res, 200, { client: publicClient(c) });
+    }
+
+    if (body.action === "resend_user") {
+      const c = await mustGet(body.id);
+      const u = mustUser(c, body.userId);
+      if (u.passHash && u.invite && u.invite.acceptedAt) throw new HttpError(409, "Essa pessoa já aceitou o convite. Para trocar a senha, use Gerar senha temporária.");
+      const invite = await inviteAndEmail(req, c, u);
+      return send(res, 200, { client: publicClient(c), invite });
+    }
+
+    if (body.action === "reset_user_password") {
+      const c = await mustGet(body.id);
+      const u = mustUser(c, body.userId);
+      const password = tempPassword();
+      u.passHash = hashPassword(password);
+      await saveClient(c);
+      return send(res, 200, { client: publicClient(c), password });
+    }
+
+    if (body.action === "remove_user") {
+      const c = await mustGet(body.id);
+      const u = mustUser(c, body.userId);
+      await dropInvite(u);
+      c.users = (c.users || []).filter(x => x.id !== u.id);
+      await saveClient(c, u.email);
       return send(res, 200, { client: publicClient(c) });
     }
 

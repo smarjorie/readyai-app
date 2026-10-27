@@ -41,43 +41,70 @@ const K = {
 };
 
 export async function getClient(id) { const v = await cmd("GET", K.client(id)); return v ? JSON.parse(v) : null; }
-export async function getClientByEmail(email) { const id = await cmd("GET", K.email(email)); return id ? getClient(id) : null; }
+// o índice de e-mail aponta para "idDoCliente" (responsável) ou "idDoCliente#idDoUsuario" (acesso extra)
+export async function getClientByEmail(email) { const v = await cmd("GET", K.email(email)); return v ? getClient(String(v).split("#")[0]) : null; }
+export async function findLogin(email) {
+  const v = await cmd("GET", K.email(email));
+  if (!v) return null;
+  const [cid, uid] = String(v).split("#");
+  const c = await getClient(cid);
+  if (!c) return null;
+  const u = uid ? (c.users || []).find(x => x.id === uid) || null : null;
+  if (uid && !u) return null;
+  return { c, u };
+}
 export async function listClients() {
   const ids = await cmd("SMEMBERS", K.ids) || [];
   if (!ids.length) return [];
   const vals = await pipe(ids.map(id => ["GET", K.client(id)]));
   return vals.filter(Boolean).map(v => JSON.parse(v)).sort((a, b) => String(b.createdAt || b.since).localeCompare(String(a.createdAt || a.since)));
 }
-export async function saveClient(c, prevEmail) {
+// prevEmails: e-mails que deixaram de valer (troca de e-mail ou acesso removido)
+export async function saveClient(c, prevEmails) {
   const cmds = [["SET", K.client(c.id), JSON.stringify(c)], ["SADD", K.ids, c.id], ["SET", K.email(c.email), c.id]];
-  if (prevEmail && prevEmail.toLowerCase() !== c.email.toLowerCase()) cmds.push(["DEL", K.email(prevEmail)]);
+  for (const u of c.users || []) cmds.push(["SET", K.email(u.email), c.id + "#" + u.id]);
+  const current = new Set([c.email, ...(c.users || []).map(u => u.email)].map(e => e.toLowerCase()));
+  for (const e of [].concat(prevEmails || [])) if (e && !current.has(e.toLowerCase())) cmds.push(["DEL", K.email(e)]);
   await pipe(cmds);
   return c;
 }
 export async function deleteClient(c) {
   const cmds = [["DEL", K.client(c.id)], ["SREM", K.ids, c.id], ["DEL", K.email(c.email)]];
   if (c.invite && c.invite.tokenHash) cmds.push(["DEL", K.invite(c.invite.tokenHash)]);
+  for (const u of c.users || []) {
+    cmds.push(["DEL", K.email(u.email)]);
+    if (u.invite && u.invite.tokenHash) cmds.push(["DEL", K.invite(u.invite.tokenHash)]);
+  }
   await pipe(cmds);
 }
 
 // ---------- convites ----------
 const INVITE_DAYS = 7;
 export const sha256 = s => crypto.createHash("sha256").update(String(s)).digest("hex");
-export async function newInvite(c) {
+// convite do responsável (u ausente) ou de um acesso extra (u)
+export async function newInvite(c, u) {
+  const who = u || c;
   const token = crypto.randomBytes(24).toString("base64url");
   const tokenHash = sha256(token);
-  const cmds = [["SET", K.invite(tokenHash), c.id, "EX", String(INVITE_DAYS * 86400)]];
-  if (c.invite && c.invite.tokenHash) cmds.push(["DEL", K.invite(c.invite.tokenHash)]); // o link anterior deixa de valer
+  const cmds = [["SET", K.invite(tokenHash), u ? c.id + "#" + u.id : c.id, "EX", String(INVITE_DAYS * 86400)]];
+  if (who.invite && who.invite.tokenHash) cmds.push(["DEL", K.invite(who.invite.tokenHash)]); // o link anterior deixa de valer
   await pipe(cmds);
-  c.invite = { ...(c.invite || {}), tokenHash, expiresAt: new Date(Date.now() + INVITE_DAYS * 86400e3).toISOString(), acceptedAt: null };
+  who.invite = { ...(who.invite || {}), tokenHash, expiresAt: new Date(Date.now() + INVITE_DAYS * 86400e3).toISOString(), acceptedAt: null };
   return token;
 }
-export async function clientByInvite(token) {
+export async function inviteTarget(token) {
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(String(token || ""))) return null;
-  const id = await cmd("GET", K.invite(sha256(token)));
-  return id ? getClient(id) : null;
+  const v = await cmd("GET", K.invite(sha256(token)));
+  if (!v) return null;
+  const [cid, uid] = String(v).split("#");
+  const c = await getClient(cid);
+  if (!c) return null;
+  const u = uid ? (c.users || []).find(x => x.id === uid) || null : null;
+  if (uid && !u) return null;
+  return { c, u };
 }
-export async function dropInvite(c) { if (c.invite && c.invite.tokenHash) await cmd("DEL", K.invite(c.invite.tokenHash)); }
+export async function clientByInvite(token) { const t = await inviteTarget(token); return t ? t.c : null; }
+export async function dropInvite(who) { if (who && who.invite && who.invite.tokenHash) await cmd("DEL", K.invite(who.invite.tokenHash)); }
 
 // ---------- senhas ----------
 export function hashPassword(p) {
@@ -149,9 +176,9 @@ export async function sendEmail({ to, subject, html, text, key }) {
 }
 
 const esc = s => String(s || "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
-export function inviteEmail(c, link, planName) {
-  const first = String(c.name || "").split(" ")[0] || "Olá";
-  const exp = new Date(c.invite.expiresAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+export function inviteEmail(c, link, planName, u) {
+  const first = String((u || c).name || "").split(" ")[0] || "Olá";
+  const exp = new Date((u || c).invite.expiresAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
   const subject = `Seu acesso à ReadyAI (${c.company})`;
   const text = `${first}, você foi convidado(a) para acessar a ReadyAI como ${c.company} (plano ${planName}).\n\nCrie sua senha e entre pelo link abaixo:\n${link}\n\nO link vale até ${exp}. Se você não esperava este convite, ignore este e-mail.`;
   const html = `<!doctype html><html><body style="margin:0;background:#f4f5f7;font-family:Arial,Helvetica,sans-serif;color:#111827">
@@ -181,6 +208,12 @@ export function publicClient(c) {
   const { passHash, ...rest } = c;
   if (rest.invite) { const { tokenHash, ...inv } = rest.invite; rest.invite = inv; }
   rest.hasPassword = !!passHash;
+  rest.users = (c.users || []).map(u => {
+    const { passHash: ph, ...ru } = u;
+    if (ru.invite) { const { tokenHash, ...inv } = ru.invite; ru.invite = inv; }
+    ru.hasPassword = !!ph;
+    return ru;
+  });
   return rest;
 }
 
