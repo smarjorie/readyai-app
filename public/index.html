@@ -1296,7 +1296,8 @@ function mediaChannels(camps, inp, kind) {
   // receita por resultado: real quando a conta registra valor de venda (vale também para os canais de teste)
   const all = Object.keys(MEDIA_CH).map(base).filter(x => x.hist && x.Rev0 > 0);
   const realRpr = all.length ? all.reduce((a, x) => a + x.Rev0, 0) / all.reduce((a, x) => a + x.R0, 0) : null;
-  const typedRpr = (numIn(inp.ticket) || 0) * (kind === "compras" ? 1 : (numIn(inp.close) || 0) / 100);
+  // leads/conversas: quanto você aceita pagar por lead vira o valor de cada lead; compras sem valor: ticket médio
+  const typedRpr = kind === "compras" ? (numIn(inp.ticket) || 0) : (numIn(inp.targetCpl) || 0);
   const out = [];
   for (const k of Object.keys(MEDIA_CH)) {
     const c = (inp.ch && inp.ch[k]) || {};
@@ -1351,20 +1352,20 @@ function mediaInsights(camps, inp, plan) {
   }
   const R0 = hist.reduce((a, r) => a + r.R0, 0);
   const conf = !hist.length ? ["baixa", "Nenhum canal ligado tem histórico; a previsão usa só custos de referência."]
-    : R0 >= 100 && cur >= 3000 ? ["alta", "Baseada em " + brl(cur) + " investidos e " + fmtInt(R0) + " " + kindLabel(plan.kind).toLowerCase() + " nos últimos 30 dias."]
-    : R0 >= 30 ? ["média", "Baseada em " + brl(cur) + " investidos e " + fmtInt(R0) + " " + kindLabel(plan.kind).toLowerCase() + ". Mais histórico deixa a previsão mais precisa."]
-    : ["baixa", "Pouco histórico: " + brl(cur) + " e " + fmtInt(R0) + " " + kindLabel(plan.kind).toLowerCase() + " nos últimos 30 dias."];
+    : R0 >= 100 && cur >= 3000 ? ["alta", "Baseada em " + brl(cur) + " investidos e " + fmtInt(R0) + " " + planUnit(plan.kind) + " nos últimos 30 dias."]
+    : R0 >= 30 ? ["média", "Baseada em " + brl(cur) + " investidos e " + fmtInt(R0) + " " + planUnit(plan.kind) + ". Mais histórico deixa a previsão mais precisa."]
+    : ["baixa", "Pouco histórico: " + brl(cur) + " e " + fmtInt(R0) + " " + planUnit(plan.kind) + " nos últimos 30 dias."];
   const scen = [];
   const add = (label, B) => { if (B > 0 && !scen.some(x => Math.abs(x.B - B) < 10)) { const p = buildMediaPlan(camps, { ...inp, budget: String(B) }); if (p.ready && !scen.some(x => Math.abs(x.p.tot.spend - p.tot.spend) < 10)) scen.push({ label, B, p }); } };
   if (cur > 0) add("Manter o ritmo atual", Math.round(cur / 10) * 10);
   add("Sua verba", plan.budget);
-  if (best && !edge) add("Lucro máximo", Math.round(best.B / 10) * 10);
+  if (best && !edge) add(plan.target ? "Máximo dentro da meta" : "Lucro máximo", Math.round(best.B / 10) * 10);
   add("O dobro da sua verba", plan.budget * 2);
   scen.sort((a, b) => a.B - b.B);
   // o texto usa o mesmo número do cartão "Lucro máximo"
-  const optS = scen.find(x => x.label === "Lucro máximo");
+  const optS = scen.find(x => x.label === "Lucro máximo" || x.label === "Máximo dentro da meta");
   if (optS) best = { ...best, B: optS.p.tot.spend, p: optS.p };
-  return { cur, opt: best ? best.B : null, optProfit: best ? best.p.tot.profit : null, optEdge: edge, conf, scen };
+  return { cur, opt: best ? best.B : null, optProfit: best ? best.p.tot.profit : null, optP: best ? best.p : null, optEdge: edge, conf, scen };
 }
 function buildMediaPlan(camps, inp) {
   // tipo de resultado que mais recebe verba (compras, leads ou conversas)
@@ -1373,15 +1374,17 @@ function buildMediaPlan(camps, inp) {
   const top = Object.entries(bySpend).sort((a, b) => b[1] - a[1])[0];
   const kindN = top && ["compras", "leads", "conversas"].includes(top[0]) ? top[0] : camps.some(c => c.revenue > 0) ? "compras" : "conversas";
   const budget = numIn(inp.budget) || 0;
-  const margin = (numIn(inp.margin) != null ? numIn(inp.margin) : 100) / 100;
-  const minRoi = (numIn(inp.minRoi) || 0) / 100;
   const chans = mediaChannels(camps, inp, kindN);
   const active = chans.filter(c => c.on);
   const needsTicket = active.some(c => !c.realRevenue);
+  // modo meta de custo: a verba vai até o ponto em que o próximo lead custaria mais que a meta
+  const target = needsTicket && kindN !== "compras" ? numIn(inp.targetCpl) : null;
+  const margin = target ? 1 : (numIn(inp.margin) != null ? numIn(inp.margin) : 100) / 100;
+  const minRoi = target ? 0 : (numIn(inp.minRoi) || 0) / 100;
   const missing = [];
   if (!(budget > 0)) missing.push("verba do período");
-  if (needsTicket && !(numIn(inp.ticket) > 0)) missing.push("ticket médio");
-  if (needsTicket && kindN !== "compras" && !(numIn(inp.close) > 0)) missing.push("taxa de fechamento");
+  if (needsTicket && kindN === "compras" && !(numIn(inp.ticket) > 0)) missing.push("ticket médio");
+  if (needsTicket && kindN !== "compras" && !(numIn(inp.targetCpl) > 0)) missing.push("quanto você quer pagar por lead");
   if (!active.length) missing.push("canal");
   if (missing.length) return { ready: false, missing, chans, kind: kindN };
 
@@ -1433,7 +1436,7 @@ function buildMediaPlan(camps, inp) {
     const W = w.reduce((a, x) => a + x.w, 0) || 1;
     r.split = w.map(x => ({ name: x.c.name, spend: r.spend * x.w / W })).sort((a, b) => b.spend - a.spend);
   }
-  return { ready: true, kind: kindN, budget, margin, minRoi, step, rows, tot, unspent: Math.max(0, budget - spent), stop, refUsed: rows.some(r => r.spend > 0 && !r.hist), thinHist: rows.some(r => r.hist && r.spend > 0 && r.S0 < 500) };
+  return { ready: true, kind: kindN, target, budget, margin, minRoi, step, rows, tot, unspent: Math.max(0, budget - spent), stop, refUsed: rows.some(r => r.spend > 0 && !r.hist), thinHist: rows.some(r => r.hist && r.spend > 0 && r.S0 < 500) };
 }
 
 function defaultMediaInputs(camps, live) {
@@ -1444,7 +1447,7 @@ function defaultMediaInputs(camps, live) {
 function mediaPlanContext(plan, inp) {
   if (!plan) return null;
   const r2 = n => fin(n) ? Math.round(n * 100) / 100 : null;
-  const base = { tipo_de_resultado: kindLabel(plan.kind), verba_do_periodo: numIn(inp.budget), ticket_medio: numIn(inp.ticket), taxa_de_fechamento_pct: numIn(inp.close), margem_bruta_pct: numIn(inp.margin) != null ? numIn(inp.margin) : 100, roi_minimo_pct: numIn(inp.minRoi) || 0 };
+  const base = { tipo_de_resultado: planUnit(plan.kind), verba_do_periodo: numIn(inp.budget), custo_maximo_por_lead: plan.target || null, criterio: plan.target ? "investir enquanto o próximo lead custar menos que custo_maximo_por_lead (receita = leads x custo_maximo_por_lead serve só para o cálculo)" : "ROI", ticket_medio: numIn(inp.ticket), margem_bruta_pct: numIn(inp.margin) != null ? numIn(inp.margin) : 100, roi_minimo_pct: numIn(inp.minRoi) || 0 };
   if (!plan.ready) return { ...base, status: "incompleto", falta: plan.missing };
   return {
     ...base,
@@ -1455,7 +1458,9 @@ function mediaPlanContext(plan, inp) {
 }
 
 /* ---------- planejador de mídia com IA: conversa guiada dentro do copilot ---------- */
-const kindOne = k => ({ compras: "compra", leads: "lead", conversas: "conversa" })[k] || "conversão";
+// no planejamento, conversas e leads são tratados como leads
+const kindOne = k => k === "compras" ? "compra" : "lead";
+const planUnit = k => k === "compras" ? "compras" : "leads";
 // "10 mil", "R$ 10.000", "10k", "12500,50" -> número
 function parseMoney(t) {
   let s = String(t || "").toLowerCase().replace(/r\$|\s/g, "");
@@ -1480,9 +1485,9 @@ function MediaPlanScreen({ camps, inp, setInp, stale }) {
   const setBudget = B => B > 0 && setInp({ ...inp, budget: String(B) });
   const chans = plan.ready ? plan.rows : plan.chans;
   const needValue = chans.some(c => c.on && !c.realRevenue);
-  const kind = plan.kind, unit = kindLabel(kind).toLowerCase();
+  const kind = plan.kind, unit = planUnit(kind);
   return html`<div className="stack">
-    <${PageHead} title="Planejamento de mídia" sub="Diga quanto quer investir e veja onde colocar a verba, a previsão de resultados e o ROI esperado. Calculado com os dados da conta e benchmarks de mercado, sem gastar IA." right=${html`<${DataNote} />`} />
+    <${PageHead} title="Planejamento de mídia" sub="Diga quanto quer investir e veja onde colocar a verba e a previsão de resultados. Calculado com os dados da conta e benchmarks de mercado, sem gastar IA." right=${html`<${DataNote} />`} />
     <div className="card card-pad stack" style=${{ gap: 14 }}>
       <div><div className="card-title" style=${{ fontSize: 17 }}>Quanto você tem para investir nos próximos 30 dias?</div>
         ${cur > 0 ? html`<div className="card-sub">Nos últimos 30 dias a conta investiu ${pmoney(cur)}.</div>` : null}</div>
@@ -1492,37 +1497,43 @@ function MediaPlanScreen({ camps, inp, setInp, stale }) {
         ${sugs.map(([l, B]) => html`<button key=${l} type="button" className=${"btn btn-sm " + (Number(inp.budget) === B ? "btn-accent" : "btn-line")} onClick=${() => setBudget(B)}>${l} · ${pmoney(B)}</button>`)}
       </form>
       ${needValue ? html`<div className="stack" style=${{ gap: 8, borderTop: "1px solid var(--line)", paddingTop: 14 }}>
-        <div><b>${kind === "compras" ? "Quanto vale uma venda?" : "Quanto vale cada " + kindOne(kind) + "?"}</b><div className="card-sub">${kind === "compras" ? "As campanhas registram compras, mas não o valor." : "A Meta conta " + unit + ", mas não sabe quantas viram venda."} Com isso o ROI é calculado.</div></div>
-        <div className="plan-form">
-          <label className="plan-lbl">Ticket médio da venda<div className="m-in"><span>R$</span><input id="mp-ticket" className="input num" inputMode="decimal" placeholder="Ex.: 250" value=${inp.ticket} onInput=${e => setInp({ ...inp, ticket: e.target.value })} /></div></label>
-          ${kind !== "compras" ? html`<label className="plan-lbl">De cada 100 ${unit}, quantas viram venda<div className="m-in"><input id="mp-close" className="input num" inputMode="decimal" placeholder="Ex.: 8" value=${inp.close} onInput=${e => setInp({ ...inp, close: e.target.value })} /><span>%</span></div></label>` : null}
-        </div></div>` : null}
+        ${kind === "compras" ? html`<div><b>Quanto vale uma venda?</b><div className="card-sub">As campanhas registram compras, mas não o valor. Com o ticket médio, o ROI é calculado.</div></div>
+        <div className="plan-form"><label className="plan-lbl">Ticket médio da venda<div className="m-in"><span>R$</span><input id="mp-ticket" className="input num" inputMode="decimal" placeholder="Ex.: 250" value=${inp.ticket} onInput=${e => setInp({ ...inp, ticket: e.target.value })} /></div></label></div>`
+        : html`<div><b>Quanto você quer pagar por lead?</b><div className="card-sub">${chans.some(c => c.hist) ? "Hoje cada lead custa " + pmoney(chans.filter(c => c.hist).reduce((a, c) => a + c.S0, 0) / chans.filter(c => c.hist).reduce((a, c) => a + c.R0, 0)) + ". " : ""}A verba vai até o ponto em que o próximo lead custaria mais que esse valor.</div></div>
+        <div className="plan-form"><label className="plan-lbl">Custo máximo por lead<div className="m-in"><span>R$</span><input id="mp-cpl" className="input num" inputMode="decimal" placeholder="Ex.: 15" value=${inp.targetCpl || ""} onInput=${e => setInp({ ...inp, targetCpl: e.target.value })} /></div></label></div>`}
+        </div>` : null}
     </div>
     ${Number(inp.budget) > 0 ? html`<div className="card card-pad"><div className="eyebrow" style=${{ marginBottom: 10 }}>Proposta</div><div className="bot-body plan" style=${{ width: "100%" }}>
       <${PlanCard} m=${{ inp }} camps=${camps} inp=${inp} live=${true} setInp=${setInp} onBudget=${setBudget} stale=${stale} /></div></div>` : null}
   </div>`;
 }
 function planWhy(plan, ins, stale) {
-  const kl = kindLabel(plan.kind).toLowerCase(), one = kindOne(plan.kind);
+  const kl = planUnit(plan.kind), one = kindOne(plan.kind), T = plan.target;
   const rows = plan.rows.filter(r => r.on && r.spend > 0).sort((a, b) => b.spend - a.spend);
   const out = [];
   const top = rows[0];
   if (top) out.push(top.label + " fica com " + pct(top.spend / plan.tot.spend, 0) + " da verba" + (top.hist ? (top.realRevenue ? " porque trouxe " + pmoney(top.Rev0 / top.S0) + " de receita por real investido nos últimos 30 dias" : " porque cada " + one + " custou " + pmoney(top.cpr0) + " nos últimos 30 dias") : ", como teste") + ".");
   if (ins && ins.opt) {
     const B = plan.budget;
+    if (T) {
+      if (B > ins.opt * 1.1) out.push("Acima de " + pmoney(ins.opt) + ", o próximo lead passaria de " + pmoney(T) + ". Com essa verba, a previsão é de " + fmtInt(ins.optP.tot.results) + " leads dentro da sua meta.");
+      else if (B < ins.opt * 0.9) out.push(ins.optEdge ? "Há bastante espaço para crescer: pelos dados atuais, dá para investir mais de " + pmoney(ins.opt) + " sem o lead passar de " + pmoney(T) + ". Aumente aos poucos e confira o custo real a cada semana." : "Há espaço para crescer: até " + pmoney(ins.opt) + " cada lead extra ainda custa menos que " + pmoney(T) + " (" + fmtInt(ins.optP.tot.results) + " leads no total).");
+      else out.push("Sua verba está perto do máximo que cabe na meta de " + pmoney(T) + " por lead.");
+    } else {
     if (B > ins.opt * 1.1) out.push("Acima de " + pmoney(ins.opt) + " o lucro começa a cair: cada real extra traz menos do que custa. O maior lucro previsto é " + pmoney(ins.optProfit) + ", com essa verba.");
     else if (B < ins.opt * 0.9) out.push(ins.optEdge ? "Há bastante espaço para crescer: pelos dados atuais, o lucro continua subindo até mais de " + pmoney(ins.opt) + ". Aumente aos poucos e confira o custo real a cada semana." : "Há espaço para crescer: com " + pmoney(ins.opt) + " o lucro previsto sobe para " + pmoney(ins.optProfit) + ".");
     else out.push("Sua verba está perto do ponto de maior lucro da conta.");
+    }
   }
   for (const r of rows.filter(r => r.hist && r.freq >= 2.5)) out.push("Frequência de " + dec(r.freq, 1) + " no " + r.label + ": o público já viu bastante os anúncios, então a previsão conta com retorno menor a cada real extra. Criativos ou públicos novos ajudam.");
-  if (plan.unspent >= plan.step && plan.stop === "roi") out.push("Recomendo guardar " + pmoney(plan.unspent) + ": além do que está no plano, o retorno ficaria abaixo do mínimo.");
+  if (plan.unspent >= plan.step && plan.stop === "roi") out.push("Recomendo guardar " + pmoney(plan.unspent) + ": " + (T ? "além do que está no plano, cada lead extra custaria mais que " + pmoney(T) + "." : "além do que está no plano, o retorno ficaria abaixo do mínimo."));
   for (const r of plan.rows.filter(r => r.on && !r.hist)) {
     const est = pmoney(r.cpr0) + " por " + one;
     const basis = r.typedCpr ? "pelo custo que você informou (" + est + ")"
       : r.bench && r.bench.abs ? "pelo custo de referência de mercado (" + est + ")"
       : r.bench ? r.bench.why + "; aplicado ao " + (r.metaReal ? "seu custo no Meta (" + pmoney(r.metaCpr) + ")" : "custo de referência do Meta") + ", estimo " + est : "";
     out.push(r.spend > 0 ? "Sugiro testar o " + r.label + " com " + pmoney(r.spend) + " (" + pct(r.spend / plan.tot.spend, 0) + " da verba): " + basis + ". Depois de 2 a 3 semanas, a previsão passa a usar os dados reais."
-      : r.label + " ficou de fora: " + basis + ", e com esse custo o retorno não compensa frente aos outros canais.");
+      : r.label + " ficou de fora: " + basis + (T && r.cpr0 > T ? ", acima da sua meta de " + pmoney(T) + " por lead." : ", e com esse custo não compensa frente aos outros canais."));
   }
   if (stale) out.push("A conta está sem veicular desde " + stale + ": os primeiros dias podem custar mais enquanto as campanhas reaprendem.");
   out.push("Ritmo sugerido: " + pmoney(plan.tot.spend / 30) + " por dia.");
@@ -1533,24 +1544,27 @@ function PlanCard({ m, camps, inp, live, setInp, onBudget, stale }) {
   const plan = useMemo(() => buildMediaPlan(camps, use), [camps, use]);
   const ins = useMemo(() => plan.ready ? mediaInsights(camps, use, plan) : null, [camps, use, plan]);
   if (!plan.ready) return html`<p>Para fechar o plano falta: ${plan.missing.map(x => x === "canal" ? "ligar pelo menos um canal" : x).join(", ")}.</p>`;
-  const kl = kindLabel(plan.kind), unit = kl.toLowerCase();
+  const unit = planUnit(plan.kind), T = plan.target;
+  const cpl = plan.tot.results > 0 ? plan.tot.spend / plan.tot.results : null, cplP = plan.tot.resultsP > 0 ? plan.tot.spend / plan.tot.resultsP : null;
   const rows = plan.rows.filter(r => r.on && r.spend > 0).sort((a, b) => b.spend - a.spend);
   const confPill = { alta: "pill-good", média: "pill-warn", baixa: "pill-bad" }[ins.conf[0]];
   const updCh = (k, f, v) => setInp({ ...inp, ch: { ...(inp.ch || {}), [k]: { ...((inp.ch || {})[k] || {}), [f]: v } } });
   return html`<${Fragment}>
-    <p>Para <b>${pmoney(plan.budget)}</b> nos próximos 30 dias, minha proposta é investir ${rows.length === 1 ? "tudo no " + rows[0].label : rows.map(r => r.label).join(", ").replace(/, ([^,]*)$/, " e $1")}${plan.unspent >= plan.step ? " (" + pmoney(plan.tot.spend) + ")" : ""}. A previsão é de <b>${fmtInt(plan.tot.results)} ${unit}</b> e <b>${pmoney(plan.tot.revenue)}</b> em receita, com ROI de <b style=${{ color: plan.tot.roi >= 0 ? "var(--good)" : "var(--bad)" }}>${proi(plan.tot.roi)}</b>.</p>
+    <p>Para <b>${pmoney(plan.budget)}</b> nos próximos 30 dias, minha proposta é investir ${rows.length === 1 ? "tudo no " + rows[0].label : rows.map(r => r.label).join(", ").replace(/, ([^,]*)$/, " e $1")}${plan.unspent >= plan.step ? " (" + pmoney(plan.tot.spend) + ")" : ""}. A previsão é de <b>${fmtInt(plan.tot.results)} ${unit}</b>${T ? html` a <b>${pmoney(cpl)}</b> cada, ${cpl <= T ? "abaixo" : "acima"} da sua meta de ${pmoney(T)}` : html` e <b>${pmoney(plan.tot.revenue)}</b> em receita, com ROI de <b style=${{ color: plan.tot.roi >= 0 ? "var(--good)" : "var(--bad)" }}>${proi(plan.tot.roi)}</b>`}.</p>
     <div className="mini-cards">
       <div className="mini"><small>Investimento</small><b className="num">${pmoney(plan.tot.spend)}</b></div>
       <div className="mini"><small>Previsão de ${unit}</small><b className="num">${fmtInt(plan.tot.results)}</b><small>mín. ${fmtInt(plan.tot.resultsP)}</small></div>
-      <div className="mini"><small>Receita prevista</small><b className="num">${pmoney(plan.tot.revenue)}</b><small>mín. ${pmoney(plan.tot.revenueP)}</small></div>
-      <div className="mini"><small>ROI esperado</small><b className="num" style=${{ color: plan.tot.roi >= 0 ? "var(--good)" : "var(--bad)" }}>${proi(plan.tot.roi)}</b><small>mín. ${proi(plan.tot.roiP)}</small></div>
+      ${T ? html`<div className="mini"><small>Custo por lead previsto</small><b className="num" style=${{ color: cpl <= T ? "var(--good)" : "var(--bad)" }}>${pmoney(cpl)}</b><small>até ${pmoney(cplP)}</small></div>
+      <div className="mini"><small>Sua meta por lead</small><b className="num">${pmoney(T)}</b><small>${cpl <= T ? pct(1 - cpl / T, 0) + " abaixo da meta" : pct(cpl / T - 1, 0) + " acima da meta"}</small></div>`
+      : html`<div className="mini"><small>Receita prevista</small><b className="num">${pmoney(plan.tot.revenue)}</b><small>mín. ${pmoney(plan.tot.revenueP)}</small></div>
+      <div className="mini"><small>ROI esperado</small><b className="num" style=${{ color: plan.tot.roi >= 0 ? "var(--good)" : "var(--bad)" }}>${proi(plan.tot.roi)}</b><small>mín. ${proi(plan.tot.roiP)}</small></div>`}
     </div>
     <div className="plan-conf"><span className=${"pill " + confPill}>Confiança ${ins.conf[0]}</span><span>${ins.conf[1]}</span></div>
     <div className="plan-sec"><b>Onde investir</b>
       ${rows.map(r => html`<div key=${r.k} className="plan-ch">
         <div className="plan-ch-h"><span><span className="ch-dot" style=${{ background: r.color }}></span>${r.label}${r.hist ? null : html` <span className="pill pill-violet" style=${{ height: 18, fontSize: 10.5 }}>teste</span>`}</span><b className="num">${pmoney(r.spend)}</b></div>
         <div className="bar-track" style=${{ height: 6 }}><div className="bar-fill" style=${{ width: (r.spend / plan.tot.spend * 100) + "%", background: r.color }}></div></div>
-        <small className="num">${fmtInt(r.results)} ${unit} · ${pmoney(r.cpr)} cada · ROI ${proi(r.roi)}${r.split && r.split.length ? " · " + r.split.slice(0, 2).map(x => x.name + " " + pmoney(x.spend)).join(", ") : ""}</small>
+        <small className="num">${fmtInt(r.results)} ${unit} · ${pmoney(r.cpr)} cada${T ? "" : " · ROI " + proi(r.roi)}${r.split && r.split.length ? " · " + r.split.slice(0, 2).map(x => x.name + " " + pmoney(x.spend)).join(", ") : ""}</small>
       </div>`)}
     </div>
     <div className="plan-sec"><b>Por quê</b><ul>${planWhy(plan, ins, stale).map((b, i) => html`<li key=${i}>${b}</li>`)}</ul>
@@ -1558,15 +1572,15 @@ function PlanCard({ m, camps, inp, live, setInp, onBudget, stale }) {
     </div>
     ${ins.scen.length > 1 ? html`<div className="plan-sec"><b>Compare</b>
       <div className="plan-scen">${ins.scen.map(s => html`<button key=${s.label} className=${"plan-sc" + (s.B === plan.budget ? " on" : "")} onClick=${() => s.B !== plan.budget && onBudget(s.B)} disabled=${!live}>
-        <span>${s.label}</span><b className="num">${pmoney(s.p.tot.spend)}</b><small className="num">${fmtInt(s.p.tot.results)} ${unit} · ROI ${proi(s.p.tot.roi)} · lucro ${pmoney(s.p.tot.profit)}</small></button>`)}</div></div>` : null}
+        <span>${s.label}</span><b className="num">${pmoney(s.p.tot.spend)}</b><small className="num">${fmtInt(s.p.tot.results)} ${unit} · ${T ? pmoney(s.p.tot.spend / s.p.tot.results) + " por lead" : "ROI " + proi(s.p.tot.roi) + " · lucro " + pmoney(s.p.tot.profit)}</small></button>`)}</div></div>` : null}
     ${live ? html`<details className="plan-adv"><summary>Ajustar premissas</summary>
       <div className="plan-form" style=${{ marginTop: 8 }}>
+        ${T ? html`<label className="plan-lbl">Custo máximo por lead<div className="m-in"><span>R$</span><input className="input num" inputMode="decimal" value=${inp.targetCpl || ""} onInput=${e => setInp({ ...inp, targetCpl: e.target.value })} /></div></label>` : html`<${Fragment}>
         <label className="plan-lbl">Margem bruta<div className="m-in"><input className="input num" inputMode="decimal" value=${inp.margin} onInput=${e => setInp({ ...inp, margin: e.target.value })} /><span>%</span></div></label>
         <label className="plan-lbl">ROI mínimo do último real<div className="m-in"><input className="input num" inputMode="decimal" value=${inp.minRoi} onInput=${e => setInp({ ...inp, minRoi: e.target.value })} /><span>%</span></div></label>
-        ${plan.rows.some(r => r.on && !r.realRevenue) ? html`<label className="plan-lbl">Ticket médio<div className="m-in"><span>R$</span><input className="input num" inputMode="decimal" value=${inp.ticket} onInput=${e => setInp({ ...inp, ticket: e.target.value })} /></div></label>` : null}
-        ${plan.kind !== "compras" && plan.rows.some(r => r.on && !r.realRevenue) ? html`<label className="plan-lbl">Fechamento<div className="m-in"><input className="input num" inputMode="decimal" value=${inp.close} onInput=${e => setInp({ ...inp, close: e.target.value })} /><span>%</span></div></label>` : null}
+        ${plan.rows.some(r => r.on && !r.realRevenue) ? html`<label className="plan-lbl">Ticket médio<div className="m-in"><span>R$</span><input className="input num" inputMode="decimal" value=${inp.ticket} onInput=${e => setInp({ ...inp, ticket: e.target.value })} /></div></label>` : null}<//>`}
       </div>
-      <small className="card-sub">Margem de 100% calcula o ROI sobre a receita. O ROI mínimo vale para o último real investido.</small>
+      ${T ? null : html`<small className="card-sub">Margem de 100% calcula o ROI sobre a receita. O ROI mínimo vale para o último real investido.</small>`}
       <div className="plan-chs">${plan.rows.map(r => html`<div key=${r.k}><${Toggle} on=${r.on} disabled=${!r.usable} onChange=${v => updCh(r.k, "on", v)} label=${(r.on ? "Tirar " : "Incluir ") + r.label} /><span>${r.label}${r.suggested ? html` <small style=${{ display: "block" }}>benchmark ${r.bench.range}</small>` : null}</span>${r.hist ? html`<small>${pmoney(r.cpr0)} por ${kindOne(plan.kind)}</small>` : html`<span className="m-in" style=${{ width: 116 }}><span>R$</span><input className="input num" inputMode="decimal" placeholder=${r.benchCpr ? "" : "informe"} value=${((inp.ch || {})[r.k] || {}).cpr != null ? inp.ch[r.k].cpr : r.benchCpr ? String(Math.round(r.benchCpr * 100) / 100).replace(".", ",") : ""} onInput=${e => updCh(r.k, "cpr", e.target.value)} aria-label=${"Custo por " + kindOne(plan.kind) + " no " + r.label} /></span>`}</div>`)}</div>
       <small className="card-sub">Canais sem histórico entram como teste (até ${pct(TEST_CAP, 0)} da verba) com o custo estimado pelo benchmark. Para canais sem benchmark confiável, como Pinterest e Kwai, informe o custo esperado para incluí-los.</small>
     </details>` : html`<small className="card-sub">Plano anterior. O mais recente fica no fim da conversa.</small>`}
@@ -1607,7 +1621,7 @@ function HomeCopilot({ user, client, chat, camps, insights, go }) {
         <div className="hello" style=${{ padding: "28px 0 6px" }}>
           <div style=${{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}><span className="badge-co" style=${{ marginBottom: 0 }}><${Icon} n="sparkles" s=${13} />Copilot de Marketing · ${client.company}</span><${AIBadge} /></div>
           <h1>${hour < 12 ? "Bom dia" : "Boa tarde"}, ${first}. O que vamos fazer pelas suas campanhas hoje?</h1>
-          <button className="plan-entry" onClick=${chat.startPlanner}><span className="bot-ico"><${Icon} n="chart" s=${15} /></span><span><b>Planejador de mídia com IA</b><small>Diga quanto quer investir e receba onde colocar a verba, a previsão de resultados e o ROI esperado, com base nos dados da conta.</small></span><${Icon} n="arrowR" s=${16} /></button>
+          <button className="plan-entry" onClick=${chat.startPlanner}><span className="bot-ico"><${Icon} n="chart" s=${15} /></span><span><b>Planejador de mídia com IA</b><small>Diga quanto quer investir e receba onde colocar a verba e a previsão de resultados, com base nos dados da conta e em benchmarks de mercado.</small></span><${Icon} n="arrowR" s=${16} /></button>
           <p>Analisei ${camps.length} campanhas em ${(l => l.length > 1 ? l.slice(0, -1).join(", ") + " e " + l[l.length - 1] : l[0])(chPresent(camps).map(k => CH[k].label.replace(" Ads", "")))}. Os pontos de atenção estão no painel de insights; clique em qualquer um para conversar sobre ele.</p>
         </div>
         <${ChatMessages} msgs=${chat.msgs} typing=${chat.typing} onAction=${chat.onAction} onConfirm=${chat.onConfirm} endRef=${end} custom=${chat.custom} />
