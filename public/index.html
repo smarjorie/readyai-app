@@ -1910,21 +1910,14 @@ function demoDays(camps) {
 // rótulos do eixo com a precisão que a escala pede
 const axNum = (v, mx) => mx < 20 ? dec(v, v % 1 ? 1 : 0) : mx < 10000 ? fmtInt(v) : kfmt(v);
 const axMoney = (v, mx) => "R$ " + (mx < 10 ? dec(v, 2) : mx < 100 ? dec(v, v % 1 ? 1 : 0) : mx < 10000 ? fmtInt(v) : kfmt(v));
-function tlMetrics(kind, sells) {
-  const res = d => kind === "compras" ? d.compras : kind === "leads" ? d.leads : kind === "conversas" ? d.conversas : d.compras + d.leads + d.conversas;
+function tlMetrics() {
   const sum = (days, f) => days.reduce((a, d) => a + (f(d) || 0), 0);
-  const m = [
+  return [
     { k: "spend", l: "Investimento", get: d => d.spend, fmt: brl2, ax: axMoney, tot: days => brl(sum(days, d => d.spend)) },
-    { k: "results", l: kindLabel(kind), get: res, fmt: v => fmtInt(v), ax: axNum, tot: days => fmtInt(sum(days, res)) },
-    { k: "cpr", l: kindCost(kind), get: d => res(d) > 0 ? d.spend / res(d) : null, fmt: brl2, ax: axMoney, tot: days => { const r = sum(days, res); return r > 0 ? brl2(sum(days, d => d.spend) / r) : "—"; } },
     { k: "clicks", l: "Cliques", get: d => d.clicks, fmt: v => fmtInt(v), ax: axNum, tot: days => kfmt(sum(days, d => d.clicks)) },
-    { k: "impr", l: "Impressões", get: d => d.impr, fmt: v => fmtInt(v), ax: axNum, tot: days => kfmt(sum(days, d => d.impr)) },
     { k: "ctr", l: "CTR", get: d => d.impr > 0 ? d.clicks / d.impr : null, fmt: v => pct(v, 2), ax: v => pct(v, 1), tot: days => { const i = sum(days, d => d.impr); return i > 0 ? pct(sum(days, d => d.clicks) / i, 2) : "—"; } },
-    { k: "cpc", l: "CPC", get: d => d.clicks > 0 ? d.spend / d.clicks : null, fmt: brl2, ax: axMoney, tot: days => { const c = sum(days, d => d.clicks); return c > 0 ? brl2(sum(days, d => d.spend) / c) : "—"; } },
+    { k: "cpm", l: "CPM", get: d => d.impr > 0 ? d.spend / d.impr * 1000 : null, fmt: brl2, ax: axMoney, tot: days => { const i = sum(days, d => d.impr); return i > 0 ? brl2(sum(days, d => d.spend) / i * 1000) : "—"; } },
   ];
-  if (sells) m.splice(1, 0, { k: "revenue", l: "Receita", get: d => d.revenue, fmt: brl2, ax: axMoney, tot: days => brl(sum(days, d => d.revenue)) },
-    { k: "roas", l: "ROAS", get: d => d.spend > 0 && d.revenue > 0 ? d.revenue / d.spend : null, fmt: xroas, ax: v => dec(v, 1) + "x", tot: days => { const s = sum(days, d => d.spend); return s > 0 ? xroas(sum(days, d => d.revenue) / s) : "—"; } });
-  return m;
 }
 // curva suave (Catmull-Rom) que quebra nos dias sem valor e nunca passa do eixo
 function smoothPath(pts, floor) {
@@ -1944,14 +1937,14 @@ function smoothPath(pts, floor) {
 }
 const TL_COLORS = ["var(--accent)", "var(--violet)"];
 function Timeline({ days, kind, sells, sub }) {
-  const metrics = useMemo(() => tlMetrics(kind, sells), [kind, sells]);
-  const [sel, setSelS] = useState(() => { const s = store.get("readyai_tl", ["spend", "results"]); return Array.isArray(s) && s.length ? s : ["spend", "results"]; });
+  const metrics = useMemo(() => tlMetrics(), []);
+  const [sel, setSelS] = useState(() => { const s = store.get("readyai_tl2", ["spend", "clicks"]); return Array.isArray(s) && s.length ? s : ["spend", "clicks"]; });
   const on = sel.map(k => metrics.find(m => m.k === k)).filter(Boolean);
   const act = on.length ? on : [metrics[0]];
   const toggle = k => {
     let n = sel.filter(x => metrics.some(m => m.k === x));
     if (n.includes(k)) { if (n.length > 1) n = n.filter(x => x !== k); } else n = n.length >= 2 ? [n[0], k] : [...n, k];
-    setSelS(n); store.set("readyai_tl", n);
+    setSelS(n); store.set("readyai_tl2", n);
   };
   const [ref, W] = useWidth(700);
   const [hov, setHov] = useState(null);
@@ -2039,16 +2032,16 @@ function Overview({ camps, days }) {
       <${Kpi} label="CTR" value=${pct(t.ctr, 2)} d=${fin(delta(t.ctr, prevCtr)) ? delta(t.ctr, prevCtr) : undefined} hint=${"CPC " + brl2(t.spend / t.clicks)} />
       <${Kpi} label=${kindCost(kind)} value=${brl2(t.cpa)} d=${fin(delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases)) ? delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases) : undefined} invert hint=${fmtInt(t.purchases) + " " + kl.toLowerCase()} />
     </div>
-    ${days && days.length > 1 ? html`<${Timeline} days=${days} kind=${kind} sells=${sells} sub=${"Dia a dia, " + (ACTIVE.period ? (ACTIVE.period.custom ? ACTIVE.period.dates : ACTIVE.period.label.toLowerCase() + " (" + ACTIVE.period.dates + ")") : "últimos 30 dias (19/09 a 18/10)") + (ACTIVE.live && ACTIVE.dayCh && ACTIVE.dayCh.length < chPresent(camps).length ? " · só " + ACTIVE.dayCh.map(k => CH[k].label).join(" e ") : ACTIVE.live ? "" : " · Meta, Google e TikTok")} />` : null}
-    <div className="grid g-21">
-      <div className="card card-pad"><div className="card-head"><div><div className="card-title">${sells ? "Campanhas com mais receita" : "Campanhas com mais investimento"}</div></div></div>
-        <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Campanha</th><th>Canal</th><th className="r">Investido</th><th className="r">${kl}</th>${sells ? html`<th className="r">Receita</th><th className="r">ROAS</th>` : html`<th className="r">${kindCost(kind)}</th><th className="r">CTR</th>`}</tr></thead>
-        <tbody>${top.map(c => html`<tr key=${c.id}><td><span className="cname">${c.name}</span></td><td><${ChTag} ch=${c.ch} /></td><td className="r num">${brl(c.spend)}</td><td className="r num">${fmtInt(c.purchases)}</td>${sells ? html`<td className="r num">${brl(c.revenue)}</td><td className="r num"><b style=${{ color: "var(--ink)" }}>${xroas(roasOf(c))}</b></td>` : html`<td className="r num">${brl2(c.spend / c.purchases)}</td><td className="r num">${pct(c.clicks / c.impr, 2)}</td>`}</tr>`)}</tbody></table></div>
-      </div>
+    <div className=${days && days.length > 1 ? "grid g-21 tl-row" : "grid"}>
+      ${days && days.length > 1 ? html`<${Timeline} days=${days} kind=${kind} sells=${sells} sub=${"Dia a dia, " + (ACTIVE.period ? (ACTIVE.period.custom ? ACTIVE.period.dates : ACTIVE.period.label.toLowerCase() + " (" + ACTIVE.period.dates + ")") : "últimos 30 dias (19/09 a 18/10)") + (ACTIVE.live && ACTIVE.dayCh && ACTIVE.dayCh.length < chPresent(camps).length ? " · só " + ACTIVE.dayCh.map(k => CH[k].label).join(" e ") : ACTIVE.live ? "" : " · Meta, Google e TikTok")} />` : null}
       <div className="card card-pad"><div className="card-head"><div><div className="card-title">Funil de tráfego</div><div className="card-sub">Quanto passa de uma etapa para a outra</div></div></div>
         <${Funnel} stages=${funnel.map(([l, v]) => ({ l, v }))} kind=${kind} note=${ACTIVE.live && kind !== "compras" ? (kind === "conversas" ? "As campanhas desta conta otimizam para conversas no WhatsApp ou no Messenger, então a última etapa conta conversas iniciadas, não compras." : kind === "leads" ? "As campanhas desta conta otimizam para cadastros, então a última etapa conta leads, não compras." : "A última etapa soma o resultado principal de cada campanha (compras, leads ou conversas).") : null} />
       </div>
     </div>
+    <div className="card card-pad"><div className="card-head"><div><div className="card-title">${sells ? "Campanhas com mais receita" : "Campanhas com mais investimento"}</div></div></div>
+        <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Campanha</th><th>Canal</th><th className="r">Investido</th><th className="r">${kl}</th>${sells ? html`<th className="r">Receita</th><th className="r">ROAS</th>` : html`<th className="r">${kindCost(kind)}</th><th className="r">CTR</th>`}</tr></thead>
+        <tbody>${top.map(c => html`<tr key=${c.id}><td><span className="cname">${c.name}</span></td><td><${ChTag} ch=${c.ch} /></td><td className="r num">${brl(c.spend)}</td><td className="r num">${fmtInt(c.purchases)}</td>${sells ? html`<td className="r num">${brl(c.revenue)}</td><td className="r num"><b style=${{ color: "var(--ink)" }}>${xroas(roasOf(c))}</b></td>` : html`<td className="r num">${brl2(c.spend / c.purchases)}</td><td className="r num">${pct(c.clicks / c.impr, 2)}</td>`}</tr>`)}</tbody></table></div>
+      </div>
     <div className="card card-pad"><div className="card-head"><div><div className="card-title">Investimento por canal</div><div className="card-sub">Participação no investimento e resultado de cada canal</div></div></div>
       <div className=${byCh.length > 1 ? "grid g3" : "stack"} style=${{ gap: 18 }}>${byCh.map(([k, v]) => { const ck = resultKind(camps.filter(c => c.ch === k)); return html`<div key=${k} className="stack" style=${{ gap: 6 }}>
         <div style=${{ display: "flex", justifyContent: "space-between", gap: 8 }}><${ChTag} ch=${k} /><span className="num" style=${{ fontSize: 13 }}><b>${brl(v.spend)}</b> · ${pct(v.spend / t.spend, 0)}</span></div>
