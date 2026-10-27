@@ -482,6 +482,49 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .auth-link{margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-radius:10px;background:var(--accent-soft);color:var(--ink);font-size:13px}
 
 .wait-card{display:flex;gap:14px;align-items:flex-start;max-width:680px}
+.empty{display:flex;gap:18px;align-items:flex-start;padding:26px 28px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:0 1px 2px rgba(17,24,39,.04)}
+.empty-ico{width:46px;height:46px;border-radius:14px;background:var(--accent-soft);color:var(--accent-ink);display:grid;place-items:center;flex:none}
+.empty.bad .empty-ico{background:var(--bad-soft);color:var(--bad)}
+.empty.warn .empty-ico{background:var(--warn-soft);color:var(--warn)}
+.empty-body{min-width:0;flex:1;display:flex;flex-direction:column;gap:8px}
+.empty-body h2{font-size:18px;font-weight:700;letter-spacing:-.01em;line-height:1.3}
+.empty-body p{color:var(--muted-2);font-size:14px;max-width:68ch;margin:0}
+.empty-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.empty-steps{list-style:none;margin:12px 0 0;padding:14px 0 0;border-top:1px dashed var(--line-2);display:flex;gap:10px 22px;flex-wrap:wrap}
+.empty-steps li{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted-2)}
+.empty-steps li span{width:22px;height:22px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line-2);display:grid;place-items:center;font-size:11.5px;font-weight:700;color:var(--ink);flex:none}
+.empty-steps li.done span{background:var(--good);border-color:var(--good);color:#fff}
+.empty-errs{list-style:none;margin:0;padding:10px 12px;border-radius:10px;background:var(--bad-soft);display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--ink)}
+.empty-errs li{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+.ghost{display:flex;flex-direction:column;gap:14px;opacity:.55;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(#000 30%,transparent);mask-image:linear-gradient(#000 30%,transparent)}
+.gh-grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.gh-grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.gh-grid2{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+.gh-card{border:1px dashed var(--line-2);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--surface)}
+.gh-card i{display:block;height:9px;border-radius:5px;background:var(--surface-2)}
+.gh-card b{display:block;height:22px;width:70%;border-radius:6px;background:var(--surface-2)}
+.gh-row{display:flex;gap:16px;padding:6px 0}.gh-row i{flex:1}
+.gh-img{aspect-ratio:16/10;border-radius:10px;background:var(--surface-2)}
+.gh-bar i{height:12px}
+.gh-chart{height:170px;justify-content:flex-end}
+.gh-chart svg{width:100%;height:110px}.gh-chart path{fill:none;stroke:var(--line-2);stroke-width:3;stroke-dasharray:6 6;vector-effect:non-scaling-stroke}
+.setup{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.setup-step{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.setup-step.done{background:var(--surface-2)}
+.setup-n{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--line-2);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.setup-step.done .setup-n{background:var(--good);border-color:var(--good);color:#fff}
+.setup-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.setup-txt b{font-size:14.5px}.setup-txt span{font-size:13px;color:var(--muted-2)}
+.setup-act{display:flex;align-items:center;gap:8px;flex:none}
+.setup-preview{gap:12px}
+.prev-item{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px dashed var(--line-2);border-radius:12px}
+.prev-item b{display:block;font-size:13.5px}.prev-item small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+.prev-item .ico-wrap{width:30px;height:30px;border-radius:9px;background:var(--surface-2);color:var(--muted-2);display:grid;place-items:center;flex:none}
+.chip-btn{cursor:pointer}.chip-btn:hover{border-color:var(--accent)}
+.chip-btn .ch-dot.off{background:var(--line-2)}
+.chip-btn.bad{color:var(--bad);border-color:var(--bad-soft)}
+.chip-btn.bad .ch-dot{background:var(--bad)}
+@media (max-width:760px){.empty{flex-direction:column;padding:20px}.gh-grid4{grid-template-columns:repeat(2,minmax(0,1fr))}.gh-grid3,.gh-grid2{grid-template-columns:1fr}.gh-grid3>:nth-child(n+2){display:none}.setup-step{flex-wrap:wrap}.setup-act{width:100%;justify-content:flex-end}}
 .wait-card b{display:block;font-size:15px}
 
 /* ---------- cadastro, convites e exclusão ---------- */
@@ -2328,16 +2371,18 @@ function ClientSwitcher({ rows, activeId, onPick, onPortfolio, inClient }) {
   </div>`;
 }
 
-function Report({ camps, toast, user, account, agency }) {
+function Report({ camps, toast, user, account, agency, demo = true, insights = [] }) {
   const [chs, setChs] = useState({ email: true, whatsapp: true, slack: false, teams: false });
   const [freq, setFreq] = useState("weekly");
   const [secs, setSecs] = useState({ kpis: true, channels: true, top: true, insights: true });
-  const [note, setNote] = useState("Semana forte no Google. Vamos escalar a PMax e pausar o UGC do TikTok.");
+  const [note, setNote] = useState(demo ? "Semana forte no Google. Vamos escalar a PMax e pausar o UGC do TikTok." : "");
   const t = totals(camps); const top = [...camps].sort((a, b) => b.spend - a.spend).slice(0, 3);
-  const CHN = [["email", "E-mail", "camila@lojaaurora.com.br, diretoria@lojaaurora.com.br"], ["whatsapp", "WhatsApp", "+55 11 98765-4321"], ["slack", "Slack", "#marketing-performance"], ["teams", "Microsoft Teams", "Canal Growth"]];
+  const CHN = demo ? [["email", "E-mail", "camila@lojaaurora.com.br, diretoria@lojaaurora.com.br"], ["whatsapp", "WhatsApp", "+55 11 98765-4321"], ["slack", "Slack", "#marketing-performance"], ["teams", "Microsoft Teams", "Canal Growth"]]
+    : [["email", "E-mail", user.email], ["whatsapp", "WhatsApp", "Número definido no envio"], ["slack", "Slack", "Canal definido no envio"], ["teams", "Microsoft Teams", "Canal definido no envio"]];
+  const chNames = (l => l.length > 1 ? l.slice(0, -1).join(", ") + " e " + l[l.length - 1] : l[0] || "")(chPresent(camps).map(k => CH[k].label.replace(" Ads", "")));
   const n = Object.values(chs).filter(Boolean).length;
   return html`<div className="stack">
-    <${PageHead} title="Relatórios" sub="Monte o relatório uma vez e envie para todos os canais que o seu time usa." right=${html`<span className="demo-note"><${Icon} n="eye" s=${13} />Envio simulado na demo</span>`} />
+    <${PageHead} title="Relatórios" sub="Monte o relatório uma vez e envie para todos os canais que o seu time usa." right=${html`<span className="demo-note"><${Icon} n="eye" s=${13} />${demo ? "Envio simulado na demo" : "Envio ainda simulado"}</span>`} />
     <div className="grid g2" style=${{ alignItems: "start" }}>
       <div className="card card-pad stack">
         <div><div className="card-title">Canais de envio</div><div className="card-sub">Escolha um ou mais</div></div>
@@ -2352,11 +2397,11 @@ function Report({ camps, toast, user, account, agency }) {
       </div>
       <div className="card card-pad stack" style=${{ background: "var(--surface-2)" }}>
         <div className="eyebrow">Pré-visualização</div>
-        <div><b style=${{ fontSize: 17 }}>${account || "Loja Aurora"} · Performance semanal</b><div className="card-sub">19/09 a 18/10 · Meta, Google e TikTok${agency ? " · enviado por " + agency : ""}</div></div>
+        <div><b style=${{ fontSize: 17 }}>${account || "Loja Aurora"} · Performance semanal</b><div className="card-sub">${demo || !ACTIVE.period ? "19/09 a 18/10" : ACTIVE.period.dates} · ${demo ? "Meta, Google e TikTok" : chNames}${agency ? " · enviado por " + agency : ""}</div></div>
         ${secs.kpis ? html`<div className="mini-cards"><div className="mini"><small>Investimento</small><b className="num">${brl(t.spend)}</b></div><div className="mini"><small>Receita</small><b className="num">${brl(t.revenue)}</b></div><div className="mini"><small>ROAS</small><b className="num">${xroas(t.roas)}</b></div><div className="mini"><small>CPA</small><b className="num">${brl2(t.cpa)}</b></div></div>` : null}
         ${secs.channels ? html`<div className="stack" style=${{ gap: 6 }}>${chPresent(camps).map(k => { const v = totals(camps.filter(c => c.ch === k)); return html`<div key=${k} style=${{ display: "flex", justifyContent: "space-between", fontSize: 13 }}><${ChTag} ch=${k} /><span className="num">${brl(v.spend)} · ROAS <b>${xroas(v.roas)}</b></span></div>`; })}</div>` : null}
         ${secs.top ? html`<div><div className="eyebrow" style=${{ marginBottom: 6 }}>3 campanhas com maior investimento</div><ol style=${{ margin: 0, paddingLeft: 18, fontSize: 13, display: "flex", flexDirection: "column", gap: 3 }}>${top.map(c => html`<li key=${c.id}>${c.name} · <span className="num">${brl(c.spend)}</span></li>`)}</ol></div>` : null}
-        ${secs.insights ? html`<div style=${{ fontSize: 13, color: "var(--muted-2)" }}><b style=${{ color: "var(--ink)" }}>Copilot:</b> PMax Coleção Verão pode escalar; TikTok Topo UGC segue abaixo da meta.</div>` : null}
+        ${secs.insights ? html`<div style=${{ fontSize: 13, color: "var(--muted-2)" }}><b style=${{ color: "var(--ink)" }}>Copilot:</b> ${demo ? "PMax Coleção Verão pode escalar; TikTok Topo UGC segue abaixo da meta." : insights.length ? insights.slice(0, 2).map(i => i.title).join("; ") + "." : "Nenhum alerta no período."}</div>` : null}
         ${note ? html`<div style=${{ fontSize: 13, borderLeft: "2px solid var(--line-2)", paddingLeft: 10, color: "var(--muted-2)" }}>${note}</div>` : null}
       </div>
     </div>
@@ -2370,11 +2415,12 @@ const SKILLS0 = [
   { id: "s4", name: "Realocação semanal de orçamento", desc: "Toda segunda simula mover verba das campanhas abaixo da meta para as limitadas por orçamento.", freq: "Toda segunda, 9h", on: true, last: "13 out, 09:00", ask: "Redistribua o orçamento" },
   { id: "s5", name: "Detector de fadiga criativa", desc: "Sinaliza criativos com frequência acima de 4 ou CTR em queda de 25% na semana.", freq: "Todo dia, 10h", on: true, last: "ontem, 10:00", ask: "Quais criativos estão com fadiga?" },
 ];
-function Skills({ chat, toast }) {
-  const [skills, setSkills] = useState(SKILLS0); const [adding, setAdding] = useState(false);
+function Skills({ chat, toast, demo = true, noData, connect }) {
+  const [skills, setSkills] = useState(() => demo ? SKILLS0 : SKILLS0.map(s => ({ ...s, on: false, last: "nunca" }))); const [adding, setAdding] = useState(false);
   const [nn, setNn] = useState(""); const [np, setNp] = useState(""); const [nf, setNf] = useState("Todo dia, 8h");
   return html`<div className="stack">
     <${PageHead} title="Habilidades do agente" sub="Rotinas que o copilot executa sozinho. Toda alteração em conta de anúncio pede sua confirmação antes." right=${html`<button className="btn btn-primary" onClick=${() => setAdding(true)}><${Icon} n="plus" s=${15} />Nova habilidade</button>`} />
+    ${noData ? html`<div className="data-band demo" style=${{ borderRadius: 12 }}><${Icon} n="plug" s=${15} /><span style=${{ flex: 1, minWidth: 200 }}>As habilidades rodam sobre as campanhas das contas conectadas. <b>Conecte uma conta de anúncio</b> para elas começarem a trabalhar.</span><button className="btn btn-sm btn-primary" onClick=${() => connect("meta")}>Conectar conta</button></div>` : null}
     ${adding ? html`<form className="card card-pad stack" onSubmit=${e => { e.preventDefault(); if (!nn.trim()) return; setSkills([{ id: "s" + Date.now(), name: nn, desc: np || "Instrução personalizada", freq: nf, on: true, last: "nunca", ask: np || nn }, ...skills]); setAdding(false); setNn(""); setNp(""); toast("Habilidade criada"); }}>
       <div className="card-title">Nova habilidade</div>
       <div className="grid g2"><div className="field"><label htmlFor="sk-n">Nome</label><input id="sk-n" className="input" value=${nn} onInput=${e => setNn(e.target.value)} placeholder="Ex.: Alerta de ROAS no TikTok" /></div>
@@ -2386,7 +2432,7 @@ function Skills({ chat, toast }) {
       <div style=${{ display: "flex", gap: 12, minWidth: 0, flex: "1 1 280px" }}><span className="ico-wrap" style=${{ background: s.on ? "var(--accent-soft)" : "var(--surface-2)", color: s.on ? "var(--accent-ink)" : "var(--muted)", width: 32, height: 32, borderRadius: 9 }}><${Icon} n="zap" s=${15} /></span>
         <div style=${{ minWidth: 0 }}><b>${s.name}</b><small style=${{ display: "block", marginTop: 2, maxWidth: "62ch" }}>${s.desc}</small>
           <div style=${{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}><span className="pill pill-mute"><${Icon} n="clock" s=${11} />${s.freq}</span><span className="pill pill-mute">Última execução: ${s.last}</span></div></div></div>
-      <div style=${{ display: "flex", alignItems: "center", gap: 10 }}><button className="btn btn-sm btn-line" onClick=${() => chat.send(s.ask, true)}><${Icon} n="play" s=${12} />Executar agora</button><${Toggle} on=${s.on} onChange=${v => setSkills(skills.map(x => x.id === s.id ? { ...x, on: v } : x))} label=${"Ativar " + s.name} /></div>
+      <div style=${{ display: "flex", alignItems: "center", gap: 10 }}><button className="btn btn-sm btn-line" disabled=${noData} title=${noData ? "Conecte uma conta de anúncio primeiro" : null} onClick=${() => chat.send(s.ask, true)}><${Icon} n="play" s=${12} />Executar agora</button><${Toggle} on=${s.on} onChange=${v => setSkills(skills.map(x => x.id === s.id ? { ...x, on: v } : x))} label=${"Ativar " + s.name} /></div>
     </div>`)}</div>
   </div>`;
 }
@@ -2399,14 +2445,14 @@ function Insights({ insights, chat, go }) {
     ${list.length === 0 ? html`<p style=${{ color: "var(--muted)" }}>Nenhum insight nessa categoria agora.</p>` : null}
   </div>`;
 }
-function Integrations({ client, onUpdate, toast, isAgency, live }) {
+function Integrations({ client, onUpdate, toast, isAgency, live, openCh, clearOpen }) {
   const others = [
     ["Google Analytics 4", "Sessões, receita e atribuição do site", "Ainda sem conector"],
     ["WhatsApp Business", "Conversas e CRM de vendas", "Disponível em breve"],
   ];
   return html`<div className="stack">
     <${PageHead} title="Integrações" sub="Contas que o painel, o copilot e as inteligências do agente usam. Alterações nas contas sempre pedem sua confirmação." />
-    <${AdIntegrations} client=${client} onUpdate=${onUpdate} toast=${toast} isAgency=${isAgency} live=${live} />
+    <${AdIntegrations} client=${client} onUpdate=${onUpdate} toast=${toast} isAgency=${isAgency} live=${live} openCh=${openCh} clearOpen=${clearOpen} />
     <${AIIntegrations} />
     <div className="eyebrow" style=${{ marginTop: 6 }}>Outras fontes</div>
     <div className="grid g2">${others.map(([n, d, a]) => html`<article key=${n} className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -2798,8 +2844,9 @@ function GoogleConnectDrawer({ client, onUpdate, onClose, toast }) {
     </aside><//>`;
 }
 
-function AdIntegrations({ client, onUpdate, toast, isAgency, live }) {
-  const [open, setOpen] = useState(null);
+function AdIntegrations({ client, onUpdate, toast, isAgency, live, openCh, clearOpen }) {
+  const [open, setOpen] = useState(openCh || null);
+  useEffect(() => { if (openCh) { setOpen(openCh); clearOpen && clearOpen(); } }, [openCh]);
   const conn = client.conn || {};
   const [target, setTarget] = useState(client.targetRoas ? String(client.targetRoas).replace(".", ",") : "");
   const saveTarget = e => { e.preventDefault(); if (!target.trim()) { onUpdate({ targetRoas: null }); return toast("Conta sem meta de ROAS"); } const v = parseFloat(target.replace(",", ".")); if (!(v > 0 && v < 100)) return toast("Informe uma meta de ROAS entre 0,1 e 99, ou deixe em branco"); onUpdate({ targetRoas: Math.round(v * 100) / 100 }); toast("Meta de ROAS salva: " + xroas(v)); };
@@ -2904,6 +2951,138 @@ function PortfolioBand({ pf, go, demo, accountsN }) {
     <button className="btn btn-sm btn-line" onClick=${pf.reload}>Atualizar</button></div>`;
 }
 
+/* ================= telas de exceção: contas sem dados ================= */
+// Só as contas de demonstração mostram dados de exemplo. As outras mostram o que falta para os números aparecerem.
+const DEMO_EMAILS = ["camila@lojaaurora.com.br", "marina@studiovitta.com.br", "rafael@nortex.com.br"];
+const isDemoClient = c => !!c && (typeof c.demo === "boolean" ? c.demo : DEMO_EMAILS.includes(String(c.email || "").toLowerCase()));
+const DATA_SCREENS = ["overview", "analytics", "campaigns", "creatives", "report", "insights", "media"];
+const SCREEN_EMPTY = {
+  overview: { icon: "chart", what: "a visão geral", desc: "Investimento, impressões, CTR e custo por resultado de todos os canais, comparados com o período anterior.", ghost: "kpis" },
+  analytics: { icon: "clock", what: "a performance analítica", desc: "Os horários, dias da semana, regiões, idades e dispositivos que mais trazem resultado.", ghost: "chart" },
+  campaigns: { icon: "megaphone", what: "suas campanhas", desc: "As campanhas da Meta e do Google numa tabela só, com a recomendação do copilot para pausar, revisar ou escalar.", ghost: "table" },
+  creatives: { icon: "image", what: "seus criativos", desc: "Os anúncios com mais investimento, com as imagens e os vídeos reais e o desempenho de cada um.", ghost: "cards" },
+  report: { icon: "send", what: "os relatórios", desc: "Relatórios com os números das contas conectadas, enviados por e-mail, WhatsApp, Slack ou Teams.", ghost: "kpis" },
+  insights: { icon: "bulb", what: "os insights", desc: "O agente lê as campanhas e aponta o que precisa de atenção e onde há espaço para crescer.", ghost: "cards" },
+  media: { icon: "wallet", what: "o planejamento de mídia", desc: "O planejador usa o custo e os resultados da conta para sugerir onde colocar a verba e prever os resultados.", ghost: "kpis" },
+};
+// demo | live | noconn | loading | error | nodata
+function dataStateOf(demo, live, isLive) {
+  if (isLive) return "live";
+  if (demo) return "demo";
+  if (!live.hasConn) return "noconn";
+  if (live.status === "loading" || live.status === "idle") return "loading";
+  if (live.status === "error" || Object.keys(live.errors || {}).length) return "error";
+  return "nodata";
+}
+const perPhrase = R => R.custom ? "de " + R.dates : (/^últimos/i.test(R.label) ? "nos " : "em ") + R.label.toLowerCase() + " (" + R.dates + ")";
+// dica para erros comuns de conexão
+function errHint(msg) {
+  const m = String(msg || "").toLowerCase();
+  if (/token|expir|oauth|sess(ão|ion)|190|463/.test(m)) return "O token de acesso pode ter expirado ou perdido a permissão. Gere um novo e cole em Integrações.";
+  if (/permiss|access|acesso|autoriz/.test(m)) return "O usuário do token não tem acesso a esta conta. Confira as permissões no Business Manager ou escolha outra conta.";
+  if (/conex|internet|servidor|timeout|fetch/.test(m)) return "Parece uma falha de rede. Tente de novo em alguns segundos.";
+  return "Revise a conexão em Integrações. Se o problema continuar, troque a conta ou gere um novo token.";
+}
+function Ghost({ kind }) {
+  const line = html`<svg viewBox="0 0 400 110" preserveAspectRatio="none"><path d="M0 84 C50 70 80 92 130 66 S210 26 262 50 S340 34 400 16" /></svg>`;
+  return html`<div className="ghost" aria-hidden="true">
+    ${kind === "table" ? html`<div className="gh-card">${[0, 1, 2, 3, 4, 5].map(i => html`<div key=${i} className="gh-row"><i style=${{ flex: 2.4 }}></i><i></i><i></i><i></i><i></i></div>`)}</div>`
+      : kind === "cards" ? html`<div className="gh-grid3">${[0, 1, 2].map(i => html`<div key=${i} className="gh-card"><div className="gh-img"></div><i style=${{ width: "72%" }}></i><i style=${{ width: "44%" }}></i></div>`)}</div>`
+      : kind === "chart" ? html`<div className="gh-grid2"><div className="gh-card gh-chart">${line}</div><div className="gh-card">${[0, 1, 2, 3, 4].map(i => html`<div key=${i} className="gh-bar"><i style=${{ width: (88 - i * 15) + "%" }}></i></div>`)}</div></div>`
+      : html`<div className="gh-grid4">${[0, 1, 2, 3].map(i => html`<div key=${i} className="gh-card"><i style=${{ width: "46%" }}></i><b></b></div>`)}</div><div className="gh-card gh-chart">${line}</div>`}
+  </div>`;
+}
+// bloco central de uma tela sem dados: diz o que aconteceu e qual é a próxima ação
+function EmptyBlock({ icon, tone, title, children, acts, steps }) {
+  return html`<div className=${"empty" + (tone ? " " + tone : "")}>
+    <span className="empty-ico"><${Icon} n=${icon} s=${22} /></span>
+    <div className="empty-body"><h2>${title}</h2>${children}
+      ${acts ? html`<div className="empty-acts">${acts}</div>` : null}
+      ${steps ? html`<ol className="empty-steps">${steps.map((s, i) => html`<li key=${i} className=${s.done ? "done" : ""}><span>${s.done ? html`<${Icon} n="check" s=${12} />` : i + 1}</span>${s.t}</li>`)}</ol>` : null}</div>
+  </div>`;
+}
+function DataProblem({ st, live, periodR, onJump, onPicker, connect, company, what }) {
+  const errs = Object.entries(live.errors || {});
+  if (st === "loading") return html`<div className="empty"><span className="empty-ico"><span className="spin" aria-hidden="true"></span></span><div className="empty-body"><h2>Buscando as campanhas de ${company}</h2><p>Lendo ${periodR.custom ? periodR.dates : periodR.label.toLowerCase()} nas contas conectadas. Leva alguns segundos.</p></div></div>`;
+  if (st === "noconn") return html`<${EmptyBlock} icon="plug" title=${"Conecte uma conta de anúncio para ver " + what}
+    acts=${html`<button className="btn btn-primary" onClick=${() => connect("meta")}><${Icon} n="plug" s=${14} />Conectar Meta Ads</button><button className="btn btn-line" onClick=${() => connect("google")}><span className="ch-dot" style=${{ background: CH.google.color }}></span>Conectar Google Ads</button>`}
+    steps=${[{ t: "Conecte o Meta Ads ou o Google Ads em Integrações" }, { t: "Escolha a conta de anúncio de " + company }, { t: "Os números aparecem aqui e em todas as telas" }]}>
+    <p>${company} ainda não tem nenhuma conta de anúncio conectada. Sem ela, não há campanhas para analisar.</p><//>`;
+  if (st === "error") return html`<${EmptyBlock} icon="alert" tone="bad" title=${"Não conseguimos ler as campanhas de " + company}
+    acts=${html`<button className="btn btn-primary" onClick=${live.reload}><${Icon} n="refresh" s=${14} />Tentar de novo</button><button className="btn btn-line" onClick=${() => connect(errs.length ? errs[0][0] : "meta")}>Revisar conexão</button>`}>
+    <ul className="empty-errs">${errs.map(([ch, m]) => html`<li key=${ch}><span className="ch-dot" style=${{ background: CH[ch].color }}></span><b>${CH[ch].label}:</b> ${m}</li>`)}</ul>
+    <p>${errHint(errs.length ? errs[0][1] : "")}</p><//>`;
+  // nodata: conectado, mas sem investimento no período
+  const last = live.lastSpend, inside = last && last >= periodR.since && last <= periodR.until;
+  const lastTxt = last ? pFmt(last, pDate(last).getFullYear() !== new Date().getFullYear()) : null;
+  const note = (live.sources || []).map(x => x.note).filter(Boolean)[0];
+  const src = (live.sources || [])[0];
+  return html`<${EmptyBlock} icon="calendar" tone="warn" title=${"Sem investimento " + perPhrase(periodR)}
+    acts=${html`${last && !inside ? html`<button className="btn btn-primary" onClick=${() => onJump(last)}><${Icon} n="calendar" s=${14} />Ver os 30 dias até ${pFmt(last)}</button>` : null}
+      <button className="btn btn-line" onClick=${onPicker}>Escolher período</button>
+      ${!last ? html`<button className="btn btn-line" onClick=${() => connect(src ? src.ch : "meta")}>Trocar a conta</button>` : null}`}>
+    <p>${note ? note + " " : ""}${last && !inside ? "A última veiculação de " + company + " foi em " + lastTxt + ". Escolha um período com investimento para ver " + what + "."
+      : last ? "As campanhas ainda não registraram resultados neste período." : (src ? src.label + " não veiculou nada no último ano. Confira se esta é a conta certa ou ative campanhas no gerenciador de anúncios." : "As contas conectadas não veicularam no último ano.")}</p><//>`;
+}
+function EmptyState({ screen, st, live, periodR, onJump, onPicker, connect, company }) {
+  const S = SCREEN_EMPTY[screen] || SCREEN_EMPTY.overview, info = routeInfo(screen);
+  return html`<div className="stack">
+    <${PageHead} title=${info.label} sub=${S.desc} />
+    <${DataProblem} st=${st} live=${live} periodR=${periodR} onJump=${onJump} onPicker=${onPicker} connect=${connect} company=${company} what=${S.what} />
+    <${Ghost} kind=${S.ghost} />
+  </div>`;
+}
+// início do copilot sem dados: checklist do que falta para a conta ficar pronta
+function SetupHome({ user, company, st, live, periodR, onJump, onPicker, connect, go, target }) {
+  const ai = useAI();
+  const first = (user.name || "").split(" ")[0], hour = new Date().getHours();
+  const accOk = st === "nodata";
+  const accPill = st === "noconn" ? ["pill-mute", "Pendente"] : st === "loading" ? ["pill-info", "Carregando"] : st === "error" ? ["pill-bad", "Com erro"] : ["pill-warn", "Sem dados no período"];
+  const step = (n, done, title, desc, pill, act) => html`<li className=${"setup-step" + (done ? " done" : "")}>
+    <span className="setup-n">${done ? html`<${Icon} n="check" s=${14} />` : n}</span>
+    <div className="setup-txt"><b>${title}</b><span>${desc}</span></div>
+    <div className="setup-act">${pill ? html`<span className=${"pill " + pill[0]}>${pill[1]}</span>` : null}${act}</div></li>`;
+  return html`<${Fragment}>
+    <section className="home-chat setup-home" aria-label="Primeiros passos">
+      <div className="msgs" style=${{ paddingTop: 0 }}>
+        <div className="hello" style=${{ padding: "28px 0 6px" }}>
+          <span className="badge-co" style=${{ marginBottom: 0 }}><${Icon} n="sparkles" s=${13} />Copilot de Marketing · ${company}</span>
+          <h1>${hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite"}, ${first}. Vamos deixar ${company} pronta para o copilot.</h1>
+          <p>O copilot, o painel e os insights trabalham com os dados das suas contas de anúncio. ${st === "noconn" ? "Comece conectando uma conta: leva uns 3 minutos." : "Falta pouco."}</p>
+        </div>
+        <ol className="setup">
+          ${step(1, false, "Conta de anúncio", st === "noconn" ? "Conecte o Meta Ads ou o Google Ads para o copilot ler as campanhas." : st === "loading" ? "Lendo as campanhas da conta conectada." : st === "error" ? "A conexão está com erro. Revise para voltar a ler as campanhas." : "Conectada, mas sem investimento " + perPhrase(periodR) + ".", accPill,
+            st === "noconn" ? html`<button className="btn btn-sm btn-primary" onClick=${() => connect("meta")}>Conectar</button>` : st === "error" ? html`<button className="btn btn-sm btn-primary" onClick=${() => connect(Object.keys(live.errors || {})[0] || "meta")}>Revisar</button>` : st === "nodata" ? html`<button className="btn btn-sm btn-line" onClick=${() => go("overview")}>Ver detalhes</button>` : null)}
+          ${step(2, !!ai.conn, "IA do copilot", ai.conn ? "Conectada: " + AI_PROVIDERS[ai.conn.provider].name + " · " + ai.conn.model : "Conecte Claude, ChatGPT ou Groq com uma chave de API para conversar com o copilot.", ai.conn ? null : ["pill-mute", "Pendente"],
+            html`<button className=${"btn btn-sm " + (ai.conn ? "btn-ghost" : "btn-line")} onClick=${() => aiStore.open()}>${ai.conn ? "Gerenciar" : "Conectar"}</button>`)}
+          ${step(3, !!target, "Meta de ROAS", target ? "Definida em " + xroas(target) + ". Entra nos insights e nas recomendações." : "Opcional. Com ela, o copilot compara cada campanha com o retorno que você espera.", target ? null : ["pill-mute", "Opcional"],
+            html`<button className="btn btn-sm btn-ghost" onClick=${() => go("integrations")}>${target ? "Alterar" : "Definir"}</button>`)}
+        </ol>
+        ${st === "error" || st === "nodata" || st === "loading" ? html`<div style=${{ marginTop: 16 }}><${DataProblem} st=${st} live=${live} periodR=${periodR} onJump=${onJump} onPicker=${onPicker} connect=${connect} company=${company} what="o copilot em ação" /></div>` : null}
+      </div>
+    </section>
+    <aside className="insights-pane setup-preview" aria-label="O que aparece depois de conectar">
+      <div className="eyebrow">${st === "noconn" ? "Depois de conectar, aparece aqui" : "Quando houver dados, aparece aqui"}</div>
+      ${[["target", "Saúde da conta", "Uma nota de 0 a 100 com o que está bem e o que pede ajuste."], ["wallet", "Investimento e resultados", "Gasto, receita, ROAS e custo por resultado, com a variação do período."], ["alert", "O que precisa da sua atenção", "Campanhas queimando verba, fadiga de criativo e oportunidades de escalar."], ["chart", "Planejamento de mídia", "Quanto investir em cada canal e a previsão de resultados."]].map(([ic, t, d]) => html`<div key=${t} className="prev-item"><span className="ico-wrap"><${Icon} n=${ic} s=${15} /></span><div><b>${t}</b><small>${d}</small></div></div>`)}
+    </aside>
+  <//>`;
+}
+function PortfolioEmpty({ pf, hasToken, connect, agency }) {
+  let blk;
+  if (!hasToken) blk = html`<${EmptyBlock} icon="users" title=${"Conecte o token da Meta para montar a carteira da " + agency}
+    acts=${html`<button className="btn btn-primary" onClick=${() => connect("meta")}><${Icon} n="plug" s=${14} />Conectar Meta Ads</button>`}
+    steps=${[{ t: "Gere um token com acesso às contas dos clientes no Business Manager" }, { t: "Cole o token em Integrações da agência" }, { t: "Cada conta de anúncio vira um cliente na carteira" }]}>
+    <p>Cada conta de anúncio que o token acessa vira um cliente aqui, com saúde, pendências e gasto do dia.</p><//>`;
+  else if (pf.status === "loading" || pf.status === "idle") blk = html`<div className="empty"><span className="empty-ico"><span className="spin" aria-hidden="true"></span></span><div className="empty-body"><h2>Carregando a carteira</h2><p>Lendo as contas de anúncio que o token da Meta acessa.</p></div></div>`;
+  else if (pf.status === "error") blk = html`<${EmptyBlock} icon="alert" tone="bad" title="Não conseguimos ler as contas do token da Meta"
+    acts=${html`<button className="btn btn-primary" onClick=${pf.reload}><${Icon} n="refresh" s=${14} />Tentar de novo</button><button className="btn btn-line" onClick=${() => connect("meta")}>Revisar conexão</button>`}>
+    <ul className="empty-errs"><li><span className="ch-dot" style=${{ background: CH.meta.color }}></span><b>Meta Ads:</b> ${pf.error}</li></ul><p>${errHint(pf.error)}</p><//>`;
+  else blk = html`<${EmptyBlock} icon="users" tone="warn" title="O token não enxerga nenhuma conta de anúncio"
+    acts=${html`<button className="btn btn-primary" onClick=${() => connect("meta")}>Revisar conexão</button>`}>
+    <p>O token é válido, mas o usuário dele não tem acesso a contas de anúncio. No Business Manager, dê acesso às contas dos clientes ao usuário do sistema ou use outro token.</p><//>`;
+  return html`<div className="stack"><${PageHead} title="Carteira de clientes" sub=${agency + " · todas as contas de anúncio dos clientes num painel só."} />${blk}<${Ghost} kind="table" /></div>`;
+}
+
 function AccountWait({ live, name, onBack, periodR, onJump, onPicker }) {
   const errs = Object.values(live.errors || {});
   if (live.status === "loading" || live.status === "idle") return html`<div className="card card-pad wait-card"><span className="spin" aria-hidden="true"></span><div><b>Carregando as campanhas de ${name}</b><div className="card-sub">Buscando ${periodR.custom ? periodR.dates : periodR.label.toLowerCase()} na Meta.</div></div></div>`;
@@ -2923,17 +3102,24 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   // planejamento de mídia vem junto com o copilot (clientes antigos não têm o módulo salvo)
   const allowed = new Set([...client.modules, "integrations", ...(client.modules.includes("copilot") ? ["media"] : [])]);
   const isAgency = allowed.has("portfolio");
-  const [screen, setScreen] = useState(startScreen && allowed.has(startScreen) ? startScreen : isAgency ? "portfolio" : allowed.has("copilot") ? "copilot" : "overview");
+  const [screenS, setScreen] = useState(startScreen && allowed.has(startScreen) ? startScreen : isAgency ? "portfolio" : allowed.has("copilot") ? "copilot" : "overview");
+  // só as contas de demonstração usam dados de exemplo
+  const demo = isDemoClient(client);
   const [activeId, setActiveId] = useState(null);
   const target = fin(client.targetRoas) && client.targetRoas > 0 ? client.targetRoas : null;
   const agencyMeta = isAgency && metaOn(client.conn);
   const pf = usePortfolio(client, agencyMeta);
   const livePf = agencyMeta && pf.status === "ready" && pf.accounts.length > 0;
-  const pfRows = useMemo(() => !isAgency ? [] : livePf ? livePortfolioRows(pf.accounts, target) : portfolioRows(), [isAgency, livePf, pf.at, target]);
+  const pfRows = useMemo(() => !isAgency ? [] : livePf ? livePortfolioRows(pf.accounts, target) : demo ? portfolioRows() : [], [isAgency, livePf, pf.at, target, demo]);
+  // agência sem contas: fica na carteira (ou em Integrações) até conectar
+  const noRows = isAgency && !pfRows.length;
+  const screen = noRows && screenS !== "integrations" ? "portfolio" : screenS;
   const activeRow = isAgency ? (pfRows.find(r => r.id === activeId) || pfRows.find(r => r.id === "aurora") || pfRows[0]) : null;
-  const activeAcc = livePf ? activeRow : isAgency ? (PORTFOLIO.find(p => p.id === activeRow.id) || PORTFOLIO[0]) : null;
-  const accountName = isAgency ? activeRow.name : client.company;
-  if (isAgency && !livePf) {
+  const activeAcc = livePf ? activeRow : isAgency && activeRow ? (PORTFOLIO.find(p => p.id === activeRow.id) || PORTFOLIO[0]) : null;
+  const accountName = isAgency ? (activeRow ? activeRow.name : client.company) : client.company;
+  const EMPTY_ACTIVE = { prev: { spend: NaN, revenue: NaN, purchases: NaN, clicks: NaN, impr: NaN }, target, health: 0, live: true, empty: true };
+  if (isAgency && !livePf && !demo) ACTIVE = EMPTY_ACTIVE;
+  if (isAgency && !livePf && demo) {
     const row = activeRow;
     const f = 1 - activeAcc.d7;
     ACTIVE = { target: activeAcc.target, health: row.health, prev: { spend: PREV.spend * activeAcc.k, revenue: PREV.revenue * activeAcc.k * activeAcc.rm * f, purchases: PREV.purchases * activeAcc.k * activeAcc.rm * f, clicks: PREV.clicks * activeAcc.k, impr: PREV.impr * activeAcc.k } };
@@ -2951,7 +3137,11 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   const isLive = live.status === "ready" && live.camps.length > 0 && (!isAgency || !!(livePf && activeId && screen !== "portfolio"));
   if (!isAgency || livePf) ACTIVE = isLive ? { prev: live.prev, target, health: liveHealth(live.camps, target), live: true, period: periodR }
     : isAgency ? { prev: { spend: NaN, revenue: NaN, purchases: NaN, clicks: NaN, impr: NaN }, target, health: activeRow ? activeRow.health : 70, live: true }
-    : { prev: PREV, target: TARGET_ROAS, health: 78 };
+    : demo ? { prev: PREV, target: TARGET_ROAS, health: 78 } : EMPTY_ACTIVE;
+  const dataSt = dataStateOf(demo, live, isLive);
+  // conta sem dados (fora da demonstração): as telas de dados mostram o que fazer
+  const noData = !demo && !isLive && !isAgency;
+  const [intOpen, setIntOpen] = useState(null);
   const waiting = isAgency && livePf && screen !== "portfolio" && screen !== "integrations" && !isLive;
   const [open, setOpen] = useState(() => ({ painel: true, gerenciador: true, inteligencias: true }));
   const [sideOpen, setSideOpen] = useState(false); const [dockOpen, setDockOpen] = useState(false);
@@ -2960,7 +3150,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   const isNarrow = () => { try { return window.matchMedia("(max-width:1180px)").matches; } catch (e) { return false; } };
   const openCopilot = () => { if (isNarrow()) setDockOpen(true); else setDockHidden(false); };
   const closeCopilot = () => { if (dockOpen) setDockOpen(false); else setDockHidden(true); };
-  const [camps, setCamps] = useState(CAMPAIGNS0);
+  const [camps, setCamps] = useState(demo ? CAMPAIGNS0 : []);
   // quebras da Meta só são buscadas depois que a pessoa abre a Performance analítica
   const [seenAnalytics, setSeenAnalytics] = useState(false);
   useEffect(() => { if (screen === "analytics") setSeenAnalytics(true); }, [screen]);
@@ -2969,7 +3159,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   useEffect(() => { if (screen === "creatives") setSeenCre(true); }, [screen]);
   const cre = useMetaCreatives(brkMeta, resultKind(isLive ? live.camps.filter(c => c.ch === "meta") : []), isLive && seenCre && !!brkMeta, live.at, periodR);
   const brk = useBreakdowns(brkMeta, resultKind(isLive ? live.camps.filter(c => c.ch === "meta") : []), isLive && seenAnalytics && !!brkMeta, live.at, periodR);
-  useEffect(() => { if (isLive) setCamps(live.camps); else if (!isAgency) setCamps(CAMPAIGNS0); }, [isLive, live.at]);
+  useEffect(() => { if (isLive) setCamps(live.camps); else if (!isAgency) setCamps(demo ? CAMPAIGNS0 : []); }, [isLive, live.at]);
   const [msgs, setMsgs] = useState([]); const [typing, setTyping] = useState(false);
   // copilot de mídia: briefing guardado por cliente neste navegador
   const mediaKey = "readyai_media_" + (isAgency ? (activeRow ? activeRow.id : "x") : client.id);
@@ -2987,9 +3177,11 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   const mediaPlan = useMemo(() => buildMediaPlan(campsPlan, mediaIn), [campsPlan, mediaSaved, isLive]);
   const [toastMsg, setToastMsg] = useState(null);
   const toast = m => { setToastMsg(m); clearTimeout(toast.t); toast.t = setTimeout(() => setToastMsg(null), 2600); };
-  const insights = useMemo(() => isLive ? buildLiveInsights(camps) : buildInsights(camps), [camps, isLive, client.targetRoas]);
+  const insights = useMemo(() => isLive ? buildLiveInsights(camps) : demo ? buildInsights(camps) : [], [camps, isLive, client.targetRoas]);
   const go = key => { setScreen(key); setSideOpen(false); setDockOpen(false); const g = NAV.find(n => (n.children || []).some(c => c.key === key)); if (g) setOpen(o => ({ ...o, [g.id]: true })); };
   const ai = useAI();
+  // leva para Integrações já com a conexão do canal aberta
+  const connect = ch => { setIntOpen(ch || "meta"); go("integrations"); };
   const startPlanner = () => go("media");
   const staleTxt = isLive ? staleSince(live.lastSpend) : null;
   const send = async (text, openDock) => {
@@ -3000,9 +3192,9 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
     const history = [...msgs, { id, role: "user", text }];
     setMsgs(history); setTyping(true);
     const screens = [...allowed].filter(k => k !== "whatsapp");
-    const budget = isLive || livePf ? null : isAgency ? { total: activeAcc.budget, spent: activeAcc.spent } : { total: MONTH_BUDGET, spent: MONTH_SPENT };
+    const budget = isLive || livePf || !demo ? null : isAgency ? { total: activeAcc.budget, spent: activeAcc.spent } : { total: MONTH_BUDGET, spent: MONTH_SPENT };
     const inMedia = screen === "media";
-    const data = aiContext({ media: inMedia ? mediaPlanContext(mediaPlan, mediaIn) : null, camps, screen, account: accountName, isAgency, rows: pfRows, insights, budget, detail: !isLive && !livePf && (!isAgency || activeRow.id === "aurora"), live: isLive || livePf });
+    const data = aiContext({ media: inMedia ? mediaPlanContext(mediaPlan, mediaIn) : null, camps, screen, account: accountName, isAgency, rows: pfRows, insights, budget, detail: demo && !isLive && !livePf && (!isAgency || (activeRow && activeRow.id === "aurora")), live: isLive || livePf || !demo });
     try {
       const j = await aiCall({ provider: ai.conn.provider, model: ai.conn.model, system: aiSystem(data, screens, isAgency), messages: history.filter(m => !m.error).map(toAIMessage) }, ai.conn.key);
       setMsgs(m => [...m, { id: id + 1, role: "bot", ...parseAIReply(j.text, { camps, screens, clientIds: isAgency ? pfRows.map(x => x.id) : [] }) }]);
@@ -3040,18 +3232,21 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
     </div>`;
   };
   let body;
+  const emptyProps = { st: dataSt, live, periodR, onJump: jumpTo, onPicker: () => setPickerOpen(true), connect, company: accountName };
   if (!can) body = html`<${Locked} mod=${screen} plan=${client.plan} />`;
+  else if (noData && DATA_SCREENS.includes(screen)) body = html`<${EmptyState} screen=${screen} ...${emptyProps} />`;
+  else if (screen === "portfolio" && noRows) body = html`<${PortfolioEmpty} pf=${pf} hasToken=${agencyMeta} connect=${connect} agency=${client.company} />`;
   else if (screen === "overview") body = html`<${Overview} camps=${camps} />`;
   else if (screen === "analytics") body = html`<${Analytics} camps=${camps} brk=${brk} />`;
   else if (screen === "campaigns") body = html`<${Campaigns} camps=${camps} setCamps=${setCamps} toast=${toast} chat=${chat} idle=${isLive ? live.idle : null} />`;
   else if (screen === "creatives") body = html`<${Creatives} camps=${camps} cre=${cre} />`;
-  else if (screen === "report") body = html`<${Report} camps=${camps} toast=${toast} user=${client} account=${accountName} agency=${isAgency ? client.company : null} />`;
+  else if (screen === "report") body = html`<${Report} camps=${camps} toast=${toast} user=${client} account=${accountName} agency=${isAgency ? client.company : null} demo=${demo && !isLive} insights=${insights} />`;
   else if (screen === "portfolio") body = html`<${Portfolio} chat=${chat} openClient=${openClient} toast=${toast} agency=${client.company} rows=${pfRows} />`;
   else if (screen === "media") body = html`<${MediaPlanScreen} camps=${campsPlan} inp=${mediaIn} setInp=${setMediaIn} stale=${staleTxt} />`;
-  else if (screen === "skills") body = html`<${Skills} chat=${chat} toast=${toast} />`;
+  else if (screen === "skills") body = html`<${Skills} chat=${chat} toast=${toast} demo=${demo} noData=${noData || (isAgency && noRows)} connect=${connect} />`;
   else if (screen === "insights") body = html`<${Insights} insights=${insights} chat=${chat} go=${go} />`;
-  else if (screen === "integrations") body = html`<${Integrations} client=${client} onUpdate=${onUpdate} toast=${toast} isAgency=${isAgency} live=${live} />`;
-  const showDock = !isHome && allowed.has("copilot");
+  else if (screen === "integrations") body = html`<${Integrations} client=${client} onUpdate=${onUpdate} toast=${toast} isAgency=${isAgency} live=${live} openCh=${intOpen} clearOpen=${() => setIntOpen(null)} />`;
+  const showDock = !isHome && allowed.has("copilot") && !noData && !noRows;
   return html`<div style=${{ display: "flex", flexDirection: "column", height: "100%" }}>
     ${impersonating ? html`<div className="imp-banner"><span>Você está vendo como ${client.name} (${client.company}) · plano ${PLANS[client.plan].name}</span><button onClick=${onBackToConsole}>Voltar ao console</button></div>` : null}
     <div className="shell" style=${{ flex: 1, minHeight: 0 }}>
@@ -3081,17 +3276,18 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
           <div className="crumb"><button className="btn btn-ghost btn-sm menu-btn" onClick=${() => setSideOpen(true)} aria-label="Abrir menu"><${Icon} n="menu" /></button>
             ${isAgency && inClient ? html`<button className="crumb-link hide-sm" onClick=${toPortfolio}>Carteira</button><span className="hide-sm" style=${{ color: "var(--line-2)" }}>/</span><span className="crumb-client"><span className="c-av sm">${activeRow.name[0]}</span>${activeRow.name}</span><span style=${{ color: "var(--line-2)" }}>/</span>` : null}
             ${info.group !== info.label && !(isAgency && inClient) ? html`<span className="hide-sm">${info.group}</span><span className="hide-sm" style=${{ color: "var(--line-2)" }}>/</span>` : null}<b>${info.label}</b></div>
-          <div className="top-actions">${!isHome && allowed.has("copilot") ? html`<button className=${"btn btn-line btn-sm dock-toggle hide-md" + (dockHidden ? "" : " on")} onClick=${() => (dockHidden ? openCopilot() : closeCopilot())} aria-pressed=${!dockHidden}><${Icon} n="sparkles" s=${14} />${dockHidden ? "Abrir copilot" : "Fechar copilot"}</button>` : null}<${PeriodPicker} period=${period} setPeriod=${setPeriod} open=${pickerOpen} setOpen=${setPickerOpen} />${isAgency ? html`<${ClientSwitcher} rows=${pfRows} activeId=${activeRow ? activeRow.id : null} inClient=${inClient} onPick=${id => openClient(id, screen === "portfolio" ? "copilot" : screen)} onPortfolio=${toPortfolio} />` : html`<span className="chip-sel hide-sm">${isLive ? live.sources.map(x => html`<span key=${x.ch} className="ch-dot" style=${{ background: CH[x.ch].color }}></span>`) : html`<span className="ch-dot" style=${{ background: "var(--c-meta)" }}></span><span className="ch-dot" style=${{ background: "var(--c-google)" }}></span><span className="ch-dot" style=${{ background: "var(--c-tiktok)" }}></span>`}${isLive ? live.sources.length + (live.sources.length === 1 ? " conta" : " contas") : "3 contas de exemplo"}</span>`}</div>
+          <div className="top-actions">${showDock ? html`<button className=${"btn btn-line btn-sm dock-toggle hide-md" + (dockHidden ? "" : " on")} onClick=${() => (dockHidden ? openCopilot() : closeCopilot())} aria-pressed=${!dockHidden}><${Icon} n="sparkles" s=${14} />${dockHidden ? "Abrir copilot" : "Fechar copilot"}</button>` : null}<${PeriodPicker} period=${period} setPeriod=${setPeriod} open=${pickerOpen} setOpen=${setPickerOpen} />${isAgency && noRows ? null : isAgency ? html`<${ClientSwitcher} rows=${pfRows} activeId=${activeRow ? activeRow.id : null} inClient=${inClient} onPick=${id => openClient(id, screen === "portfolio" ? "copilot" : screen)} onPortfolio=${toPortfolio} />` : noData ? html`<button type="button" className=${"chip-sel chip-btn hide-sm" + (dataSt === "error" ? " bad" : "")} onClick=${() => dataSt === "noconn" ? connect("meta") : go("integrations")} title="Abrir Integrações">${dataSt === "noconn" ? html`<span className="ch-dot off"></span>Nenhuma conta conectada` : dataSt === "error" ? html`<span className="ch-dot"></span>Conexão com erro` : dataSt === "loading" ? html`<span className="spin" aria-hidden="true" style=${{ width: 12, height: 12 }}></span>Carregando contas` : html`${live.sources.map(x => html`<span key=${x.ch} className="ch-dot" style=${{ background: CH[x.ch].color }}></span>`)}${live.sources.length + (live.sources.length === 1 ? " conta" : " contas")}`}</button>`
+            : html`<span className="chip-sel hide-sm">${isLive ? live.sources.map(x => html`<span key=${x.ch} className="ch-dot" style=${{ background: CH[x.ch].color }}></span>`) : html`<span className="ch-dot" style=${{ background: "var(--c-meta)" }}></span><span className="ch-dot" style=${{ background: "var(--c-google)" }}></span><span className="ch-dot" style=${{ background: "var(--c-tiktok)" }}></span>`}${isLive ? live.sources.length + (live.sources.length === 1 ? " conta" : " contas") : "3 contas de exemplo"}</span>`}</div>
         </header>
         ${isAgency && inClient ? html`<div className="client-band"><span className="c-av sm">${activeRow.name[0]}</span><span>Você está no ambiente de <b>${activeRow.name}</b></span>
           <span className="band-accs hide-sm">${activeRow.accounts.map(a => html`<span key=${a.ch} className="acc-chip">${html`<span className="ch-dot" style=${{ background: CH[a.ch].color }}></span>`}<span className="mono">${a.id}</span></span>`)}</span>
           <span className="band-note hide-sm">Ações e relatórios valem só para este cliente</span>
           <button className="btn btn-sm btn-line" onClick=${toPortfolio}><${Icon} n="users" s=${13} />Voltar para a carteira</button></div>` : null}
-        ${!isAgency ? html`<${DataBand} live=${live} company=${client.company} go=${go} isLive=${isLive} periodR=${periodR} onJump=${jumpTo} onPicker=${() => setPickerOpen(true)} />`
-          : screen === "portfolio" ? html`<${PortfolioBand} pf=${pf} go=${go} demo=${!agencyMeta} accountsN=${pf.accounts.length} />`
+        ${noData ? null : !isAgency ? html`<${DataBand} live=${live} company=${client.company} go=${go} isLive=${isLive} periodR=${periodR} onJump=${jumpTo} onPicker=${() => setPickerOpen(true)} />`
+          : screen === "portfolio" ? (noRows ? null : html`<${PortfolioBand} pf=${pf} go=${go} demo=${!agencyMeta} accountsN=${pf.accounts.length} />`)
           : isLive ? html`<${DataBand} live=${live} company=${activeRow.name} go=${go} isLive=${true} periodR=${periodR} onJump=${jumpTo} onPicker=${() => setPickerOpen(true)} />` : null}
         <div className=${"work" + (isHome ? " home" : showDock && !dockHidden ? "" : " no-dock")}>
-          ${isHome && can && !waiting ? html`<${HomeCopilot} user=${client} client=${{ ...client, company: accountName }} chat=${chat} camps=${camps} insights=${insights} go=${go} />` : html`<div className="pane">${waiting ? html`<${AccountWait} live=${live} name=${activeRow.name} onBack=${toPortfolio} periodR=${periodR} onJump=${jumpTo} onPicker=${() => setPickerOpen(true)} />` : body}</div>`}
+          ${isHome && can && noData ? html`<${SetupHome} user=${client} company=${accountName} ...${emptyProps} go=${go} target=${target} />` : isHome && can && !waiting ? html`<${HomeCopilot} user=${client} client=${{ ...client, company: accountName }} chat=${chat} camps=${camps} insights=${insights} go=${go} />` : html`<div className="pane">${waiting ? html`<${AccountWait} live=${live} name=${activeRow.name} onBack=${toPortfolio} periodR=${periodR} onJump=${jumpTo} onPicker=${() => setPickerOpen(true)} />` : body}</div>`}
           ${showDock && (!dockHidden || dockOpen) ? html`<aside className=${"dock" + (dockOpen ? " open" : "")} aria-label="Copilot"><${DockChat} chat=${chat} screen=${screen} onClose=${closeCopilot} /></aside>` : null}
         </div>
       </main>
@@ -3204,7 +3400,7 @@ function AdminConsole({ clients, api, onLogout, onImpersonate, adminName }) {
           <tbody>${list.map(c => { const custom = c.modules.slice().sort().join() !== PLANS[c.plan].modules.slice().sort().join();
             return html`<${Fragment} key=${c.id}><tr style=${{ cursor: "pointer" }} onClick=${() => setSel(c.id)}>
               <td><b style=${{ color: "var(--ink)", display: "block" }}>${c.company}</b><span style=${{ fontSize: 12 }}>${c.name} · ${c.email}${c.users && c.users.length ? " · +" + c.users.length + (c.users.length === 1 ? " acesso" : " acessos") : ""}</span></td>
-              <td><span className="pill pill-info">${PLANS[c.plan].name}</span>${custom ? html` <span className="pill pill-violet">Personalizado</span>` : null}</td>
+              <td><span className="pill pill-info">${PLANS[c.plan].name}</span>${custom ? html` <span className="pill pill-violet">Personalizado</span>` : null}${isDemoClient(c) ? html` <span className="pill pill-mute" title="Mostra dados de exemplo quando não há conta conectada">Demo</span>` : null}</td>
               <td className="num">${c.modules.filter(m => MODULES.find(x => x.key === m && !x.hidden)).length} de ${visibleMods.length}</td>
               <td>${statusPill(c.status)}${inviteNote(c)}</td><td>${fmtWhen(c.lastAccess)}</td><td className="r num">${brl(PLANS[c.plan].price)}</td>
               <td><span className="row-acts"><button className="btn btn-sm btn-ghost" onClick=${e => { e.stopPropagation(); setSel(c.id); }}>Gerenciar<${Icon} n="chevR" s=${13} /></button>
@@ -3329,6 +3525,9 @@ function ClientDrawer({ c, upd, api, inviteRes, setInviteRes, onClose, onImperso
             <${Toggle} on=${c.modules.includes(m.key)} disabled=${m.core} onChange=${v => toggleMod(m.key, v)} label=${m.label} /></div>`)}
           <div className="mod-row"><div><b>WhatsApp CRM</b><small>Oculto na plataforma por enquanto</small></div><${Toggle} on=${false} disabled=${true} label="WhatsApp CRM" /></div>
         </section>
+        <section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Demonstração</div>
+          <div className="mod-row"><div><b>Dados de exemplo</b><small>${isDemoClient(c) ? "Sem conta conectada, as telas mostram campanhas de exemplo. Use só em contas de demonstração." : "Sem conta conectada, as telas mostram o que falta para os dados aparecerem."}</small></div>
+            <${Toggle} on=${isDemoClient(c)} onChange=${v => { upd(c.id, { demo: v }); toast(v ? "Conta marcada como demonstração" : "Conta sem dados de exemplo"); }} label="Dados de exemplo" /></div></section>
         <section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Acesso</div>
           <div className="mod-row"><div><b>Acesso à plataforma</b><small>${c.status === "suspenso" ? "Bloqueado: o cliente não consegue entrar" : "Liberado"}</small></div>
             <${Toggle} on=${c.status !== "suspenso"} onChange=${v => { upd(c.id, { status: v ? (c.status === "suspenso" && api.server && !c.hasPassword ? "convite" : "ativo") : "suspenso" }); toast(v ? "Acesso liberado" : "Acesso suspenso"); }} label="Acesso à plataforma" /></div>
