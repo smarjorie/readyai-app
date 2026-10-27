@@ -6,6 +6,8 @@
 // POST /api/google { action: "data",     slug, customer_id }    -> campanhas dos últimos 30 dias, no formato do painel
 // Opcional em todas: refresh_token (só quando o MCP não tem banco persistente e pede o token de volta).
 
+import { periodOf } from "./_period.js";
+
 const MCP_URL = process.env.GOOGLE_MCP_URL || "https://google-ads-api-five.vercel.app/mcp";
 const PROTOCOL = "2025-06-18";
 
@@ -93,7 +95,7 @@ function parsePerf(text) {
   return out;
 }
 const sum = perf => Object.values(perf).reduce((a, p) => ({ spend: a.spend + p.spend, impr: a.impr + p.impr, clicks: a.clicks + p.clicks, conv: a.conv + p.conv }), { spend: 0, impr: 0, clicks: 0, conv: 0 });
-function periodOf(text) { const m = text.match(/(\d{4}-\d{2}-\d{2})\s+a\s+(\d{4}-\d{2}-\d{2})/); return m ? { since: m[1], until: m[2] } : null; }
+function periodOfText(text) { const m = text.match(/(\d{4}-\d{2}-\d{2})\s+a\s+(\d{4}-\d{2}-\d{2})/); return m ? { since: m[1], until: m[2] } : null; }
 
 // ---------- ações ----------
 async function connect(mcp, base) {
@@ -119,13 +121,18 @@ async function accounts(mcp, base) {
   return { accounts: out };
 }
 
-async function data(mcp, base, customerId) {
+// o MCP do Google aceita só "últimos N dias" (até hoje): o período é convertido para isso
+async function data(mcp, base, customerId, period) {
+  const P = periodOf(period);
+  const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+  const D = Math.max(1, Math.round((today - new Date(P.since + "T00:00:00Z")) / 86400e3));
+  const endsRecent = (today - new Date(P.until + "T00:00:00Z")) / 86400e3 <= 1;
   const args = { ...base, customer_id: customerId };
   const listText = checkAuth(await mcp.call("google_ads_list_campaigns", args));
   const list = parseCampaigns(listText).filter(c => c.status !== "4");
   if (!list.length) return { campaigns: [], prev: null, note: "Essa conta não tem campanhas. Se for uma conta gerenciadora (MCC), escolha a subconta onde as campanhas estão." };
   // 30 dias atuais, 60 dias (para o período anterior), 7 e 14 dias (para a variação semanal)
-  const texts = (await Promise.all([30, 60, 7, 14].map(days => mcp.call("google_ads_campaign_performance", { ...args, days })))).map(checkAuth);
+  const texts = (await Promise.all([D, D * 2, 7, 14].map(days => mcp.call("google_ads_campaign_performance", { ...args, days })))).map(checkAuth);
   const [p30, p60, p7, p14] = texts.map(parsePerf);
   const byName = perf => Object.fromEntries(Object.values(perf).map(p => [p.name, p]));
   const n30 = byName(p30), n7 = byName(p7), n14 = byName(p14);
@@ -151,7 +158,8 @@ async function data(mcp, base, customerId) {
     account: { id: customerId, label: fmtId(customerId) },
     campaigns,
     prev: { spend: Math.max(0, s60.spend - s30.spend), tracked: 0, revenue: 0, purchases: Math.max(0, s60.conv - s30.conv), clicks: Math.max(0, s60.clicks - s30.clicks), impr: Math.max(0, s60.impr - s30.impr) },
-    period: periodOf(texts[0]),
+    period: periodOfText(texts[0]),
+    note: endsRecent ? undefined : "O Google Ads só aceita períodos que terminam hoje: mostrando os últimos " + D + " dias.",
   };
 }
 
@@ -169,7 +177,7 @@ export default async function handler(req, res) {
     if (body.action === "data") {
       const id = String(body.customer_id || "").replace(/\D/g, "");
       if (id.length !== 10) return send(res, 400, { error: "Escolha uma conta do Google Ads (10 dígitos)." });
-      return send(res, 200, await data(mcp, base, id));
+      return send(res, 200, await data(mcp, base, id, body.period));
     }
     return send(res, 400, { error: "Ação desconhecida." });
   } catch (e) {

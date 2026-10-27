@@ -553,6 +553,49 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .idle-list{display:flex;flex-direction:column;gap:6px;margin-top:12px;max-height:320px;overflow:auto}
 .idle-list div{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:9px;background:var(--surface-2);font-size:13px}
 .idle-list small{color:var(--muted);white-space:nowrap}
+/* seletor de período */
+.pp{position:relative}
+.pp-btn{cursor:pointer;gap:7px}
+.pp-btn:hover,.pp-btn.on{border-color:var(--accent);color:var(--ink)}
+.pp-btn svg:last-child{color:var(--muted)}
+.pp-lbl{font-weight:600}
+.pp-dates{color:var(--muted);font-size:12px}
+.pp-pop{position:absolute;right:0;top:calc(100% + 8px);z-index:60;display:flex;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px rgba(17,24,39,.18);overflow:hidden;width:max-content;max-width:calc(100vw - 24px)}
+.pp-pre{display:flex;flex-direction:column;gap:2px;padding:10px;border-right:1px solid var(--line);background:var(--surface-2);min-width:178px}
+.pp-pre button{text-align:left;padding:8px 10px;border-radius:9px;font-size:13px;font-weight:600;color:var(--ink)}
+.pp-pre button small{display:block;font-weight:500;font-size:11.5px;color:var(--muted);margin-top:1px}
+.pp-pre button:hover{background:var(--surface)}
+.pp-pre button.on{background:var(--accent-soft);color:var(--accent-ink)}
+.pp-cal{padding:12px 16px 14px;position:relative;display:flex;flex-direction:column;gap:8px}
+.pp-nav{position:absolute;left:10px;right:10px;top:8px;display:flex;justify-content:space-between;pointer-events:none}
+.pp-nav button{pointer-events:auto;padding:0 6px}
+.pp-nav button:first-child svg{transform:rotate(90deg)}
+.pp-nav button.nx svg{transform:rotate(-90deg)}
+.pp-months{display:flex;gap:22px}
+.cal-m{width:238px}
+.cal-title{text-align:center;font-size:13px;font-weight:700;text-transform:capitalize;padding:5px 0 10px}
+.cal-g{display:grid;grid-template-columns:repeat(7,1fr);row-gap:2px}
+.cal-wd{text-align:center;font-size:11px;color:var(--muted);font-weight:600;padding-bottom:4px}
+.cal-d{height:32px;font-size:12.5px;color:var(--ink);border-radius:8px;font-variant-numeric:tabular-nums}
+.cal-d:hover:not([disabled]){background:var(--surface-2)}
+.cal-d[disabled]{color:var(--line-2);cursor:default}
+.cal-d.today{box-shadow:inset 0 0 0 1px var(--line-2)}
+.cal-d.in{background:var(--accent-soft);border-radius:0;color:var(--accent-ink)}
+.cal-d.sel,.cal-d.sel:hover:not([disabled]){background:var(--accent);color:var(--on-accent);font-weight:700}
+.cal-d.in:hover:not([disabled]){background:var(--accent-soft)}
+.cal-d.sel.lo:not(.hi){border-radius:8px 0 0 8px}
+.cal-d.sel.hi:not(.lo){border-radius:0 8px 8px 0}
+.pp-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px;font-size:12.5px;color:var(--muted-2)}
+@media (max-width:760px){.pp-m2{display:none}.pp-pop{flex-direction:column;position:fixed;left:12px;right:12px;top:58px;width:auto;max-height:calc(100vh - 72px);overflow:auto}.cal-m{width:100%}.pp-cal{padding:12px}.pp-pre{flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--line);min-width:0}.pp-pre button{flex:1 1 45%}.pp-pre button small{display:none}}
+/* aviso de período sem dados */
+.data-band.nodata{background:var(--accent-soft);color:var(--ink);align-items:center;gap:12px;padding-top:12px;padding-bottom:12px}
+.nd-ico{width:34px;height:34px;border-radius:10px;background:var(--surface);color:var(--accent-ink);display:grid;place-items:center;flex:none;box-shadow:var(--shadow)}
+.nd-txt{flex:1;min-width:220px;display:flex;flex-direction:column;gap:2px}
+.nd-txt b{font-size:14px}
+.nd-txt span{font-size:12.5px;color:var(--muted-2)}
+.nd-acts{display:flex;gap:8px;flex-wrap:wrap}
+.nodata-card{display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-color:var(--accent);background:var(--accent-soft)}
+.nodata-card .nd-ico{width:44px;height:44px;border-radius:12px}
 /* verba do planejamento */
 .bh{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr);gap:0;overflow:hidden}
 .bh-main{padding:24px 26px;display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -980,7 +1023,7 @@ function aiContext({ camps, screen, account, isAgency, rows, insights, budget, d
     conta: account,
     tela_atual: routeInfo(screen).label || screen,
     fonte: live ? "dados reais das contas conectadas" : "dados de exemplo (nenhuma conta conectada)",
-    periodo: live ? "últimos 30 dias" : "últimos 30 dias (19/09 a 18/10/2026)",
+    periodo: live ? (ACTIVE.period ? ACTIVE.period.label + " (" + ACTIVE.period.since + " a " + ACTIVE.period.until + ", " + ACTIVE.period.days + " dias)" : "últimos 30 dias") : "últimos 30 dias (19/09 a 18/10/2026)",
     moeda: "BRL",
     meta_roas: hasTarget() ? ACTIVE.target : null,
     tipo_de_resultado: kindLabel(resultKind(camps)),
@@ -1377,9 +1420,9 @@ function mediaInsights(camps, inp, plan) {
   }
   const R0 = hist.reduce((a, r) => a + r.R0, 0);
   const conf = !hist.length ? ["baixa", "Nenhum canal ligado tem histórico; a previsão usa só custos de referência."]
-    : R0 >= 100 && cur >= 3000 ? ["alta", "Baseada em " + brl(cur) + " investidos e " + fmtInt(R0) + " " + planUnit(plan.kind) + " nos últimos 30 dias."]
+    : R0 >= 100 && cur >= 3000 ? ["alta", "Baseada em " + brl(cur) + " investidos e " + fmtInt(R0) + " " + planUnit(plan.kind) + planBasis() + "."]
     : R0 >= 30 ? ["média", "Baseada em " + brl(cur) + " investidos e " + fmtInt(R0) + " " + planUnit(plan.kind) + ". Mais histórico deixa a previsão mais precisa."]
-    : ["baixa", "Pouco histórico: " + brl(cur) + " e " + fmtInt(R0) + " " + planUnit(plan.kind) + " nos últimos 30 dias."];
+    : ["baixa", "Pouco histórico: " + brl(cur) + " e " + fmtInt(R0) + " " + planUnit(plan.kind) + planBasis() + "."];
   const scen = [];
   const add = (label, B) => { if (B > 0 && !scen.some(x => Math.abs(x.B - B) < 10)) { const p = buildMediaPlan(camps, { ...inp, budget: String(B) }); if (p.ready && !scen.some(x => Math.abs(x.p.tot.spend - p.tot.spend) < 10)) scen.push({ label, B, p }); } };
   if (cur > 0) add("Manter o ritmo atual", Math.round(cur / 10) * 10);
@@ -1483,6 +1526,9 @@ function mediaPlanContext(plan, inp) {
 }
 
 /* ---------- planejador de mídia com IA: conversa guiada dentro do copilot ---------- */
+// de onde vem o histórico usado no planejamento (sempre equivalente a 30 dias)
+const planBasis = () => ACTIVE.live && ACTIVE.period && ACTIVE.period.days !== 30 ? " no ritmo de " + (ACTIVE.period.custom ? ACTIVE.period.dates : ACTIVE.period.label.toLowerCase()) + ", projetado para 30 dias" : " nos últimos 30 dias";
+const planBasisShort = () => ACTIVE.live && ACTIVE.period && ACTIVE.period.days !== 30 ? "Ritmo de " + (ACTIVE.period.custom ? ACTIVE.period.dates : ACTIVE.period.label.toLowerCase()) + ", em 30 dias" : "Últimos 30 dias";
 // no planejamento, conversas e leads são tratados como leads
 const kindOne = k => k === "compras" ? "compra" : "lead";
 const planUnit = k => k === "compras" ? "compras" : "leads";
@@ -1536,7 +1582,7 @@ function MediaPlanScreen({ camps, inp, setInp, stale }) {
       <div className="bh-main">
         <label className="bh-q" htmlFor="mp-budget">Quanto você tem para investir nos próximos 30 dias?</label>
         <div className="bh-amount"><span>R$</span><input id="mp-budget" inputMode="numeric" placeholder="0" value=${v} onInput=${e => { setV(e.target.value); const B = parseMoney(e.target.value); if (B) setBudgetSoon(B); }} onBlur=${() => setBudget(parseMoney(v))} onKeyDown=${e => e.key === "Enter" && setBudget(parseMoney(v))} /></div>
-        <div className="bh-ctx">${cur > 0 ? html`Últimos 30 dias: <b>${pmoney(cur)}</b>${B0 > 0 ? html` · <span className=${B0 >= cur ? "up" : "down"}>${B0 >= cur ? "+" : "−"}${pct(Math.abs(B0 / cur - 1), 0)} em relação ao atual</span>` : null}` : "A conta ainda não tem investimento nos últimos 30 dias."}</div>
+        <div className="bh-ctx">${cur > 0 ? html`${planBasisShort()}: <b>${pmoney(cur)}</b>${B0 > 0 ? html` · <span className=${B0 >= cur ? "up" : "down"}>${B0 >= cur ? "+" : "−"}${pct(Math.abs(B0 / cur - 1), 0)} em relação ao atual</span>` : null}` : "A conta ainda não tem investimento nos últimos 30 dias."}</div>
         ${smax > smin ? html`<div className="bh-range">
           <input type="range" min=${smin} max=${smax} step=${sstep} value=${Math.min(smax, Math.max(smin, B0 || cur || smin))} onInput=${e => { const B = Number(e.target.value); setV(B.toLocaleString("pt-BR")); setBudgetSoon(B); }} aria-label="Ajustar verba" style=${{ "--p": ((Math.min(smax, Math.max(smin, B0 || smin)) - smin) / (smax - smin) * 100) + "%" }} />
           <div className="bh-marks">${marks.map(([l, B]) => html`<button key=${l} type="button" style=${{ left: ((B - smin) / (smax - smin) * 100) + "%" }} onClick=${() => setBudget(B)} title=${l + ": " + pmoney(B)}><i></i><span>${l}</span></button>`)}</div>
@@ -1573,7 +1619,7 @@ function planWhy(plan, ins, stale) {
   const rows = plan.rows.filter(r => r.on && r.spend > 0).sort((a, b) => b.spend - a.spend);
   const out = [];
   const top = rows[0];
-  if (top) out.push(top.label + " fica com " + pct(top.spend / plan.tot.spend, 0) + " da verba" + (top.hist ? (top.realRevenue ? " porque trouxe " + pmoney(top.Rev0 / top.S0) + " de receita por real investido nos últimos 30 dias" : " porque cada " + one + " custou " + pmoney(top.cpr0) + " nos últimos 30 dias") : ", como teste") + ".");
+  if (top) out.push(top.label + " fica com " + pct(top.spend / plan.tot.spend, 0) + " da verba" + (top.hist ? (top.realRevenue ? " porque trouxe " + pmoney(top.Rev0 / top.S0) + " de receita por real investido" + planBasis() : " porque cada " + one + " custou " + pmoney(top.cpr0) + planBasis()) : ", como teste") + ".");
   if (ins && ins.opt) {
     const B = plan.budget;
     if (T) {
@@ -1733,7 +1779,7 @@ function Overview({ camps }) {
   const funnel = ACTIVE.live ? [["Impressões", t.impr], ["Cliques", t.clicks], [kl, t.purchases]] : [["Impressões", t.impr], ["Cliques", t.clicks], ["Adições ao carrinho", 8640], ["Checkouts iniciados", 3910], ["Compras", t.purchases]];
   const prevCtr = ACTIVE.prev.clicks / ACTIVE.prev.impr;
   return html`<div className="stack">
-    <${PageHead} title="Visão geral" sub="Todos os canais somados nos últimos 30 dias, comparados com os 30 dias anteriores." right=${html`<${DataNote} />`} />
+    <${PageHead} title="Visão geral" sub=${ACTIVE.period ? "Todos os canais somados em " + (ACTIVE.period.custom ? ACTIVE.period.dates : ACTIVE.period.label.toLowerCase()) + ", comparados com os " + ACTIVE.period.days + " dias anteriores." : "Todos os canais somados nos últimos 30 dias, comparados com os 30 dias anteriores."} right=${html`<${DataNote} />`} />
     <div className="grid g4">
       <${Kpi} label="Investimento" value=${brl(t.spend)} d=${fin(delta(t.spend, ACTIVE.prev.spend)) ? delta(t.spend, ACTIVE.prev.spend) : undefined} invert />
       <${Kpi} label="Impressões" value=${kfmt(t.impr)} d=${fin(delta(t.impr, ACTIVE.prev.impr)) ? delta(t.impr, ACTIVE.prev.impr) : undefined} hint=${fmtInt(t.clicks) + " cliques"} />
@@ -1778,13 +1824,14 @@ const DEMO_BREAK = {
 DEMO_BREAK.heat = [0.85, 1.05, 1, 1.02, 1.08, 1.12, 0.9].map(f => HOURS.map((v, h) => { const r = v * f / 7 * 4.3; const c = h < 6 ? 1.45 : h < 9 ? 1.2 : h >= 18 && h <= 22 ? 0.88 : 1; return { results: r, clicks: r * 28, spend: r * 39 * c, impr: r * 1300 }; }));
 DEMO_BREAK.activeDays = 30;
 // quebras reais (hora, idade, dispositivo, região) da conta da Meta aberta
-function useBreakdowns(meta, kind, enabled, at) {
+function useBreakdowns(meta, kind, enabled, at, period) {
   const [st, setSt] = useState({ status: "idle" });
-  const key = JSON.stringify([enabled, meta && [meta.accountId, meta.token.slice(-8)], kind, at ? +at : 0]);
+  const per = period ? { since: period.since, until: period.until } : undefined;
+  const key = JSON.stringify([enabled, meta && [meta.accountId, meta.token.slice(-8)], kind, at ? +at : 0, per]);
   useEffect(() => {
     if (!enabled || !meta) { setSt({ status: "idle" }); return; }
     let dead = false; setSt({ status: "loading" });
-    apiPost("/api/meta", { action: "breakdowns", account_id: meta.accountId, kind }, { "x-meta-token": meta.token })
+    apiPost("/api/meta", { action: "breakdowns", account_id: meta.accountId, kind, period: per }, { "x-meta-token": meta.token })
       .then(d => { if (!dead) setSt({ status: "ready", data: d }); }, e => { if (!dead) setSt({ status: "error", error: e.message }); });
     return () => { dead = true; };
   }, [key]);
@@ -1847,7 +1894,7 @@ function TimeOfDay({ heat, activeDays, kind }) {
       <span></span>${byHour.map((_, h) => html`<span key=${"x" + h} className="hx">${h % 3 === 0 ? h + "h" : ""}</span>`)}
     </div>
     <div className="tod-foot">
-      <span className="card-sub">${activeDays ? "Baseado em " + activeDays + (activeDays === 1 ? " dia" : " dias") + " com veiculação nos últimos 30 dias, no fuso da conta." : "Últimos 30 dias, no fuso da conta."}${activeDays && activeDays < 7 ? " Ainda é pouco volume para cravar o melhor horário." : ""}</span>
+      <span className="card-sub">${activeDays ? "Baseado em " + activeDays + (activeDays === 1 ? " dia" : " dias") + " com veiculação no período, no fuso da conta." : "Últimos 30 dias, no fuso da conta."}${activeDays && activeDays < 7 ? " Ainda é pouco volume para cravar o melhor horário." : ""}</span>
       <span className="heat-legend">${metric === "cpr" ? "Mais caro" : "Menos"}<i style=${{ background: `color-mix(in srgb, ${color} 15%, var(--surface-2))` }}></i><i style=${{ background: `color-mix(in srgb, ${color} 50%, var(--surface-2))` }}></i><i style=${{ background: color }}></i>${metric === "cpr" ? "Mais barato" : "Mais"}</span>
     </div>
   </div>`;
@@ -1945,7 +1992,7 @@ function IdleCampaigns({ idle }) {
   return html`<div className="card card-pad">
     <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
       <div style=${{ display: "flex", gap: 10, alignItems: "flex-start", minWidth: 0, flex: 1 }}><span className="stale-pill" style=${{ flex: "none" }}><${Icon} n="pause" s=${12} />${idle.length}</span>
-        <div><b>${idle.length === 1 ? "Mais 1 campanha está ativa" : "Mais " + idle.length + " campanhas estão ativas"} na Meta, mas não gastaram nos últimos 30 dias</b>
+        <div><b>${idle.length === 1 ? "Mais 1 campanha está ativa" : "Mais " + idle.length + " campanhas estão ativas"} na Meta, mas não gastaram no período</b>
         <div className="card-sub">Por isso não entram na tabela nem nos números. Costuma ser conjunto de anúncios pausado ou encerrado, anúncio reprovado ou sem orçamento.</div></div></div>
       <button className="btn btn-sm btn-line" onClick=${() => setOpen(!open)} aria-expanded=${open}>${open ? "Esconder lista" : "Ver campanhas"}</button>
     </div>
@@ -2082,13 +2129,14 @@ function CreativeArt({ id }) {
   return html`<svg className="cre-art" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g transform="translate(60 32) scale(0.7)">${arts[id] || null}</g></svg>`;
 }
 
-function useMetaCreatives(meta, kind, enabled, at) {
+function useMetaCreatives(meta, kind, enabled, at, period) {
   const [st, setSt] = useState({ status: "idle" });
-  const key = JSON.stringify([enabled, meta && [meta.accountId, meta.token.slice(-8)], kind, at ? +at : 0]);
+  const per = period ? { since: period.since, until: period.until } : undefined;
+  const key = JSON.stringify([enabled, meta && [meta.accountId, meta.token.slice(-8)], kind, at ? +at : 0, per]);
   useEffect(() => {
     if (!enabled || !meta) { setSt({ status: "idle" }); return; }
     let dead = false; setSt({ status: "loading" });
-    apiPost("/api/meta", { action: "creatives", account_id: meta.accountId, kind }, { "x-meta-token": meta.token })
+    apiPost("/api/meta", { action: "creatives", account_id: meta.accountId, kind, period: per }, { "x-meta-token": meta.token })
       .then(d => { if (!dead) setSt({ status: "ready", data: d }); }, e => { if (!dead) setSt({ status: "error", error: e.message }); });
     return () => { dead = true; };
   }, [key]);
@@ -2117,7 +2165,7 @@ function LiveCreatives({ cre }) {
   const head = html`<${PageHead} title="Criativos" sub=${sells ? "Anúncios ranqueados por ROAS, com sinais de fadiga." : "Anúncios ranqueados pelo menor " + kindCost(kind).toLowerCase() + ", com sinais de fadiga."} right=${html`<div className="seg view-seg" role="group" aria-label="Visualização"><button className=${view === "grid" ? "on" : ""} onClick=${() => setView("grid")} aria-label="Ver em grade" aria-pressed=${view === "grid"} title="Grade"><${Icon} n="grid" s=${15} /></button><button className=${view === "list" ? "on" : ""} onClick=${() => setView("list")} aria-label="Ver em lista" aria-pressed=${view === "list"} title="Lista"><${Icon} n="list" s=${15} /></button></div>`} />`;
   if (!cre || cre.status === "loading" || cre.status === "idle") return html`<div className="stack">${head}<div className="card card-pad"><${BreakNote}>Buscando os anúncios na Meta…<//></div></div>`;
   if (cre.status === "error") return html`<div className="stack">${head}<div className="card card-pad"><${BreakNote}>Não consegui buscar os anúncios: ${cre.error}<//></div></div>`;
-  if (!ads.length) return html`<div className="stack">${head}<div className="card card-pad"><${BreakNote}>Nenhum anúncio da Meta teve investimento nos últimos 30 dias.<//></div></div>`;
+  if (!ads.length) return html`<div className="stack">${head}<div className="card card-pad"><${BreakNote}>Nenhum anúncio da Meta teve investimento no período selecionado.<//></div></div>`;
   return html`<div className="stack">${head}
     ${view === "list" ? html`<div className="card cre-list">
       <div className="cre-row cre-row-head"><span></span><span>Anúncio</span><span>Status</span><span className="r">${main(list[0])[0]}</span><span className="r">CTR</span><span className="r">${kl}</span><span className="r">Investido</span></div>
@@ -2138,7 +2186,7 @@ function LiveCreatives({ cre }) {
         <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, flexWrap: "wrap" }}><span style=${{ fontSize: 12.5, color: "var(--muted-2)" }}>${fmtInt(k.results)} ${kl.toLowerCase()}</span><span className=${"pill " + s[0]} title=${s[2]}>${s[1]}</span></div>
         <div className="cre-stats"><div><small>${main(k)[0]}</small><b className="num">${main(k)[1]}</b></div><div><small>CTR</small><b className="num">${pct(k.clicks / k.impr, 1)}</b></div><div><small>${third(k)[0]}</small><b className="num">${third(k)[1]}</b></div></div>
       </div></article>`; })}</div>`}
-    <p className="demo-note"><${Icon} n="check" s=${13} />${d.total > ads.length ? "Os " + ads.length + " anúncios com mais investimento, de " + d.total + "," : ads.length + (ads.length === 1 ? " anúncio" : " anúncios")} da Meta com investimento nos últimos 30 dias. Passe o mouse no status para ver o motivo. O Google Ads ainda não entrega criativos.</p>
+    <p className="demo-note"><${Icon} n="check" s=${13} />${d.total > ads.length ? "Os " + ads.length + " anúncios com mais investimento, de " + d.total + "," : ads.length + (ads.length === 1 ? " anúncio" : " anúncios")} da Meta com investimento no período. Passe o mouse no status para ver o motivo. O Google Ads ainda não entrega criativos.</p>
   </div>`;
 }
 function Creatives({ camps, cre }) {
@@ -2349,7 +2397,7 @@ function Integrations({ client, onUpdate, toast, isAgency, live }) {
 }
 function DataNote({ partial, home }) {
   if (!ACTIVE.live) return html`<span className="demo-note"><${Icon} n="eye" s=${13} />${home ? "Dados de exemplo · últimos 30 dias (19/09 a 18/10)" : "Dados de exemplo"}</span>`;
-  return html`<span className="demo-note"><${Icon} n="check" s=${13} />${partial || "Dados reais · últimos 30 dias"}</span>`;
+  return html`<span className="demo-note"><${Icon} n="check" s=${13} />${partial || "Dados reais · " + (ACTIVE.period ? (ACTIVE.period.custom ? ACTIVE.period.dates : ACTIVE.period.label.toLowerCase()) : "últimos 30 dias")}</span>`;
 }
 /* ================= dados reais: Meta Ads (token) e Google Ads (MCP) ================= */
 // As conexões ficam no cadastro de cada cliente (conn.meta e conn.google): no banco, quando há banco; senão, neste navegador.
@@ -2372,19 +2420,102 @@ const metaApi = m => m && m.via === "mcp" ? "/api/metamcp" : "/api/meta";
 const metaOn = conn => !!(conn && conn.meta && conn.meta.token && conn.meta.accountId);
 const googleOn = conn => !!(conn && conn.google && conn.google.slug && conn.google.customerId);
 
-function useLiveData(client, enabled) {
+/* ================= período das consultas ================= */
+// "Últimos N dias" são dias completos, até ontem (como a Meta e o Google contam).
+const PERIOD_PRESETS = [
+  { id: "7d", label: "Últimos 7 dias", days: 7 },
+  { id: "14d", label: "Últimos 14 dias", days: 14 },
+  { id: "30d", label: "Últimos 30 dias", days: 30 },
+  { id: "90d", label: "Últimos 90 dias", days: 90 },
+  { id: "month", label: "Este mês" },
+  { id: "lastmonth", label: "Mês passado" },
+];
+const pYmd = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+const pDate = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const pAdd = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const pToday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+const pFmt = (s, withYear) => { const d = pDate(s); return String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + (withYear ? "/" + d.getFullYear() : ""); };
+function periodRange(p) {
+  const today = pToday();
+  let since, until, label;
+  const pre = PERIOD_PRESETS.find(x => x.id === (p && p.id)) || (p && p.id === "custom" ? null : PERIOD_PRESETS[2]);
+  if (pre && pre.days) { until = pAdd(today, -1); since = pAdd(today, -pre.days); label = pre.label; }
+  else if (pre && pre.id === "month") { since = new Date(today.getFullYear(), today.getMonth(), 1); until = today; label = pre.label; }
+  else if (pre && pre.id === "lastmonth") { since = new Date(today.getFullYear(), today.getMonth() - 1, 1); until = new Date(today.getFullYear(), today.getMonth(), 0); label = pre.label; }
+  else { since = pDate(p.since); until = pDate(p.until); }
+  const s = pYmd(since), u = pYmd(until);
+  const yr = since.getFullYear() !== today.getFullYear() || until.getFullYear() !== today.getFullYear();
+  const dates = s === u ? pFmt(s, yr) : pFmt(s, yr) + " a " + pFmt(u, yr);
+  return { id: pre ? pre.id : "custom", since: s, until: u, days: Math.round((until - since) / 86400e3) + 1, label: label || dates, dates, custom: !pre };
+}
+const WD = ["D", "S", "T", "Q", "Q", "S", "S"];
+const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+function MonthGrid({ year, month, a, b, hover, onPick, onHover }) {
+  const first = new Date(year, month, 1), days = new Date(year, month + 1, 0).getDate();
+  const today = pToday(), cells = [];
+  for (let i = 0; i < first.getDay(); i++) cells.push(null);
+  for (let d = 1; d <= days; d++) cells.push(new Date(year, month, d));
+  const end = b || hover;
+  const lo = a && end ? (a < end ? a : end) : a, hi = a && end ? (a < end ? end : a) : a;
+  return html`<div className="cal-m"><div className="cal-title">${MONTHS[month]} ${year}</div>
+    <div className="cal-g">${WD.map((w, i) => html`<span key=${"w" + i} className="cal-wd">${w}</span>`)}
+      ${cells.map((d, i) => { if (!d) return html`<span key=${"e" + i}></span>`; const s = pYmd(d); const fut = d > today;
+        const cls = "cal-d" + (lo && s === pYmd(lo) ? " sel lo" : "") + (hi && s === pYmd(hi) ? " sel hi" : "") + (lo && hi && d > lo && d < hi ? " in" : "") + (s === pYmd(today) ? " today" : "");
+        return html`<button key=${s} type="button" className=${cls} disabled=${fut} onClick=${() => onPick(d)} onMouseEnter=${() => onHover(d)} aria-label=${d.toLocaleDateString("pt-BR")}>${d.getDate()}</button>`; })}
+    </div></div>`;
+}
+function PeriodPicker({ period, setPeriod, open, setOpen }) {
+  const R = periodRange(period);
+  const [a, setA] = useState(null); const [b, setB] = useState(null); const [hover, setHover] = useState(null);
+  const [view, setView] = useState(() => { const u = pDate(R.until); return new Date(u.getFullYear(), u.getMonth() - 1, 1); });
+  const box = useRef(null);
+  useEffect(() => { if (open) { setA(pDate(R.since)); setB(pDate(R.until)); setHover(null); const u = pDate(R.until); setView(new Date(u.getFullYear(), u.getMonth() - 1, 1)); } }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const off = e => { if (box.current && !box.current.contains(e.target)) setOpen(false); };
+    const esc = e => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", off); document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", off); document.removeEventListener("keydown", esc); };
+  }, [open]);
+  const pick = d => { if (!a || (a && b)) { setA(d); setB(null); } else { if (d < a) { setB(a); setA(d); } else setB(d); } };
+  const choose = id => { setPeriod({ id }); setOpen(false); };
+  const apply = () => { if (!a) return; const lo = b && b < a ? b : a, hi = b ? (b < a ? a : b) : a; setPeriod({ id: "custom", since: pYmd(lo), until: pYmd(hi) }); setOpen(false); };
+  const m2 = new Date(view.getFullYear(), view.getMonth() + 1, 1);
+  const canNext = m2 < new Date(pToday().getFullYear(), pToday().getMonth(), 1);
+  const sel = a ? pFmt(pYmd(a), true) + (b && pYmd(b) !== pYmd(a) ? " – " + pFmt(pYmd(b), true) : b ? "" : " – escolha o fim") : "Escolha o início";
+  return html`<div className="pp" ref=${box}>
+    <button type="button" className=${"chip-sel pp-btn" + (open ? " on" : "")} onClick=${() => setOpen(!open)} aria-haspopup="dialog" aria-expanded=${open} title=${R.dates}>
+      <${Icon} n="calendar" s=${14} /><span className="pp-lbl">${R.label}</span>${R.custom ? null : html`<span className="pp-dates hide-sm">${R.dates}</span>`}<${Icon} n="chevD" s=${13} /></button>
+    ${open ? html`<div className="pp-pop" role="dialog" aria-label="Escolher período">
+      <div className="pp-pre">${PERIOD_PRESETS.map(x => html`<button key=${x.id} type="button" className=${R.id === x.id ? "on" : ""} onClick=${() => choose(x.id)}>${x.label}<small>${periodRange({ id: x.id }).dates}</small></button>`)}
+        <button type="button" className=${R.custom ? "on" : ""} onClick=${() => { setA(null); setB(null); }}>Personalizado<small>${R.custom ? R.dates : "Escolha no calendário"}</small></button></div>
+      <div className="pp-cal">
+        <div className="pp-nav"><button type="button" className="btn btn-ghost btn-sm" onClick=${() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))} aria-label="Mês anterior"><${Icon} n="chevD" s=${15} /></button>
+          <button type="button" className="btn btn-ghost btn-sm nx" disabled=${!canNext} onClick=${() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))} aria-label="Próximo mês"><${Icon} n="chevD" s=${15} /></button></div>
+        <div className="pp-months" onMouseLeave=${() => setHover(null)}>
+          <${MonthGrid} year=${view.getFullYear()} month=${view.getMonth()} a=${a} b=${b} hover=${a && !b ? hover : null} onPick=${pick} onHover=${setHover} />
+          <div className="pp-m2"><${MonthGrid} year=${m2.getFullYear()} month=${m2.getMonth()} a=${a} b=${b} hover=${a && !b ? hover : null} onPick=${pick} onHover=${setHover} /></div>
+        </div>
+        <div className="pp-foot"><span>${sel}</span><div className="msg-actions"><button type="button" className="btn btn-sm btn-line" onClick=${() => setOpen(false)}>Cancelar</button><button type="button" className="btn btn-sm btn-primary" disabled=${!a} onClick=${apply}>Aplicar</button></div></div>
+      </div>
+    </div>` : null}
+  </div>`;
+}
+
+function useLiveData(client, enabled, period) {
   const conn = client.conn || {};
   const [tick, setTick] = useState(0);
   const [st, setSt] = useState({ status: "idle", camps: [], errors: {}, sources: [] });
   const m = metaOn(conn) ? conn.meta : null, g = googleOn(conn) ? conn.google : null;
-  const key = JSON.stringify([enabled, m && [m.accountId, m.token.slice(-8), m.via || "api"], g && [g.slug, g.customerId, g.refreshToken || ""], tick]);
+  const per = period ? { since: period.since, until: period.until } : undefined;
+  const key = JSON.stringify([enabled, m && [m.accountId, m.token.slice(-8), m.via || "api"], g && [g.slug, g.customerId, g.refreshToken || ""], tick, per]);
   useEffect(() => {
     if (!enabled || (!m && !g)) { setSt({ status: "idle", camps: [], errors: {}, sources: [] }); return; }
     let dead = false;
     setSt(s => ({ ...s, status: "loading", errors: {} }));
     Promise.allSettled([
-      m ? apiPost(metaApi(m), { action: "data", account_id: m.accountId }, { "x-meta-token": m.token }) : Promise.resolve(null),
-      g ? apiPost("/api/google", { action: "data", slug: g.slug, customer_id: g.customerId, refresh_token: g.refreshToken || undefined }) : Promise.resolve(null),
+      m ? apiPost(metaApi(m), { action: "data", account_id: m.accountId, period: per }, { "x-meta-token": m.token }) : Promise.resolve(null),
+      g ? apiPost("/api/google", { action: "data", slug: g.slug, customer_id: g.customerId, refresh_token: g.refreshToken || undefined, period: per }) : Promise.resolve(null),
     ]).then(([rm, rg]) => {
       if (dead) return;
       const camps = [], prev = { spend: 0, revenue: 0, purchases: 0, clicks: 0, impr: 0, tracked: 0 }, errors = {}, sources = [];
@@ -2448,16 +2579,32 @@ function staleSince(last) {
   const y = lim.getFullYear() + "-" + String(lim.getMonth() + 1).padStart(2, "0") + "-" + String(lim.getDate()).padStart(2, "0");
   return last < y ? ddmm(last) : null;
 }
-function DataBand({ live, company, go, isLive }) {
+// aviso de período sem investimento: diz o que aconteceu e leva para um período com dados
+function NoDataNotice({ live, periodR, onJump, onPicker, onIntegrations, card }) {
+  const last = live.lastSpend;
+  const lastTxt = last ? pFmt(last, pDate(last).getFullYear() !== new Date().getFullYear()) : null;
+  const note = live.sources.map(x => x.note).filter(Boolean)[0];
+  const lastInside = last && last >= periodR.since && last <= periodR.until;
+  return html`<div className=${card ? "card card-pad nodata nodata-card" : "data-band nodata"}>
+    <span className="nd-ico"><${Icon} n="calendar" s=${card ? 20 : 16} /></span>
+    <div className="nd-txt"><b>Sem investimento ${periodR.custom ? "de " + periodR.dates : (/^últimos/i.test(periodR.label) ? "nos " : "em ") + periodR.label.toLowerCase() + " (" + periodR.dates + ")"}</b>
+      <span>${note ? note + " " : ""}${last && !lastInside ? "A última veiculação foi em " + lastTxt + ". " : !last ? "As contas conectadas não veicularam no último ano. " : ""}Até você escolher um período com dados, as telas mostram um exemplo.</span></div>
+    <div className="nd-acts">
+      ${last && !lastInside ? html`<button className="btn btn-sm btn-primary" onClick=${() => onJump(last)}><${Icon} n="calendar" s=${14} />Ver os 30 dias até ${pFmt(last)}</button>` : null}
+      <button className="btn btn-sm btn-line" onClick=${onPicker}>Escolher período</button>
+      ${!last && onIntegrations ? html`<button className="btn btn-sm btn-line" onClick=${onIntegrations}>Ver integrações</button>` : null}
+    </div></div>`;
+}
+function DataBand({ live, company, go, isLive, periodR, onJump, onPicker }) {
   if (live.status === "loading") return html`<div className="data-band"><span className="spin" aria-hidden="true"></span><span>Buscando as campanhas conectadas…</span></div>`;
   const errs = Object.entries(live.errors || {});
   if (isLive) return html`<div className="data-band live"><span className="pill pill-good"><span className="dot"></span>Dados reais</span>
     <span className="band-src">${live.sources.map(s => html`<span key=${s.ch} className="acc-chip"><span className="ch-dot" style=${{ background: CH[s.ch].color }}></span>${CH[s.ch].label} · ${s.label}</span>`)}</span>
-    ${errs.length ? html`<span className="band-err">${errs.map(([ch, m]) => CH[ch].label + ": " + m).join(" ")}</span>` : html`${staleSince(live.lastSpend) ? html`<span className="stale-pill" title="Nenhuma campanha gastou desde esta data. Os números do período não mudam até a conta voltar a veicular."><${Icon} n="alert" s=${13} />Sem veiculação desde ${staleSince(live.lastSpend)}</span>` : null}<span className="band-note hide-sm">Últimos 30 dias${live.period ? " (" + ddmm(live.period.since) + " a " + ddmm(live.period.until) + ")" : ""} · atualizado às ${live.at ? live.at.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}</span>`}
+    ${errs.length ? html`<span className="band-err">${errs.map(([ch, m]) => CH[ch].label + ": " + m).join(" ")}</span>` : html`${staleSince(live.lastSpend) ? html`<span className="stale-pill" title="Nenhuma campanha gastou desde esta data. Os números do período não mudam até a conta voltar a veicular."><${Icon} n="alert" s=${13} />Sem veiculação desde ${staleSince(live.lastSpend)}</span>` : null}<span className="band-note hide-sm">${periodR.custom ? periodR.dates : periodR.label + " (" + periodR.dates + ")"} · atualizado às ${live.at ? live.at.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}</span>`}
     <button className="btn btn-sm btn-line" onClick=${live.reload}>Atualizar</button></div>`;
   if (errs.length) return html`<div className="data-band err"><${Icon} n="alert" s=${15} /><span style=${{ flex: 1, minWidth: 200 }}>${errs.map(([ch, m]) => html`<span key=${ch} style=${{ display: "block" }}><b>${CH[ch].label}:</b> ${m}</span>`)}<span style=${{ display: "block", color: "var(--muted-2)" }}>Enquanto isso, o painel mostra dados de exemplo.</span></span>
     <button className="btn btn-sm btn-line" onClick=${live.reload}>Tentar de novo</button><button className="btn btn-sm btn-primary" onClick=${() => go("integrations")}>Ver integrações</button></div>`;
-  if (live.status === "ready") return html`<div className="data-band"><${Icon} n="eye" s=${15} /><span style=${{ flex: 1, minWidth: 200 }}>${live.sources.map(s => s.note).filter(Boolean)[0] || "As contas conectadas não têm campanhas com investimento nos últimos 30 dias."} O painel mostra dados de exemplo.</span><button className="btn btn-sm btn-line" onClick=${() => go("integrations")}>Ver integrações</button></div>`;
+  if (live.status === "ready") return html`<${NoDataNotice} live=${live} periodR=${periodR} onJump=${onJump} onPicker=${onPicker} onIntegrations=${() => go("integrations")} />`;
   return html`<div className="data-band demo"><${Icon} n="eye" s=${15} /><span style=${{ flex: 1, minWidth: 200 }}>Você está vendo <b>dados de exemplo</b>. Conecte o Meta Ads ou o Google Ads para ver as campanhas de ${company}.</span><button className="btn btn-sm btn-primary" onClick=${() => go("integrations")}><${Icon} n="plug" s=${14} />Conectar contas</button></div>`;
 }
 
@@ -2699,9 +2846,10 @@ function PortfolioBand({ pf, go, demo, accountsN }) {
     <button className="btn btn-sm btn-line" onClick=${pf.reload}>Atualizar</button></div>`;
 }
 
-function AccountWait({ live, name, onBack }) {
+function AccountWait({ live, name, onBack, periodR, onJump, onPicker }) {
   const errs = Object.values(live.errors || {});
-  if (live.status === "loading" || live.status === "idle") return html`<div className="card card-pad wait-card"><span className="spin" aria-hidden="true"></span><div><b>Carregando as campanhas de ${name}</b><div className="card-sub">Buscando os últimos 30 dias na Meta.</div></div></div>`;
+  if (live.status === "loading" || live.status === "idle") return html`<div className="card card-pad wait-card"><span className="spin" aria-hidden="true"></span><div><b>Carregando as campanhas de ${name}</b><div className="card-sub">Buscando ${periodR.custom ? periodR.dates : periodR.label.toLowerCase()} na Meta.</div></div></div>`;
+  if (!errs.length && live.status === "ready") return html`<${NoDataNotice} card=${true} live=${live} periodR=${periodR} onJump=${onJump} onPicker=${onPicker} />`;
   return html`<div className="card card-pad wait-card"><${Icon} n=${errs.length ? "alert" : "eye"} s=${20} /><div style=${{ flex: 1, minWidth: 0 }}><b>${errs.length ? "Não consegui carregar as campanhas de " + name : name + " não tem campanhas com investimento nos últimos 30 dias"}</b>
     <div className="card-sub">${errs.length ? errs[0] : "Escolha outra conta na carteira ou volte quando houver campanhas rodando."}</div>
     <div className="msg-actions" style=${{ marginTop: 10 }}>${errs.length ? html`<button className="btn btn-sm btn-line" onClick=${live.reload}>Tentar de novo</button>` : null}<button className="btn btn-sm btn-primary" onClick=${onBack}>Voltar para a carteira</button></div></div></div>`;
@@ -2734,9 +2882,16 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   }
   // dados reais: a conta do cliente (Starter/Pro) ou a conta aberta na carteira da agência
   const liveSrc = isAgency ? (livePf && activeRow ? { conn: { meta: { token: client.conn.meta.token, accountId: activeRow.id, accountName: activeRow.name, via: client.conn.meta.via } } } : { conn: {} }) : client;
-  const live = useLiveData(liveSrc, isAgency ? !!(livePf && activeId && screen !== "portfolio") : true);
+  // período das consultas: vale para todas as telas e fica salvo neste navegador
+  const [period, setPeriodS] = useState(() => store.get("readyai_period", { id: "30d" }));
+  const setPeriod = v => { setPeriodS(v); store.set("readyai_period", v); };
+  const periodR = useMemo(() => periodRange(period), [JSON.stringify(period), new Date().toDateString()]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  // "ver os 30 dias até a última veiculação"
+  const jumpTo = last => { const u = pDate(last); setPeriod({ id: "custom", since: pYmd(pAdd(u, -29)), until: last }); };
+  const live = useLiveData(liveSrc, isAgency ? !!(livePf && activeId && screen !== "portfolio") : true, periodR);
   const isLive = live.status === "ready" && live.camps.length > 0 && (!isAgency || !!(livePf && activeId && screen !== "portfolio"));
-  if (!isAgency || livePf) ACTIVE = isLive ? { prev: live.prev, target, health: liveHealth(live.camps, target), live: true }
+  if (!isAgency || livePf) ACTIVE = isLive ? { prev: live.prev, target, health: liveHealth(live.camps, target), live: true, period: periodR }
     : isAgency ? { prev: { spend: NaN, revenue: NaN, purchases: NaN, clicks: NaN, impr: NaN }, target, health: activeRow ? activeRow.health : 70, live: true }
     : { prev: PREV, target: TARGET_ROAS, health: 78 };
   const waiting = isAgency && livePf && screen !== "portfolio" && screen !== "integrations" && !isLive;
@@ -2754,8 +2909,8 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   const brkMeta = metaOn(liveSrc.conn) ? liveSrc.conn.meta : null;
   const [seenCre, setSeenCre] = useState(false);
   useEffect(() => { if (screen === "creatives") setSeenCre(true); }, [screen]);
-  const cre = useMetaCreatives(brkMeta, resultKind(isLive ? live.camps.filter(c => c.ch === "meta") : []), isLive && seenCre && !!brkMeta, live.at);
-  const brk = useBreakdowns(brkMeta, resultKind(isLive ? live.camps.filter(c => c.ch === "meta") : []), isLive && seenAnalytics && !!brkMeta, live.at);
+  const cre = useMetaCreatives(brkMeta, resultKind(isLive ? live.camps.filter(c => c.ch === "meta") : []), isLive && seenCre && !!brkMeta, live.at, periodR);
+  const brk = useBreakdowns(brkMeta, resultKind(isLive ? live.camps.filter(c => c.ch === "meta") : []), isLive && seenAnalytics && !!brkMeta, live.at, periodR);
   useEffect(() => { if (isLive) setCamps(live.camps); else if (!isAgency) setCamps(CAMPAIGNS0); }, [isLive, live.at]);
   const [msgs, setMsgs] = useState([]); const [typing, setTyping] = useState(false);
   // copilot de mídia: briefing guardado por cliente neste navegador
@@ -2764,7 +2919,14 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   useEffect(() => { setMediaSaved(store.get(mediaKey, null)); }, [mediaKey]);
   const mediaIn = mediaSaved || defaultMediaInputs(camps, isLive);
   const setMediaIn = v => { setMediaSaved(v); store.set(mediaKey, v); };
-  const mediaPlan = useMemo(() => buildMediaPlan(camps, mediaIn), [camps, mediaSaved, isLive]);
+  // o planejamento é sempre para 30 dias: o histórico do período escolhido é projetado para 30 dias
+  const campsPlan = useMemo(() => {
+    const d = isLive && periodR ? periodR.days : 30;
+    if (d === 30) return camps;
+    const k = 30 / d;
+    return camps.map(c => ({ ...c, spend: c.spend * k, purchases: c.purchases * k, revenue: (c.revenue || 0) * k, clicks: c.clicks * k, impr: c.impr * k }));
+  }, [camps, isLive, periodR && periodR.days]);
+  const mediaPlan = useMemo(() => buildMediaPlan(campsPlan, mediaIn), [campsPlan, mediaSaved, isLive]);
   const [toastMsg, setToastMsg] = useState(null);
   const toast = m => { setToastMsg(m); clearTimeout(toast.t); toast.t = setTimeout(() => setToastMsg(null), 2600); };
   const insights = useMemo(() => isLive ? buildLiveInsights(camps) : buildInsights(camps), [camps, isLive, client.targetRoas]);
@@ -2827,7 +2989,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   else if (screen === "creatives") body = html`<${Creatives} camps=${camps} cre=${cre} />`;
   else if (screen === "report") body = html`<${Report} camps=${camps} toast=${toast} user=${client} account=${accountName} agency=${isAgency ? client.company : null} />`;
   else if (screen === "portfolio") body = html`<${Portfolio} chat=${chat} openClient=${openClient} toast=${toast} agency=${client.company} rows=${pfRows} />`;
-  else if (screen === "media") body = html`<${MediaPlanScreen} camps=${camps} inp=${mediaIn} setInp=${setMediaIn} stale=${staleTxt} />`;
+  else if (screen === "media") body = html`<${MediaPlanScreen} camps=${campsPlan} inp=${mediaIn} setInp=${setMediaIn} stale=${staleTxt} />`;
   else if (screen === "skills") body = html`<${Skills} chat=${chat} toast=${toast} />`;
   else if (screen === "insights") body = html`<${Insights} insights=${insights} chat=${chat} go=${go} />`;
   else if (screen === "integrations") body = html`<${Integrations} client=${client} onUpdate=${onUpdate} toast=${toast} isAgency=${isAgency} live=${live} />`;
@@ -2861,17 +3023,17 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
           <div className="crumb"><button className="btn btn-ghost btn-sm menu-btn" onClick=${() => setSideOpen(true)} aria-label="Abrir menu"><${Icon} n="menu" /></button>
             ${isAgency && inClient ? html`<button className="crumb-link hide-sm" onClick=${toPortfolio}>Carteira</button><span className="hide-sm" style=${{ color: "var(--line-2)" }}>/</span><span className="crumb-client"><span className="c-av sm">${activeRow.name[0]}</span>${activeRow.name}</span><span style=${{ color: "var(--line-2)" }}>/</span>` : null}
             ${info.group !== info.label && !(isAgency && inClient) ? html`<span className="hide-sm">${info.group}</span><span className="hide-sm" style=${{ color: "var(--line-2)" }}>/</span>` : null}<b>${info.label}</b></div>
-          <div className="top-actions">${!isHome && allowed.has("copilot") ? html`<button className=${"btn btn-line btn-sm dock-toggle hide-md" + (dockHidden ? "" : " on")} onClick=${() => (dockHidden ? openCopilot() : closeCopilot())} aria-pressed=${!dockHidden}><${Icon} n="sparkles" s=${14} />${dockHidden ? "Abrir copilot" : "Fechar copilot"}</button>` : null}<span className="chip-sel hide-sm"><${Icon} n="calendar" s=${14} />Últimos 30 dias</span>${isAgency ? html`<${ClientSwitcher} rows=${pfRows} activeId=${activeRow ? activeRow.id : null} inClient=${inClient} onPick=${id => openClient(id, screen === "portfolio" ? "copilot" : screen)} onPortfolio=${toPortfolio} />` : html`<span className="chip-sel hide-sm">${isLive ? live.sources.map(x => html`<span key=${x.ch} className="ch-dot" style=${{ background: CH[x.ch].color }}></span>`) : html`<span className="ch-dot" style=${{ background: "var(--c-meta)" }}></span><span className="ch-dot" style=${{ background: "var(--c-google)" }}></span><span className="ch-dot" style=${{ background: "var(--c-tiktok)" }}></span>`}${isLive ? live.sources.length + (live.sources.length === 1 ? " conta" : " contas") : "3 contas de exemplo"}</span>`}</div>
+          <div className="top-actions">${!isHome && allowed.has("copilot") ? html`<button className=${"btn btn-line btn-sm dock-toggle hide-md" + (dockHidden ? "" : " on")} onClick=${() => (dockHidden ? openCopilot() : closeCopilot())} aria-pressed=${!dockHidden}><${Icon} n="sparkles" s=${14} />${dockHidden ? "Abrir copilot" : "Fechar copilot"}</button>` : null}<${PeriodPicker} period=${period} setPeriod=${setPeriod} open=${pickerOpen} setOpen=${setPickerOpen} />${isAgency ? html`<${ClientSwitcher} rows=${pfRows} activeId=${activeRow ? activeRow.id : null} inClient=${inClient} onPick=${id => openClient(id, screen === "portfolio" ? "copilot" : screen)} onPortfolio=${toPortfolio} />` : html`<span className="chip-sel hide-sm">${isLive ? live.sources.map(x => html`<span key=${x.ch} className="ch-dot" style=${{ background: CH[x.ch].color }}></span>`) : html`<span className="ch-dot" style=${{ background: "var(--c-meta)" }}></span><span className="ch-dot" style=${{ background: "var(--c-google)" }}></span><span className="ch-dot" style=${{ background: "var(--c-tiktok)" }}></span>`}${isLive ? live.sources.length + (live.sources.length === 1 ? " conta" : " contas") : "3 contas de exemplo"}</span>`}</div>
         </header>
         ${isAgency && inClient ? html`<div className="client-band"><span className="c-av sm">${activeRow.name[0]}</span><span>Você está no ambiente de <b>${activeRow.name}</b></span>
           <span className="band-accs hide-sm">${activeRow.accounts.map(a => html`<span key=${a.ch} className="acc-chip">${html`<span className="ch-dot" style=${{ background: CH[a.ch].color }}></span>`}<span className="mono">${a.id}</span></span>`)}</span>
           <span className="band-note hide-sm">Ações e relatórios valem só para este cliente</span>
           <button className="btn btn-sm btn-line" onClick=${toPortfolio}><${Icon} n="users" s=${13} />Voltar para a carteira</button></div>` : null}
-        ${!isAgency ? html`<${DataBand} live=${live} company=${client.company} go=${go} isLive=${isLive} />`
+        ${!isAgency ? html`<${DataBand} live=${live} company=${client.company} go=${go} isLive=${isLive} periodR=${periodR} onJump=${jumpTo} onPicker=${() => setPickerOpen(true)} />`
           : screen === "portfolio" ? html`<${PortfolioBand} pf=${pf} go=${go} demo=${!agencyMeta} accountsN=${pf.accounts.length} />`
-          : isLive ? html`<${DataBand} live=${live} company=${activeRow.name} go=${go} isLive=${true} />` : null}
+          : isLive ? html`<${DataBand} live=${live} company=${activeRow.name} go=${go} isLive=${true} periodR=${periodR} onJump=${jumpTo} onPicker=${() => setPickerOpen(true)} />` : null}
         <div className=${"work" + (isHome ? " home" : showDock && !dockHidden ? "" : " no-dock")}>
-          ${isHome && can && !waiting ? html`<${HomeCopilot} user=${client} client=${{ ...client, company: accountName }} chat=${chat} camps=${camps} insights=${insights} go=${go} />` : html`<div className="pane">${waiting ? html`<${AccountWait} live=${live} name=${activeRow.name} onBack=${toPortfolio} />` : body}</div>`}
+          ${isHome && can && !waiting ? html`<${HomeCopilot} user=${client} client=${{ ...client, company: accountName }} chat=${chat} camps=${camps} insights=${insights} go=${go} />` : html`<div className="pane">${waiting ? html`<${AccountWait} live=${live} name=${activeRow.name} onBack=${toPortfolio} periodR=${periodR} onJump=${jumpTo} onPicker=${() => setPickerOpen(true)} />` : body}</div>`}
           ${showDock && (!dockHidden || dockOpen) ? html`<aside className=${"dock" + (dockOpen ? " open" : "")} aria-label="Copilot"><${DockChat} chat=${chat} screen=${screen} onClose=${closeCopilot} /></aside>` : null}
         </div>
       </main>

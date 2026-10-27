@@ -5,6 +5,8 @@
 // POST /api/meta  { action: "data", account_id: "act_" } -> campanhas dos últimos 30 dias, já no formato do painel
 // POST /api/meta  { action: "breakdowns", account_id, kind } -> hora do dia, idade, dispositivo e região (30 dias)
 
+import { periodOf, tr } from "./_period.js";
+
 const GRAPH = "https://graph.facebook.com/v25.0";
 
 // Tipos de ação de compra, em ordem de preferência. Usa só o primeiro que aparecer,
@@ -93,10 +95,10 @@ async function accounts(token) {
   };
 }
 
-async function data(token, accountId) {
+async function data(token, accountId, period) {
   const act = accountId.startsWith("act_") ? accountId : "act_" + accountId;
   const insFields = "campaign_id,campaign_name,spend,impressions,clicks,frequency,actions,action_values";
-  const range = (since, until) => JSON.stringify({ since: ymd(since), until: ymd(until) });
+  const P = periodOf(period);
 
   const [info, camps, cur, last7, prev7, prev30, daily, acctDays] = await Promise.all([
     graph("/" + act, { fields: "name,currency,account_status" }, token),
@@ -105,17 +107,17 @@ async function data(token, accountId) {
       filtering: [{ field: "effective_status", operator: "IN", value: ["ACTIVE", "PAUSED"] }],
       limit: 100,
     }, token, 5),
-    graphAll("/" + act + "/insights", { level: "campaign", date_preset: "last_30d", fields: insFields, limit: 200 }, token, 5),
-    graphAll("/" + act + "/insights", { level: "campaign", date_preset: "last_7d", fields: "campaign_id,spend,action_values,actions", limit: 200 }, token, 5),
-    graphAll("/" + act + "/insights", { level: "campaign", time_range: range(daysAgo(14), daysAgo(8)), fields: "campaign_id,spend,action_values,actions", limit: 200 }, token, 5),
-    graphAll("/" + act + "/insights", { level: "campaign", time_range: range(daysAgo(60), daysAgo(31)), fields: "campaign_id,spend,impressions,clicks,actions,action_values", limit: 200 }, token, 5),
-    // dia a dia dos últimos 14 dias, para o minigráfico da tabela de campanhas
-    graphAll("/" + act + "/insights", { level: "campaign", time_range: range(daysAgo(14), daysAgo(1)), time_increment: 1, fields: "campaign_id,spend,actions,action_values", limit: 500 }, token, 8).catch(() => []),
-    // dia a dia da conta nos últimos 90 dias, só para saber a última data com veiculação
-    graphAll("/" + act + "/insights", { level: "account", date_preset: "last_90d", time_increment: 1, fields: "spend", limit: 100 }, token, 2).catch(() => []),
+    graphAll("/" + act + "/insights", { level: "campaign", time_range: tr(P), fields: insFields, limit: 200 }, token, 5),
+    graphAll("/" + act + "/insights", { level: "campaign", time_range: tr(P.w1), fields: "campaign_id,spend,action_values,actions", limit: 200 }, token, 5),
+    graphAll("/" + act + "/insights", { level: "campaign", time_range: tr(P.w0), fields: "campaign_id,spend,action_values,actions", limit: 200 }, token, 5),
+    graphAll("/" + act + "/insights", { level: "campaign", time_range: tr(P.prev), fields: "campaign_id,spend,impressions,clicks,actions,action_values", limit: 200 }, token, 5),
+    // dia a dia das últimas 2 semanas do período, para o minigráfico da tabela de campanhas
+    graphAll("/" + act + "/insights", { level: "campaign", time_range: tr(P.last14), time_increment: 1, fields: "campaign_id,spend,actions,action_values", limit: 500 }, token, 8).catch(() => []),
+    // dia a dia da conta no último ano, só para saber a última data com veiculação
+    graphAll("/" + act + "/insights", { level: "account", time_range: tr(P.year), time_increment: 1, fields: "spend", limit: 100 }, token, 4).catch(() => []),
   ]);
   const lastSpend = acctDays.filter(r => num(r.spend) > 0).map(r => r.date_start).sort().pop() || null;
-  const days14 = []; for (let i = 14; i >= 1; i--) days14.push(ymd(daysAgo(i)));
+  const days14 = P.days14;
   const dailyBy = {};
   for (const r of daily) (dailyBy[r.campaign_id] = dailyBy[r.campaign_id] || {})[r.date_start] = r;
 
@@ -170,7 +172,7 @@ async function data(token, accountId) {
     campaigns,
     idleActive,
     prev,
-    period: { since: ymd(daysAgo(30)), until: ymd(daysAgo(1)) },
+    period: { since: P.since, until: P.until, days: P.days },
     lastSpend,
   };
 }
@@ -180,14 +182,15 @@ async function data(token, accountId) {
 const REGION_PT = { "Federal District": "Distrito Federal", "Distrito Federal (state)": "Distrito Federal" };
 const KIND_TYPES = { compras: PURCHASE_TYPES, leads: LEAD_TYPES, conversas: CHAT_TYPES };
 const DEVICE = { iphone: "Celular", android_smartphone: "Celular", ipod: "Celular", mobile_web: "Celular", ipad: "Tablet", android_tablet: "Tablet", desktop: "Desktop" };
-async function breakdowns(token, accountId, kind) {
+async function breakdowns(token, accountId, kind, period) {
+  const P = periodOf(period);
   const act = accountId.startsWith("act_") ? accountId : "act_" + accountId;
   const types = KIND_TYPES[kind] || null;
-  const q = b => graphAll("/" + act + "/insights", { level: "account", date_preset: "last_30d", breakdowns: b, fields: "spend,impressions,clicks,actions", limit: 500 }, token, 4)
+  const q = b => graphAll("/" + act + "/insights", { level: "account", time_range: tr(P), breakdowns: b, fields: "spend,impressions,clicks,actions", limit: 500 }, token, 4)
     .then(rows => ({ ok: true, rows }), e => ({ ok: false, error: e.message }));
   const [hour, age, device, region] = await Promise.all([
     // hora do dia separada por data, para montar o mapa dia da semana x hora
-    graphAll("/" + act + "/insights", { level: "account", date_preset: "last_30d", time_increment: 1, breakdowns: "hourly_stats_aggregated_by_advertiser_time_zone", fields: "spend,impressions,clicks,actions", limit: 500 }, token, 6)
+    graphAll("/" + act + "/insights", { level: "account", time_range: tr(P), time_increment: 1, breakdowns: "hourly_stats_aggregated_by_advertiser_time_zone", fields: "spend,impressions,clicks,actions", limit: 500 }, token, 6)
       .then(rows => ({ ok: true, rows }), e => ({ ok: false, error: e.message })),
     q("age"), q("impression_device"), q("region")]);
   const row = r => ({ spend: num(r.spend), impr: num(r.impressions), clicks: num(r.clicks), results: types ? pick(r.actions, types) : result(r.actions).n });
@@ -226,19 +229,19 @@ async function breakdowns(token, accountId, kind) {
   if (devices.rows) devices.rows.sort((a, b) => b.impr - a.impr);
   const regions = group(region, r => r.region && r.region !== "Unknown" ? (REGION_PT[r.region] || r.region.replace(/^State of /, "").replace(/ \(state\)$/, "")) : null);
   if (regions.rows) regions.rows.sort((a, b) => (b.results - a.results) || (b.spend - a.spend));
-  return { kind: types ? kind : "resultados", hours, heat, activeDays, ages, devices, regions, period: { since: ymd(daysAgo(30)), until: ymd(daysAgo(1)) } };
+  return { kind: types ? kind : "resultados", hours, heat, activeDays, ages, devices, regions, period: { since: P.since, until: P.until, days: P.days } };
 }
 
 // Criativos: anúncios com investimento nos últimos 30 dias, com miniatura e sinais de fadiga
-async function creatives(token, accountId, kind) {
+async function creatives(token, accountId, kind, period) {
+  const P = periodOf(period);
   const act = accountId.startsWith("act_") ? accountId : "act_" + accountId;
   const types = KIND_TYPES[kind] || null;
-  const range = (a, b) => JSON.stringify({ since: ymd(daysAgo(a)), until: ymd(daysAgo(b)) });
   const base = { level: "ad", limit: 500 };
   const [cur, w1, w0] = await Promise.all([
-    graphAll("/" + act + "/insights", { ...base, date_preset: "last_30d", fields: "ad_id,ad_name,campaign_id,campaign_name,spend,impressions,clicks,frequency,actions,action_values" }, token, 4),
-    graphAll("/" + act + "/insights", { ...base, date_preset: "last_7d", fields: "ad_id,impressions,clicks" }, token, 4).catch(() => []),
-    graphAll("/" + act + "/insights", { ...base, time_range: range(14, 8), fields: "ad_id,impressions,clicks" }, token, 4).catch(() => []),
+    graphAll("/" + act + "/insights", { ...base, time_range: tr(P), fields: "ad_id,ad_name,campaign_id,campaign_name,spend,impressions,clicks,frequency,actions,action_values" }, token, 4),
+    graphAll("/" + act + "/insights", { ...base, time_range: tr(P.w1), fields: "ad_id,impressions,clicks" }, token, 4).catch(() => []),
+    graphAll("/" + act + "/insights", { ...base, time_range: tr(P.w0), fields: "ad_id,impressions,clicks" }, token, 4).catch(() => []),
   ]);
   const rows = cur.filter(r => num(r.spend) > 0).sort((a, b) => num(b.spend) - num(a.spend)).slice(0, 60);
   // detalhes do anúncio e do criativo, até 50 ids por chamada
@@ -319,15 +322,15 @@ export default async function handler(req, res) {
     if (body.action === "portfolio") return send(res, 200, await portfolio(token));
     if (body.action === "data") {
       if (!/^(act_)?\d{5,}$/.test(String(body.account_id || ""))) return send(res, 400, { error: "Escolha uma conta de anúncio." });
-      return send(res, 200, await data(token, String(body.account_id)));
+      return send(res, 200, await data(token, String(body.account_id), body.period));
     }
     if (body.action === "creatives") {
       if (!/^(act_)?\d{5,}$/.test(String(body.account_id || ""))) return send(res, 400, { error: "Escolha uma conta de anúncio." });
-      return send(res, 200, await creatives(token, String(body.account_id), String(body.kind || "")));
+      return send(res, 200, await creatives(token, String(body.account_id), String(body.kind || ""), body.period));
     }
     if (body.action === "breakdowns") {
       if (!/^(act_)?\d{5,}$/.test(String(body.account_id || ""))) return send(res, 400, { error: "Escolha uma conta de anúncio." });
-      return send(res, 200, await breakdowns(token, String(body.account_id), String(body.kind || "")));
+      return send(res, 200, await breakdowns(token, String(body.account_id), String(body.kind || ""), body.period));
     }
     return send(res, 400, { error: "Ação desconhecida." });
   } catch (e) {
