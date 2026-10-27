@@ -162,9 +162,13 @@ async function data(token, accountId) {
     const rev = pick(r.action_values), sp = num(r.spend);
     return { spend: a.spend + sp, revenue: a.revenue + rev, purchases: a.purchases + result(r.actions).n, clicks: a.clicks + num(r.clicks), impr: a.impr + num(r.impressions), tracked: a.tracked + (rev > 0 || isSales(r.campaign_id) ? sp : 0) };
   }, { spend: 0, revenue: 0, purchases: 0, clicks: 0, impr: 0, tracked: 0 });
+  // campanhas com status Ativa na Meta que não gastaram nada nos últimos 30 dias
+  const spent = new Set(cur.filter(r => num(r.spend) > 0).map(r => r.campaign_id));
+  const idleActive = camps.filter(c => c.effective_status === "ACTIVE" && !spent.has(c.id)).map(c => ({ id: c.id, name: c.name, objective: c.objective || "" }));
   return {
     account: { id: act, name: info.name || act, currency: info.currency || "BRL" },
     campaigns,
+    idleActive,
     prev,
     period: { since: ymd(daysAgo(30)), until: ymd(daysAgo(1)) },
     lastSpend,
@@ -225,6 +229,50 @@ async function breakdowns(token, accountId, kind) {
   return { kind: types ? kind : "resultados", hours, heat, activeDays, ages, devices, regions, period: { since: ymd(daysAgo(30)), until: ymd(daysAgo(1)) } };
 }
 
+// Criativos: anúncios com investimento nos últimos 30 dias, com miniatura e sinais de fadiga
+async function creatives(token, accountId, kind) {
+  const act = accountId.startsWith("act_") ? accountId : "act_" + accountId;
+  const types = KIND_TYPES[kind] || null;
+  const range = (a, b) => JSON.stringify({ since: ymd(daysAgo(a)), until: ymd(daysAgo(b)) });
+  const base = { level: "ad", limit: 500 };
+  const [cur, w1, w0] = await Promise.all([
+    graphAll("/" + act + "/insights", { ...base, date_preset: "last_30d", fields: "ad_id,ad_name,campaign_id,campaign_name,spend,impressions,clicks,frequency,actions,action_values" }, token, 4),
+    graphAll("/" + act + "/insights", { ...base, date_preset: "last_7d", fields: "ad_id,impressions,clicks" }, token, 4).catch(() => []),
+    graphAll("/" + act + "/insights", { ...base, time_range: range(14, 8), fields: "ad_id,impressions,clicks" }, token, 4).catch(() => []),
+  ]);
+  const rows = cur.filter(r => num(r.spend) > 0).sort((a, b) => num(b.spend) - num(a.spend)).slice(0, 60);
+  // detalhes do anúncio e do criativo, até 50 ids por chamada
+  const det = {};
+  for (let i = 0; i < rows.length; i += 50) {
+    const ids = rows.slice(i, i + 50).map(r => r.ad_id).join(",");
+    try {
+      Object.assign(det, await graph("/", { ids, fields: "effective_status,creative.thumbnail_width(600).thumbnail_height(600){id,thumbnail_url,image_url,object_type,video_id,title,body,object_story_spec,asset_feed_spec}" }, token));
+    } catch (e) {}
+  }
+  const by = list => Object.fromEntries(list.map(r => [r.ad_id, r]));
+  const W1 = by(w1), W0 = by(w0);
+  const ctrOf = r => r && num(r.impressions) >= 300 ? num(r.clicks) / num(r.impressions) : null;
+  const ads = rows.map(r => {
+    const d = det[r.ad_id] || {}, cr = d.creative || {};
+    const spec = cr.object_story_spec || {};
+    const isVideo = !!(cr.video_id || spec.video_data || cr.object_type === "VIDEO");
+    const isCarousel = !!(spec.link_data && spec.link_data.child_attachments && spec.link_data.child_attachments.length > 1);
+    const text = cr.title || (spec.link_data && (spec.link_data.name || spec.link_data.message)) || (spec.video_data && (spec.video_data.title || spec.video_data.message)) || cr.body || "";
+    const impr = num(r.impressions);
+    const a = ctrOf(W1[r.ad_id]), b = ctrOf(W0[r.ad_id]);
+    return {
+      id: r.ad_id, name: r.ad_name || r.ad_id, campaign: r.campaign_name || "", status: d.effective_status || "",
+      format: isCarousel ? "Carrossel" : isVideo ? "Vídeo" : cr.object_type === "STATUS" ? "Post" : "Imagem",
+      thumb: cr.image_url || cr.thumbnail_url || null, text: String(text).slice(0, 90),
+      spend: num(r.spend), impr, clicks: num(r.clicks), freq: Math.round(num(r.frequency) * 10) / 10,
+      results: types ? pick(r.actions, types) : result(r.actions).n, revenue: pick(r.action_values),
+      hook: isVideo && impr > 0 ? pick(r.actions, ["video_view"]) / impr : null,
+      ctrTrend: a != null && b != null && b > 0 ? Math.round((a - b) / b * 100) / 100 : null,
+    };
+  });
+  return { ads, kind: types ? kind : "resultados", total: cur.filter(r => num(r.spend) > 0).length };
+}
+
 // Carteira da agência: todas as contas que o token acessa, com os números de cada uma.
 // Usa campos aninhados (insights dentro de /me/adaccounts) para não fazer uma chamada por conta.
 async function portfolio(token) {
@@ -272,6 +320,10 @@ export default async function handler(req, res) {
     if (body.action === "data") {
       if (!/^(act_)?\d{5,}$/.test(String(body.account_id || ""))) return send(res, 400, { error: "Escolha uma conta de anúncio." });
       return send(res, 200, await data(token, String(body.account_id)));
+    }
+    if (body.action === "creatives") {
+      if (!/^(act_)?\d{5,}$/.test(String(body.account_id || ""))) return send(res, 400, { error: "Escolha uma conta de anúncio." });
+      return send(res, 200, await creatives(token, String(body.account_id), String(body.kind || "")));
     }
     if (body.action === "breakdowns") {
       if (!/^(act_)?\d{5,}$/.test(String(body.account_id || ""))) return send(res, 400, { error: "Escolha uma conta de anúncio." });
