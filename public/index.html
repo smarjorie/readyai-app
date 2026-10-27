@@ -543,6 +543,39 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .idle-list{display:flex;flex-direction:column;gap:6px;margin-top:12px;max-height:320px;overflow:auto}
 .idle-list div{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:9px;background:var(--surface-2);font-size:13px}
 .idle-list small{color:var(--muted);white-space:nowrap}
+/* copilot de mídia */
+.mode-seg{margin-left:6px}
+.mode-seg button{display:inline-flex;align-items:center;gap:6px}
+.m-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px 16px}
+.m-in{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);overflow:hidden}
+.m-in:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.m-in span{padding:0 10px;color:var(--muted);font-size:13px;white-space:nowrap}
+.m-in .input{border:0;box-shadow:none!important;padding:0 10px;height:38px}
+.m-in span+.input{padding-left:0}
+.m-note{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:var(--accent-soft);color:var(--ink);font-size:13.5px}
+.m-note svg{color:var(--accent);flex:none;margin-top:2px}
+.m-note.warn{background:var(--warn-soft)}
+.m-note.warn svg{color:var(--warn)}
+.m-alloc{display:grid;grid-template-columns:52px minmax(0,1fr) 90px;gap:12px;align-items:center;margin-bottom:10px}
+.m-alloc-l{font-size:12.5px;color:var(--muted-2);font-weight:600}
+.m-alloc b{text-align:right;font-size:13px}
+.m-bar{display:flex;height:26px;border-radius:8px;overflow:hidden;background:var(--surface-2);gap:2px}
+.m-bar span{display:grid;place-items:center;color:#fff;font-size:11.5px;font-weight:700;min-width:3px}
+.m-bar i{font-size:12px;color:var(--muted);padding:0 10px;align-self:center;font-style:normal}
+.m-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted-2);margin-top:4px}
+.m-legend span{display:inline-flex;align-items:center;gap:6px}
+.m-legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.m-tbl tr.m-click{cursor:pointer}
+.m-split{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px 18px;padding:4px 0}
+.m-split div{display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.m-cfg .m-cell{height:32px;width:96px;text-align:right;padding:0 8px;font-size:13px}
+.m-how summary{cursor:pointer;list-style:none}
+.m-how summary::-webkit-details-marker{display:none}
+.m-how summary::after{content:" +";color:var(--muted)}
+.m-how[open] summary::after{content:" −"}
+@media (max-width:1180px){.dock.media-dock{position:static;transform:none;width:auto;box-shadow:none;height:600px;flex:none;border-left:0;border-top:1px solid var(--line);z-index:auto}.work.home>.pane{overflow:visible;flex:none}}
+@media (max-width:640px){.crumb:has(.mode-seg)>b{display:none}.mode-seg{margin-left:0}.mode-seg button{padding:0 8px;font-size:12px}}
+@media (max-width:640px){.m-alloc{grid-template-columns:44px minmax(0,1fr) 70px;gap:8px}}
 </style>
 
 <div id="root"><div class="boot">Carregando ReadyAI…</div></div>
@@ -664,6 +697,7 @@ const NAV = [
 ];
 const FOOT_NAV = [{ id: "integracoes", label: "Integrações", icon: "plug", key: "integrations" }];
 function routeInfo(key) {
+  if (key === "media") return { group: "Assistente de Marketing", label: "Copilot de mídia" };
   for (const g of [...NAV, ...FOOT_NAV]) {
     if (g.key === key) return { group: g.label, label: g.label };
     const c = (g.children || []).find(x => x.key === key);
@@ -860,7 +894,7 @@ async function aiCall(payload, key) {
 }
 
 // Dados da conta aberta, enviados para a IA a cada pergunta
-function aiContext({ camps, screen, account, isAgency, rows, insights, budget, detail, live }) {
+function aiContext({ camps, screen, account, isAgency, rows, insights, budget, detail, live, media }) {
   const t = totals(camps);
   const r2 = n => Math.round(n * 100) / 100;
   const data = {
@@ -891,6 +925,7 @@ function aiContext({ camps, screen, account, isAgency, rows, insights, budget, d
       dispositivos_pct: DEVICES.map(([d, v]) => ({ dispositivo: d, pct: Math.round(v * 100) })),
     };
   }
+  if (media) data.plano_de_midia = media;
   if (isAgency) data.carteira_da_agencia = rows.map(r => ({
     id: r.id, cliente: r.name, segmento: r.seg, roas: r2(r.t.roas), meta_roas: r.target, investimento_30d: Math.round(r.t.spend),
     orcamento_mes: r.budget, gasto_mes: r.spent, saude: r.health, pendencias: r.issues.map(i => ISSUE[i.t].label + ": " + i.text),
@@ -903,6 +938,7 @@ function aiSystem(data, screens, isAgency) {
     "Responda sempre em português do Brasil, de forma direta e prática, como um analista sênior de mídia paga.",
     "Use SOMENTE os números em DADOS. Não invente métricas; se algo não estiver nos dados, diga que essa informação não está disponível.",
     "Campanhas com roas null (Google Ads) não informam receita: avalie essas pelo CPA e pelas conversões.",
+    data.plano_de_midia ? "Você está no Copilot de mídia: o plano está em plano_de_midia e o critério é ROI (lucro bruto / verba). Para simular 'e se', use a fórmula e a curva de cada canal em plano_de_midia; diga que é estimativa e mostre verba, resultados, lucro e ROI antes e depois. Canais com fonte 'custo de referência' não têm histórico. Não use confirm nesta tela." : "",
     "Valores em reais. ROAS = receita / investimento. A meta de ROAS da conta está em meta_roas; se meta_roas for null, a conta não tem meta: não compare com meta nenhuma. Formate no padrão brasileiro (R$ 12.300, 3,45x, 12%).",
     "",
     "FORMATO: devolva APENAS um objeto JSON válido, sem markdown e sem texto fora dele, com os campos:",
@@ -1049,6 +1085,7 @@ function AIConnectDrawer({ toast }) {
 
 const SUGGESTIONS = {
   portfolio: ["O que preciso resolver hoje?", "Quais contas estão com entrega travada?", "Quem vai estourar ou sobrar verba?"],
+  media: ["Por que essa divisão de verba?", "E se eu tirar 20% do Meta?", "Até quanto vale investir com lucro?"],
   copilot: ["Resuma minhas campanhas", "Onde estou perdendo dinheiro?", "Quanto posso escalar no Google?"],
   overview: ["Explique a variação da receita", "Qual canal tem melhor ROAS?"],
   analytics: ["Qual o melhor horário para anunciar?", "Qual público converte mais?"],
@@ -1182,6 +1219,243 @@ function Composer({ onSend, disabled, autoFocus, placeholder }) {
     <button className="send" type="submit" disabled=${!v.trim() || disabled} aria-label="Enviar"><${Icon} n="send" s=${15} /></button>
   </form></div>`;
 }
+/* ================= copilot de mídia: planejamento entre canais por ROI ================= */
+// Canais que podem entrar no plano. Os que não estão conectados entram com custo de referência editável.
+const MEDIA_CH = {
+  meta: { label: "Meta Ads", color: "var(--c-meta)" },
+  google: { label: "Google Ads", color: "var(--c-google)" },
+  tiktok: { label: "TikTok Ads", color: "var(--c-tiktok)" },
+  linkedin: { label: "LinkedIn Ads", color: "var(--c-linkedin)" },
+  pinterest: { label: "Pinterest Ads", color: "var(--c-pinterest)" },
+  kwai: { label: "Kwai Ads", color: "var(--c-kwai)" },
+};
+// Valores iniciais de custo por resultado para canais sem histórico. Não são dados da conta:
+// servem de ponto de partida e a pessoa ajusta para a realidade do mercado dela.
+const MEDIA_START_CPR = {
+  conversas: { meta: 6, google: 12, tiktok: 8, linkedin: 40, pinterest: 15, kwai: 5 },
+  leads: { meta: 25, google: 35, tiktok: 30, linkedin: 90, pinterest: 40, kwai: 20 },
+  compras: { meta: 60, google: 55, tiktok: 75, linkedin: 180, pinterest: 70, kwai: 50 },
+};
+const ELAST_HIST = 0.8, ELAST_REF = 0.7; // quanto o resultado cresce quando a verba cresce (1 = linear)
+const REF_SPEND = 3000;                   // verba em que o custo de referência vale
+const TEST_CAP = 0.15;                    // canal sem histórico recebe no máximo 15% da verba, salvo máximo definido
+const numIn = v => { const n = parseFloat(String(v == null ? "" : v).replace(/\./g, "").replace(",", ".")); return isFinite(n) ? n : null; };
+
+// Curva de cada canal: resultados(S) = R_ref * (S / S_ref)^b
+function mediaChannels(camps, inp, kind) {
+  const out = [];
+  for (const k of Object.keys(MEDIA_CH)) {
+    const c = (inp.ch && inp.ch[k]) || {};
+    const hc = camps.filter(x => x.ch === k && x.spend > 0);
+    const S0 = hc.reduce((a, x) => a + x.spend, 0), R0 = hc.reduce((a, x) => a + x.purchases, 0), Rev0 = hc.reduce((a, x) => a + (x.revenue || 0), 0);
+    const hist = S0 > 0 && R0 > 0;
+    const refCpr = numIn(c.cpr) || (MEDIA_START_CPR[kind] || MEDIA_START_CPR.conversas)[k];
+    const on = c.on !== undefined ? !!c.on : hist;
+    out.push({
+      k, ...MEDIA_CH[k], on, hist, camps: hc,
+      S0, R0, Rev0,
+      cpr0: hist ? S0 / R0 : refCpr,
+      b: hist ? ELAST_HIST : ELAST_REF,
+      Sref: hist ? S0 : REF_SPEND,
+      Rref: hist ? R0 : REF_SPEND / refCpr,
+      // receita por resultado: real quando a conta registra valor de compra; senão ticket x fechamento
+      rpr: hist && Rev0 > 0 ? Rev0 / R0 : (numIn(inp.ticket) || 0) * (kind === "compras" ? 1 : (numIn(inp.close) || 0) / 100),
+      realRevenue: hist && Rev0 > 0,
+      min: Math.max(0, numIn(c.min) || 0),
+      max: numIn(c.max) != null ? numIn(c.max) : null,
+      fixed: numIn(c.fixed),
+    });
+  }
+  return out;
+}
+const mResults = (ch, S, pess = 1) => S > 0 ? ch.Rref * Math.pow(S / ch.Sref, ch.b) / pess : 0;
+const mValue = (ch, S, margin, pess) => mResults(ch, S, pess) * ch.rpr * margin;
+const mProfit = (ch, S, margin, pess) => mValue(ch, S, margin, pess) - S;
+
+// Distribui a verba em degraus: cada degrau vai para o canal em que o próximo real dá mais lucro.
+// Para quando o retorno do próximo degrau fica abaixo do ROI mínimo, mesmo sobrando verba.
+function buildMediaPlan(camps, inp) {
+  // tipo de resultado que mais recebe verba (compras, leads ou conversas)
+  const bySpend = {};
+  for (const c of camps.filter(c => c.spend > 0)) { const k = resKind(c); bySpend[k] = (bySpend[k] || 0) + c.spend; }
+  const top = Object.entries(bySpend).sort((a, b) => b[1] - a[1])[0];
+  const kindN = top && ["compras", "leads", "conversas"].includes(top[0]) ? top[0] : camps.some(c => c.revenue > 0) ? "compras" : "conversas";
+  const budget = numIn(inp.budget) || 0;
+  const margin = (numIn(inp.margin) != null ? numIn(inp.margin) : 100) / 100;
+  const minRoi = (numIn(inp.minRoi) || 0) / 100;
+  const chans = mediaChannels(camps, inp, kindN);
+  const active = chans.filter(c => c.on);
+  const needsTicket = active.some(c => !c.realRevenue);
+  const missing = [];
+  if (!(budget > 0)) missing.push("verba do período");
+  if (needsTicket && !(numIn(inp.ticket) > 0)) missing.push("ticket médio");
+  if (needsTicket && kindN !== "compras" && !(numIn(inp.close) > 0)) missing.push("taxa de fechamento");
+  if (!active.length) missing.push("pelo menos um canal");
+  if (missing.length) return { ready: false, missing, chans, kind: kindN };
+
+  const step = Math.max(10, Math.round(budget / 200));
+  const S = Object.fromEntries(active.map(c => [c.k, 0]));
+  const why = {};
+  const cap = c => c.fixed != null ? c.fixed : Math.min(c.max != null ? c.max : Infinity, c.hist ? Infinity : (c.max != null ? c.max : budget * TEST_CAP));
+  // fixos e mínimos primeiro
+  let left = budget;
+  for (const c of active) { const f = c.fixed != null ? Math.min(c.fixed, left) : Math.min(c.min, left); S[c.k] = f; left -= f; if (c.fixed != null) why[c.k] = "fixed"; }
+  let stop = null;
+  while (left >= step / 2) {
+    const inc = Math.min(step, left);
+    let best = null;
+    for (const c of active) {
+      if (c.fixed != null) continue;
+      if (S[c.k] + inc > cap(c) + 0.01) { why[c.k] = why[c.k] || (c.max != null ? "max" : "test"); continue; }
+      const g = (mProfit(c, S[c.k] + inc, margin) - mProfit(c, S[c.k], margin)) / inc; // ROI do próximo degrau
+      if (!best || g > best.g) best = { c, g };
+    }
+    if (!best) { stop = "caps"; break; }
+    if (best.g < minRoi) { stop = "roi"; break; }
+    S[best.c.k] += inc; left -= inc;
+  }
+  const rows = chans.map(c => {
+    const s = c.on ? (S[c.k] || 0) : 0;
+    const res = mResults(c, s), resP = mResults(c, s, 1.25);
+    const rev = res * c.rpr, revP = resP * c.rpr;
+    const prof = rev * margin - s, profP = revP * margin - s;
+    const inc = Math.max(10, s * 0.1);
+    const mroi = s > 0 ? (mProfit(c, s + inc, margin) - mProfit(c, s, margin)) / inc : (mProfit(c, step, margin)) / step;
+    let reason;
+    if (!c.on) reason = "Fora do plano: canal desligado no briefing.";
+    else if (why[c.k] === "fixed") reason = "Verba fixada por você.";
+    else if (s === 0) reason = mroi < minRoi ? "Mesmo com pouca verba, o retorno fica abaixo do ROI mínimo." : "Os outros canais rendem mais em cada real; a verba acabou antes de chegar a este.";
+    else if (why[c.k] === "max" && s >= (c.max || 0) - step) reason = "Parou no máximo que você definiu para o canal.";
+    else if (why[c.k] === "test" && !c.hist) reason = "Canal sem histórico: verba de teste limitada a " + pct(TEST_CAP, 0) + " para validar o custo.";
+    else reason = "Recebe verba até o ponto em que o próximo real rende ROI de " + pct(mroi, 0) + ".";
+    return { ...c, spend: s, results: res, resultsP: resP, revenue: rev, revenueP: revP, profit: prof, profitP: profP, roi: s > 0 ? prof / s : null, cpr: res > 0 ? s / res : null, mroi, reason };
+  });
+  const sum = (key) => rows.reduce((a, r) => a + (r[key] || 0), 0);
+  const spent = sum("spend");
+  const tot = { spend: spent, results: sum("results"), resultsP: sum("resultsP"), revenue: sum("revenue"), revenueP: sum("revenueP"), profit: sum("profit"), profitP: sum("profitP") };
+  tot.roi = spent > 0 ? tot.profit / spent : null; tot.roiP = spent > 0 ? tot.profitP / spent : null; tot.roas = spent > 0 ? tot.revenue / spent : null;
+  // divisão dentro do canal: campanhas com histórico, pesadas pela eficiência (resultado por real)
+  for (const r of rows) {
+    if (!r.hist || !r.spend) { r.split = []; continue; }
+    const w = r.camps.map(c => ({ c, w: c.spend * (c.purchases / c.spend) / (r.R0 / r.S0) }));
+    const W = w.reduce((a, x) => a + x.w, 0) || 1;
+    r.split = w.map(x => ({ name: x.c.name, spend: r.spend * x.w / W })).sort((a, b) => b.spend - a.spend);
+  }
+  return { ready: true, kind: kindN, budget, margin, minRoi, step, rows, tot, unspent: Math.max(0, budget - spent), stop, refUsed: rows.some(r => r.spend > 0 && !r.hist), thinHist: rows.some(r => r.hist && r.spend > 0 && r.S0 < 500) };
+}
+
+function defaultMediaInputs(camps, live) {
+  const t = totals(camps);
+  return { budget: String(live ? Math.max(1000, Math.ceil(t.spend / 500) * 500) : 90000), ticket: "", close: "", margin: "100", minRoi: "0", ch: {} };
+}
+function MInput({ id, label, value, onChange, prefix, suffix, hint, placeholder, width }) {
+  return html`<div className="field" style=${{ minWidth: 0 }}><label htmlFor=${id}>${label}</label>
+    <div className="m-in" style=${{ maxWidth: width || "none" }}>${prefix ? html`<span>${prefix}</span>` : null}<input id=${id} className="input num" inputMode="decimal" value=${value} placeholder=${placeholder || ""} onInput=${e => onChange(e.target.value)} />${suffix ? html`<span>${suffix}</span>` : null}</div>
+    ${hint ? html`<span className="card-sub" style=${{ fontSize: 12 }}>${hint}</span>` : null}</div>`;
+}
+function MediaCopilot({ camps, inp, setInp, plan, chat, live }) {
+  const kind = plan.kind, kl = kindLabel(kind), unit = kl.toLowerCase();
+  const upd = (k, v) => setInp({ ...inp, [k]: v });
+  const updCh = (k, f, v) => setInp({ ...inp, ch: { ...(inp.ch || {}), [k]: { ...((inp.ch || {})[k] || {}), [f]: v } } });
+  const [open, setOpen] = useState(null);
+  const chans = plan.ready ? plan.rows : plan.chans;
+  const needsTicket = chans.some(c => c.on && !c.realRevenue);
+  const rowsOn = plan.ready ? plan.rows.filter(r => r.on) : [];
+  const money = v => fin(v) ? (Math.abs(v) < 1000 ? brl2(v) : brl(v)) : "—";
+  const roiTxt = v => fin(v) ? (v >= 0 ? "+" : "−") + pct(Math.abs(v), 0) : "—";
+  const roiColor = v => !fin(v) ? "var(--muted)" : v >= plan.minRoi ? "var(--good)" : "var(--bad)";
+  return html`<${Fragment}>
+  <div className="pane"><div className="stack">
+    <${PageHead} title="Copilot de mídia" sub="Plano de verba entre canais por ROI: cada real vai para o canal em que rende mais lucro, até o ponto em que deixa de compensar." right=${html`<${DataNote} />`} />
+
+    <div className="card card-pad stack" style=${{ gap: 14 }}>
+      <div className="card-head" style=${{ marginBottom: 0 }}><div><div className="card-title">Briefing</div><div className="card-sub">Próximos 30 dias. O histórico usado é o dos últimos 30 dias.</div></div></div>
+      <div className="m-grid">
+        <${MInput} id="m-budget" label="Verba do período" prefix="R$" value=${inp.budget} onChange=${v => upd("budget", v)} placeholder="10.000" />
+        ${needsTicket ? html`<${MInput} id="m-ticket" label="Ticket médio da venda" prefix="R$" value=${inp.ticket} onChange=${v => upd("ticket", v)} placeholder="Ex.: 250" hint="Valor médio de cada venda" />` : null}
+        ${needsTicket && kind !== "compras" ? html`<${MInput} id="m-close" label=${"De cada 100 " + unit + ", quantas viram venda"} suffix="%" value=${inp.close} onChange=${v => upd("close", v)} placeholder="Ex.: 8" hint="Taxa de fechamento do time comercial" />` : null}
+        <${MInput} id="m-margin" label="Margem bruta" suffix="%" value=${inp.margin} onChange=${v => upd("margin", v)} hint="Sobre a receita. Com 100%, o ROI é calculado sobre a receita" />
+        <${MInput} id="m-roi" label="ROI mínimo do último real" suffix="%" value=${inp.minRoi} onChange=${v => upd("minRoi", v)} hint="0% = investe enquanto cada real ainda se paga" />
+      </div>
+      ${!needsTicket && chans.some(c => c.on) ? html`<p className="card-sub"><${Icon} n="check" s=${12} /> A receita vem do valor de compra registrado nas campanhas, então não precisa de ticket nem taxa de fechamento.</p>` : null}
+    </div>
+
+    ${!plan.ready ? html`<div className="card card-pad" style=${{ borderStyle: "dashed" }}><div style=${{ display: "flex", gap: 10, alignItems: "center" }}><span className="bot-ico"><${Icon} n="sparkles" s=${14} /></span><div><b>Falta pouco para montar o plano</b><div className="card-sub">Preencha ${plan.missing.join(", ").replace(/, ([^,]*)$/, " e $1")}.</div></div></div></div>` : html`<${Fragment}>
+    <div className="grid g4">
+      <${Kpi} label="Verba recomendada" value=${money(plan.tot.spend)} hint=${plan.unspent >= plan.step ? money(plan.unspent) + " ficam de fora" : "Toda a verba de " + money(plan.budget)} />
+      <${Kpi} label=${kl + (kind === "leads" ? " esperados" : " esperadas")} value=${fmtInt(plan.tot.results)} hint=${"Conservador: " + fmtInt(plan.tot.resultsP)} />
+      <${Kpi} label="Lucro bruto esperado" value=${money(plan.tot.profit)} hint=${"Receita " + money(plan.tot.revenue) + " · conservador " + money(plan.tot.profitP)} />
+      <div className="card kpi"><div className="kpi-l"><span>ROI esperado</span></div><div className="kpi-v num" style=${{ color: roiColor(plan.tot.roi) }}>${roiTxt(plan.tot.roi)}</div><div className="card-sub">Conservador ${roiTxt(plan.tot.roiP)} · ROAS ${xroas(plan.tot.roas)}</div></div>
+    </div>
+
+    ${plan.unspent >= plan.step && plan.stop === "roi" ? html`<div className="m-note warn"><${Icon} n="alert" s=${15} /><span><b>${money(plan.unspent)} não recomendados.</b> Depois de ${money(plan.tot.spend)}, o próximo real investido em qualquer canal renderia menos que o ROI mínimo de ${pct(plan.minRoi, 0)}. Para usar toda a verba, ligue outro canal, reduza o ROI mínimo ou aumente o ticket/margem se estiverem subestimados.</span></div>` : null}
+    ${plan.unspent >= plan.step && plan.stop === "caps" ? html`<div className="m-note warn"><${Icon} n="alert" s=${15} /><span><b>${money(plan.unspent)} sem canal.</b> Todos os canais ligados bateram o máximo ou a verba de teste. Ligue outro canal ou aumente os máximos.</span></div>` : null}
+
+    <div className="card card-pad">
+      <div className="card-head"><div><div className="card-title">Divisão da verba</div><div className="card-sub">Hoje (últimos 30 dias) e no plano</div></div></div>
+      ${[["Hoje", rowsOn.map(r => [r, r.S0])], ["Plano", rowsOn.map(r => [r, r.spend])]].map(([lab, parts]) => { const T = parts.reduce((a, [, v]) => a + v, 0); return html`<div key=${lab} className="m-alloc"><span className="m-alloc-l">${lab}</span>
+        <div className="m-bar">${T > 0 ? parts.filter(([, v]) => v > 0).map(([r, v]) => html`<span key=${r.k} style=${{ width: (v / T * 100) + "%", background: r.color }} title=${r.label + ": " + money(v) + " (" + pct(v / T, 0) + ")"}>${v / T >= .12 ? pct(v / T, 0) : ""}</span>`) : html`<i>Sem investimento</i>`}</div>
+        <b className="num">${money(T)}</b></div>`; })}
+      <div className="m-legend">${rowsOn.map(r => html`<span key=${r.k}><i style=${{ background: r.color }}></i>${r.label}</span>`)}</div>
+    </div>
+
+    <div className="card card-pad">
+      <div className="card-head"><div><div className="card-title">Plano por canal</div><div className="card-sub">Clique num canal para ver como a verba se divide entre as campanhas</div></div></div>
+      <div className="tbl-wrap"><table className="tbl m-tbl"><thead><tr><th>Canal</th><th className="r">Hoje</th><th className="r">Plano</th><th className="r">${kl}</th><th className="r">Lucro bruto</th><th className="r">ROI</th><th className="r" title="Quanto o próximo real investido no canal renderia">Próximo real</th></tr></thead>
+      <tbody>${rowsOn.map(r => html`<${Fragment} key=${r.k}><tr className=${r.split && r.split.length ? "m-click" : ""} onClick=${() => r.split && r.split.length && setOpen(open === r.k ? null : r.k)}>
+        <td style=${{ whiteSpace: "normal", minWidth: 200, maxWidth: 300 }}><span style=${{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}><span className="ch-dot" style=${{ background: r.color }}></span><b style=${{ color: "var(--ink)" }}>${r.label}</b><span className=${"pill " + (r.hist ? "pill-good" : "pill-violet")} style=${{ height: 19, fontSize: 11 }}>${r.hist ? "Dados da conta" : "Referência"}</span></span><span className="rec-why" style=${{ display: "block", marginTop: 4 }}>${r.reason}</span></td>
+        <td className="r num">${money(r.S0)}</td><td className="r num"><b style=${{ color: "var(--ink)" }}>${money(r.spend)}</b>${r.S0 > 0 && r.spend > 0 ? html`<span className=${"delta " + (r.spend >= r.S0 ? "up" : "down")} style=${{ display: "block" }}>${r.spend >= r.S0 ? "+" : "−"}${pct(Math.abs(r.spend / r.S0 - 1), 0)}</span>` : null}</td>
+        <td className="r num">${fmtInt(r.results)}${r.cpr ? html`<span className="rec-why" style=${{ display: "block" }}>${money(r.cpr)} cada</span>` : null}</td>
+        <td className="r num" style=${{ color: r.profit >= 0 ? "var(--ink)" : "var(--bad)" }}>${money(r.profit)}${r.revenue > 0 ? html`<span className="rec-why" style=${{ display: "block" }}>receita ${money(r.revenue)}</span>` : null}</td>
+        <td className="r num"><b style=${{ color: roiColor(r.roi) }}>${roiTxt(r.roi)}</b></td><td className="r num" style=${{ color: roiColor(r.mroi) }}>${roiTxt(r.mroi)}</td></tr>
+        ${open === r.k ? html`<tr className="confirm-row"><td colSpan="7"><div className="m-split">${r.split.map(x => html`<div key=${x.name}><span className="cname" title=${x.name}>${x.name}</span><b className="num">${money(x.spend)}</b></div>`)}</div></td></tr>` : null}
+      <//>`)}
+      <tr><td><b style=${{ color: "var(--ink)" }}>Total</b></td><td className="r num">${money(rowsOn.reduce((a, r) => a + r.S0, 0))}</td><td className="r num"><b style=${{ color: "var(--ink)" }}>${money(plan.tot.spend)}</b></td><td className="r num"><b>${fmtInt(plan.tot.results)}</b></td><td className="r num"><b>${money(plan.tot.profit)}</b></td><td className="r num"><b style=${{ color: roiColor(plan.tot.roi) }}>${roiTxt(plan.tot.roi)}</b></td><td></td></tr></tbody></table></div>
+    </div>
+
+    ${plan.refUsed ? html`<div className="m-note"><${Icon} n="bulb" s=${15} /><span>Canais marcados como <b>Referência</b> não têm histórico na conta: o custo por resultado é um valor inicial que você ajusta em <b>Canais e limites</b>. A verba deles é de teste; depois de 2 a 3 semanas, o plano passa a usar os dados reais.</span></div>` : null}
+    ${plan.thinHist ? html`<div className="m-note warn"><${Icon} n="alert" s=${15} /><span><b>Histórico curto.</b> ${rowsOn.filter(r => r.hist && r.S0 < 500).map(r => r.label + " tem só " + money(r.S0) + " investidos nos últimos 30 dias").join("; ")}. A projeção para verbas muito maiores é pouco confiável: comece com uma parte e reavalie em uma semana.</span></div>` : null}
+    `}
+
+    <div className="card card-pad">
+      <div className="card-head"><div><div className="card-title">Canais e limites</div><div className="card-sub">Ligue os canais que podem receber verba. Mínimo, máximo e verba fixa são opcionais; a verba fixa serve para testar "e se".</div></div></div>
+      <div className="tbl-wrap"><table className="tbl m-cfg"><thead><tr><th>Canal</th><th>No plano</th><th className="r">${kindCost(kind)}</th><th className="r">Mínimo</th><th className="r">Máximo</th><th className="r">Verba fixa</th></tr></thead>
+      <tbody>${chans.map(c => { const cc = (inp.ch || {})[c.k] || {}; return html`<tr key=${c.k}>
+        <td><span style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: c.color }}></span><b style=${{ color: "var(--ink)" }}>${c.label}</b></span><span className="rec-why" style=${{ display: "block" }}>${c.hist ? money(c.S0) + " investidos · " + fmtInt(c.R0) + " " + unit : "Sem histórico na conta"}</span></td>
+        <td><${Toggle} on=${c.on} onChange=${v => updCh(c.k, "on", v)} label=${(c.on ? "Tirar " : "Incluir ") + c.label} /></td>
+        <td className="r">${c.hist ? html`<span className="num" title="Custo real dos últimos 30 dias">${money(c.cpr0)}</span>` : html`<input className="input num m-cell" inputMode="decimal" value=${cc.cpr != null ? cc.cpr : String(c.cpr0).replace(".", ",")} onInput=${e => updCh(c.k, "cpr", e.target.value)} aria-label=${"Custo por resultado de referência no " + c.label} />`}</td>
+        <td className="r"><input className="input num m-cell" inputMode="decimal" value=${cc.min || ""} placeholder="—" onInput=${e => updCh(c.k, "min", e.target.value)} aria-label=${"Mínimo no " + c.label} disabled=${!c.on} /></td>
+        <td className="r"><input className="input num m-cell" inputMode="decimal" value=${cc.max || ""} placeholder=${c.hist ? "—" : "teste " + pct(TEST_CAP, 0)} onInput=${e => updCh(c.k, "max", e.target.value)} aria-label=${"Máximo no " + c.label} disabled=${!c.on} /></td>
+        <td className="r"><input className="input num m-cell" inputMode="decimal" value=${cc.fixed || ""} placeholder="—" onInput=${e => updCh(c.k, "fixed", e.target.value)} aria-label=${"Verba fixa no " + c.label} disabled=${!c.on} /></td>
+      </tr>`; })}</tbody></table></div>
+      ${Object.values(inp.ch || {}).some(c => c && (c.fixed || c.min || c.max || c.cpr)) ? html`<div style=${{ paddingTop: 10 }}><button className="link-btn" onClick=${() => setInp({ ...inp, ch: Object.fromEntries(Object.entries(inp.ch || {}).map(([k, v]) => [k, { on: v.on }])) })}>Limpar limites e verbas fixas</button></div>` : null}
+    </div>
+
+    <details className="card card-pad m-how"><summary><b>Como o plano é calculado</b></summary>
+      <div className="stack" style=${{ gap: 8, marginTop: 10, fontSize: 13.5, color: "var(--muted-2)" }}>
+        <p>1. Para cada canal, o copilot monta uma curva de retorno: quanto mais verba, mais resultados, mas cada real a mais rende um pouco menos (o público mais barato se esgota primeiro). Com histórico, a curva parte do custo real dos últimos 30 dias; sem histórico, do custo de referência que você ajusta.</p>
+        <p>2. Receita = resultados × ${needsTicket ? (kind === "compras" ? "ticket médio" : "taxa de fechamento × ticket médio") : "valor médio de compra registrado"}. Lucro bruto = receita × margem − verba. ROI = lucro bruto ÷ verba.</p>
+        <p>3. A verba é distribuída em pedaços de ${money(plan.step || 0)}: cada pedaço vai para o canal em que rende mais lucro naquele momento. A distribuição para quando o próximo pedaço renderia menos que o ROI mínimo, mesmo que sobre verba.</p>
+        <p>4. O cenário conservador considera resultados 20% menores que o esperado. Tudo é estimativa: confira os números reais depois da primeira semana.</p>
+      </div></details>
+  </div></div>
+  <aside className="dock media-dock" aria-label="Copilot de mídia"><${DockChat} chat=${chat} screen="media" /></aside>
+  <//>`;
+}
+// resumo do plano enviado ao copilot, com a curva de cada canal para simular "e se"
+function mediaPlanContext(plan, inp) {
+  if (!plan) return null;
+  const r2 = n => fin(n) ? Math.round(n * 100) / 100 : null;
+  const base = { tipo_de_resultado: kindLabel(plan.kind), verba_do_periodo: numIn(inp.budget), ticket_medio: numIn(inp.ticket), taxa_de_fechamento_pct: numIn(inp.close), margem_bruta_pct: numIn(inp.margin) != null ? numIn(inp.margin) : 100, roi_minimo_pct: numIn(inp.minRoi) || 0 };
+  if (!plan.ready) return { ...base, status: "incompleto", falta: plan.missing };
+  return {
+    ...base,
+    formula: "resultados(S) = resultados_ref * (S / verba_ref) ^ elasticidade; receita = resultados * receita_por_resultado; lucro = receita * margem - S; ROI = lucro / S",
+    totais: { verba_recomendada: r2(plan.tot.spend), sem_uso: r2(plan.unspent), resultados: Math.round(plan.tot.results), receita: r2(plan.tot.revenue), lucro_bruto: r2(plan.tot.profit), roi_pct: r2(plan.tot.roi * 100), roi_conservador_pct: r2(plan.tot.roiP * 100) },
+    canais: plan.rows.filter(r => r.on).map(r => ({ canal: r.label, fonte: r.hist ? "dados da conta, 30 dias" : "custo de referência (estimativa)", verba_hoje_30d: r2(r.S0), verba_plano: r2(r.spend), resultados: Math.round(r.results), custo_por_resultado: r2(r.cpr), receita: r2(r.revenue), lucro_bruto: r2(r.profit), roi_pct: r2(r.roi * 100), roi_do_proximo_real_pct: r2(r.mroi * 100), motivo: r.reason, curva: { verba_ref: r2(r.Sref), resultados_ref: r2(r.Rref), elasticidade: r.b, receita_por_resultado: r2(r.rpr) } })),
+  };
+}
+
 function DockChat({ chat, screen, onClose }) {
   const end = useRef(null);
   useEffect(() => { end.current && end.current.scrollIntoView({ block: "end" }); }, [chat.msgs.length, chat.typing]);
@@ -2293,6 +2567,14 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   const brk = useBreakdowns(brkMeta, resultKind(isLive ? live.camps.filter(c => c.ch === "meta") : []), isLive && seenAnalytics && !!brkMeta, live.at);
   useEffect(() => { if (isLive) setCamps(live.camps); else if (!isAgency) setCamps(CAMPAIGNS0); }, [isLive, live.at]);
   const [msgs, setMsgs] = useState([]); const [typing, setTyping] = useState(false);
+  // copilot de mídia: briefing guardado por cliente neste navegador
+  const [homeMode, setHomeMode] = useState("marketing");
+  const mediaKey = "readyai_media_" + (isAgency ? (activeRow ? activeRow.id : "x") : client.id);
+  const [mediaSaved, setMediaSaved] = useState(() => store.get(mediaKey, null));
+  useEffect(() => { setMediaSaved(store.get(mediaKey, null)); }, [mediaKey]);
+  const mediaIn = mediaSaved || defaultMediaInputs(camps, isLive);
+  const setMediaIn = v => { setMediaSaved(v); store.set(mediaKey, v); };
+  const mediaPlan = useMemo(() => buildMediaPlan(camps, mediaIn), [camps, mediaSaved, isLive]);
   const [toastMsg, setToastMsg] = useState(null);
   const toast = m => { setToastMsg(m); clearTimeout(toast.t); toast.t = setTimeout(() => setToastMsg(null), 2600); };
   const insights = useMemo(() => isLive ? buildLiveInsights(camps) : buildInsights(camps), [camps, isLive, client.targetRoas]);
@@ -2307,7 +2589,8 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
     setMsgs(history); setTyping(true);
     const screens = [...allowed].filter(k => k !== "whatsapp");
     const budget = isLive || livePf ? null : isAgency ? { total: activeAcc.budget, spent: activeAcc.spent } : { total: MONTH_BUDGET, spent: MONTH_SPENT };
-    const data = aiContext({ camps, screen, account: accountName, isAgency, rows: pfRows, insights, budget, detail: !isLive && !livePf && (!isAgency || activeRow.id === "aurora"), live: isLive || livePf });
+    const inMedia = screen === "copilot" && homeMode === "midia";
+    const data = aiContext({ media: inMedia ? mediaPlanContext(mediaPlan, mediaIn) : null, camps, screen: inMedia ? "media" : screen, account: accountName, isAgency, rows: pfRows, insights, budget, detail: !isLive && !livePf && (!isAgency || activeRow.id === "aurora"), live: isLive || livePf });
     try {
       const j = await aiCall({ provider: ai.conn.provider, model: ai.conn.model, system: aiSystem(data, screens, isAgency), messages: history.filter(m => !m.error).map(toAIMessage) }, ai.conn.key);
       setMsgs(m => [...m, { id: id + 1, role: "bot", ...parseAIReply(j.text, { camps, screens, clientIds: isAgency ? pfRows.map(x => x.id) : [] }) }]);
@@ -2384,7 +2667,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
         <header className="topbar">
           <div className="crumb"><button className="btn btn-ghost btn-sm menu-btn" onClick=${() => setSideOpen(true)} aria-label="Abrir menu"><${Icon} n="menu" /></button>
             ${isAgency && inClient ? html`<button className="crumb-link hide-sm" onClick=${toPortfolio}>Carteira</button><span className="hide-sm" style=${{ color: "var(--line-2)" }}>/</span><span className="crumb-client"><span className="c-av sm">${activeRow.name[0]}</span>${activeRow.name}</span><span style=${{ color: "var(--line-2)" }}>/</span>` : null}
-            ${info.group !== info.label && !(isAgency && inClient) ? html`<span className="hide-sm">${info.group}</span><span className="hide-sm" style=${{ color: "var(--line-2)" }}>/</span>` : null}<b>${info.label}</b></div>
+            ${info.group !== info.label && !(isAgency && inClient) ? html`<span className="hide-sm">${info.group}</span><span className="hide-sm" style=${{ color: "var(--line-2)" }}>/</span>` : null}<b>${info.label}</b>${isHome && can ? html`<div className="seg mode-seg" role="tablist" aria-label="Modo do assistente"><button role="tab" aria-selected=${homeMode === "marketing"} className=${homeMode === "marketing" ? "on" : ""} onClick=${() => setHomeMode("marketing")}><${Icon} n="sparkles" s=${13} />Copilot de marketing</button><button role="tab" aria-selected=${homeMode === "midia"} className=${homeMode === "midia" ? "on" : ""} onClick=${() => setHomeMode("midia")}><${Icon} n="chart" s=${13} />Copilot de mídia</button></div>` : null}</div>
           <div className="top-actions">${!isHome && allowed.has("copilot") ? html`<button className=${"btn btn-line btn-sm dock-toggle hide-md" + (dockHidden ? "" : " on")} onClick=${() => (dockHidden ? openCopilot() : closeCopilot())} aria-pressed=${!dockHidden}><${Icon} n="sparkles" s=${14} />${dockHidden ? "Abrir copilot" : "Fechar copilot"}</button>` : null}<span className="chip-sel hide-sm"><${Icon} n="calendar" s=${14} />Últimos 30 dias</span>${isAgency ? html`<${ClientSwitcher} rows=${pfRows} activeId=${activeRow ? activeRow.id : null} inClient=${inClient} onPick=${id => openClient(id, screen === "portfolio" ? "copilot" : screen)} onPortfolio=${toPortfolio} />` : html`<span className="chip-sel hide-sm">${isLive ? live.sources.map(x => html`<span key=${x.ch} className="ch-dot" style=${{ background: CH[x.ch].color }}></span>`) : html`<span className="ch-dot" style=${{ background: "var(--c-meta)" }}></span><span className="ch-dot" style=${{ background: "var(--c-google)" }}></span><span className="ch-dot" style=${{ background: "var(--c-tiktok)" }}></span>`}${isLive ? live.sources.length + (live.sources.length === 1 ? " conta" : " contas") : "3 contas de exemplo"}</span>`}</div>
         </header>
         ${isAgency && inClient ? html`<div className="client-band"><span className="c-av sm">${activeRow.name[0]}</span><span>Você está no ambiente de <b>${activeRow.name}</b></span>
@@ -2395,7 +2678,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
           : screen === "portfolio" ? html`<${PortfolioBand} pf=${pf} go=${go} demo=${!agencyMeta} accountsN=${pf.accounts.length} />`
           : isLive ? html`<${DataBand} live=${live} company=${activeRow.name} go=${go} isLive=${true} />` : null}
         <div className=${"work" + (isHome ? " home" : showDock && !dockHidden ? "" : " no-dock")}>
-          ${isHome && can && !waiting ? html`<${HomeCopilot} user=${client} client=${{ ...client, company: accountName }} chat=${chat} camps=${camps} insights=${insights} go=${go} />` : html`<div className="pane">${waiting ? html`<${AccountWait} live=${live} name=${activeRow.name} onBack=${toPortfolio} />` : body}</div>`}
+          ${isHome && can && !waiting && homeMode === "midia" ? html`<${MediaCopilot} camps=${camps} inp=${mediaIn} setInp=${setMediaIn} plan=${mediaPlan} chat=${chat} live=${isLive} />` : isHome && can && !waiting ? html`<${HomeCopilot} user=${client} client=${{ ...client, company: accountName }} chat=${chat} camps=${camps} insights=${insights} go=${go} />` : html`<div className="pane">${waiting ? html`<${AccountWait} live=${live} name=${activeRow.name} onBack=${toPortfolio} />` : body}</div>`}
           ${showDock && (!dockHidden || dockOpen) ? html`<aside className=${"dock" + (dockOpen ? " open" : "")} aria-label="Copilot"><${DockChat} chat=${chat} screen=${screen} onClose=${closeCopilot} /></aside>` : null}
         </div>
       </main>
