@@ -277,6 +277,64 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .thumb .hl{z-index:2}
 .cre-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
 .cre-body{padding:10px 12px 12px!important;gap:8px!important}
+/* criativo clicável + barra lateral do criativo */
+.cre-click{cursor:pointer;transition:box-shadow .15s,transform .15s}
+.cre-click:hover{box-shadow:0 0 0 2px var(--accent),var(--shadow);transform:translateY(-1px)}
+.cre-click:focus-visible,.row-click:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row-click{cursor:pointer}
+.row-click:hover td,.cre-row.row-click:hover{background:var(--surface-2)}
+.drawer.cd{width:min(560px,100%)}
+.drawer.cd .drawer-body>*{flex:none}
+.cd-hero{position:relative;border-radius:14px;overflow:hidden;background:var(--surface-2);aspect-ratio:1/1;max-height:340px;display:grid;place-items:center;color:var(--muted)}
+.cd-hero img{width:100%;height:100%;object-fit:contain;background:#000}
+.cd-hero .fmt{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.55);color:#fff;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600}
+.cd-st{position:absolute;top:10px;right:10px}
+.cd-links{display:flex;flex-direction:column;gap:8px}
+.cd-link{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;color:var(--ink);text-decoration:none;transition:border-color .15s,background .15s}
+.cd-link:hover{border-color:var(--accent);background:var(--accent-soft)}
+.cd-link>span:nth-child(2){flex:1;min-width:0}
+.cd-link b{display:block;font-size:13.5px;font-weight:600}
+.cd-link small{display:block;font-size:12px;color:var(--muted)}
+.cd-link-ico{width:32px;height:32px;border-radius:9px;background:var(--accent-soft);color:var(--accent-ink);display:grid;place-items:center;flex:none}
+.cd-sec{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.cd-sec span{font-weight:500;text-transform:none;letter-spacing:0}
+.cd-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (min-width:480px){.cd-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.cd-stat{border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0}
+.cd-stat small{display:block;font-size:11.5px;color:var(--muted)}
+.cd-stat b{display:block;font-size:17px;font-weight:700;color:var(--ink);margin-top:2px}
+.cd-stat span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cd-funnel{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.cd-funnel>div{display:grid;grid-template-columns:118px 1fr 72px;align-items:center;gap:10px;font-size:12.5px;color:var(--muted-2)}
+.cd-funnel i{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;display:block}
+.cd-funnel u{display:block;height:100%;background:var(--accent);border-radius:99px}
+.cd-funnel b{text-align:right;color:var(--ink)}
+.cd-copy{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--ink)}
+.cd-copy p{white-space:pre-wrap;margin:0;color:var(--muted-2);line-height:1.5}
+/* conferência de campanhas e níveis */
+.cov{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:13px;color:var(--muted-2);line-height:1.45}
+.cov>svg{flex:none;margin-top:2px}
+.cov b{color:var(--ink)}
+.cov-ok{border-color:color-mix(in srgb,var(--good) 30%,transparent);background:var(--good-soft)}.cov-ok>svg{color:var(--good)}
+.cov-bad{border-color:color-mix(in srgb,var(--bad) 30%,transparent);background:var(--bad-soft)}.cov-bad>svg{color:var(--bad)}
+.cname-link{display:inline-flex;align-items:center;gap:4px;max-width:100%;text-align:left;color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+.cname-link:hover{color:var(--accent-ink);text-decoration:underline}
+.cname-link svg{flex:none;opacity:.5}
+.budget-lvl{display:block;font-size:11px;color:var(--muted)}
+.other-list{display:flex;flex-direction:column;margin-top:12px;border-top:1px solid var(--line)}
+.other-row{display:grid;grid-template-columns:minmax(0,1fr) auto 16px;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line);text-align:left;width:100%;color:var(--muted)}
+.other-row:not(:disabled){cursor:pointer}.other-row:not(:disabled):hover{background:var(--surface-2)}
+.other-row small{display:block;font-size:12px;color:var(--muted)}
+.crumb-drill{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);min-width:0;flex-wrap:wrap}
+.crumb-drill .link-btn:first-child svg{transform:rotate(180deg)}
+.crumb-drill b,.crumb-drill .link-btn{max-width:42ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crumb-drill b{color:var(--ink)}
+.drill-title{font-size:20px;font-weight:700;overflow-wrap:anywhere;margin:2px 0 4px}
+.drill-tbl small.card-sub{display:block;font-size:11.5px}
+.drill-tbl tr.off td{color:var(--muted)}
+.mini-thumb.sm{width:38px;height:38px;border-radius:8px;background:var(--surface-2);flex:none}
+.mini-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.cnt-s{font-size:11px;color:var(--muted);margin-left:4px}
 .client-switch{cursor:pointer;background:var(--surface)}
 .switcher{position:relative}
 .sw-pop{position:absolute;right:0;top:calc(100% + 6px);width:320px;max-width:calc(100vw - 32px);max-height:440px;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:8px;z-index:50;display:flex;flex-direction:column;gap:2px}
@@ -2316,9 +2374,181 @@ function IdleCampaigns({ idle }) {
     ${open ? html`<div className="idle-list">${idle.map(c => html`<div key=${c.id}><span className="cname" title=${c.name}>${c.name}</span><small>${OBJ_PT[c.objective] || c.objective || "—"} · ${c.id}</small></div>`)}</div>` : null}
   </div>`;
 }
-function Campaigns({ camps, setCamps, toast, chat, idle }) {
+/* consulta à Meta feita sob demanda (drill-down e detalhe do anúncio) */
+function useMetaQuery(meta, body, enabled) {
+  const [st, setSt] = useState({ status: "idle" });
+  const key = JSON.stringify([enabled, meta && [meta.accountId, meta.token.slice(-8)], body]);
+  useEffect(() => {
+    if (!enabled || !meta) { setSt({ status: "idle" }); return; }
+    let dead = false; setSt({ status: "loading" });
+    apiPost("/api/meta", { ...body, account_id: meta.accountId }, { "x-meta-token": meta.token })
+      .then(d => { if (!dead) setSt({ status: "ready", data: d }); }, e => { if (!dead) setSt({ status: "error", error: e.message }); });
+    return () => { dead = true; };
+  }, [key]);
+  return st;
+}
+const perOf = p => p ? { since: p.since, until: p.until } : undefined;
+function statusPill(code, label) {
+  const cls = code === "ACTIVE" ? "pill-good" : code === "WITH_ISSUES" || code === "DISAPPROVED" || code === "PENDING_BILLING_INFO" ? "pill-bad" : code === "IN_PROCESS" || code === "PENDING_REVIEW" ? "pill-info" : "pill-mute";
+  return html`<span className=${"pill " + cls}>${label || code || "—"}</span>`;
+}
+const GOAL_PT = { LEAD_GENERATION: "Leads", QUALITY_LEAD: "Leads de qualidade", OFFSITE_CONVERSIONS: "Conversões", CONVERSATIONS: "Conversas", LINK_CLICKS: "Cliques no link", LANDING_PAGE_VIEWS: "Visualizações da página", REACH: "Alcance", IMPRESSIONS: "Impressões", THRUPLAY: "ThruPlay", POST_ENGAGEMENT: "Engajamento", VALUE: "Valor", APP_INSTALLS: "Instalações" };
+
+/* conferência: soma das campanhas x gasto total da conta, e o que mais existe na conta */
+function Coverage({ cov, shown }) {
+  if (!cov) return null;
+  const st = cov.byStatus || {};
+  const parts = [["ACTIVE", "ativas"], ["PAUSED", "pausadas"], ["WITH_ISSUES", "com problemas"], ["IN_PROCESS", "em processamento"], ["ARCHIVED", "arquivadas"]].filter(([k]) => st[k]).map(([k, l]) => st[k] + " " + l);
+  const ok = cov.ok;
+  return html`<div className=${"cov " + (ok === false ? "cov-bad" : ok ? "cov-ok" : "")}>
+    <${Icon} n=${ok === false ? "alert" : "check"} s=${15} />
+    <div style=${{ minWidth: 0 }}>
+      <b>${cov.listed} ${cov.listed === 1 ? "campanha" : "campanhas"} na conta${parts.length ? " (" + parts.join(", ") + ")" : ""}${cov.deletedWithSpend ? " + " + cov.deletedWithSpend + " excluída" + (cov.deletedWithSpend > 1 ? "s" : "") + " com gasto" : ""}.</b>
+      <span> ${cov.withSpend} com investimento no período estão na tabela${cov.withoutSpend ? ", " + cov.withoutSpend + " sem investimento estão listadas abaixo" : ""}.</span>
+      ${ok === true ? html`<span> A soma das campanhas (${brl2(cov.campSpend)}) bate com o gasto total da conta na Meta.</span>`
+        : ok === false ? html`<span> Atenção: a soma das campanhas (${brl2(cov.campSpend)}) é diferente do gasto da conta (${brl2(cov.acctSpend)}), diferença de ${brl2(Math.abs(cov.diff))}. Clique em Atualizar; se continuar, avise o suporte.</span>`
+        : html`<span> Não consegui conferir com o gasto total da conta agora.</span>`}
+    </div>
+  </div>`;
+}
+
+function OtherCampaigns({ list, onOpen }) {
+  const [open, setOpen] = useState(false);
+  if (!list || !list.length) return null;
+  const on = list.filter(c => c.on).length;
+  return html`<div className="card card-pad">
+    <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+      <div style=${{ display: "flex", gap: 10, alignItems: "flex-start", minWidth: 0, flex: 1 }}><span className="stale-pill" style=${{ flex: "none" }}><${Icon} n="pause" s=${12} />${list.length}</span>
+        <div><b>${list.length === 1 ? "Mais 1 campanha" : "Mais " + list.length + " campanhas"} na conta sem investimento no período</b>
+        <div className="card-sub">${on ? (on === 1 ? "1 está ativa mas não gastou" : on + " estão ativas mas não gastaram") + ": costuma ser conjunto pausado, anúncio reprovado ou sem orçamento. " : ""}Não entram nos números acima. Clique numa campanha para abrir os conjuntos e anúncios.</div></div></div>
+      <button className="btn btn-sm btn-line" onClick=${() => setOpen(!open)} aria-expanded=${open}>${open ? "Esconder lista" : "Ver campanhas"}</button>
+    </div>
+    ${open ? html`<div className="other-list">${list.map(c => html`<button type="button" key=${c.id} className="other-row" onClick=${() => onOpen && onOpen({ metaId: c.id, name: c.name })} disabled=${!onOpen}>
+      <span style=${{ minWidth: 0 }}><span className="cname" title=${c.name}>${c.name}</span><small>${OBJ_PT[c.objective] || c.objective || "—"}${c.budget ? " · " + brl(c.budget) + "/dia" : ""}</small></span>
+      ${statusPill(c.metaStatus, c.statusLabel)}${onOpen ? html`<${Icon} n="chevR" s=${14} />` : null}</button>`)}</div>` : null}
+  </div>`;
+}
+
+/* campanha aberta em níveis: conjuntos → anúncios → criativo */
+function CampaignDrill({ meta, camp, kind, period, onBack }) {
+  const q = useMetaQuery(meta, { action: "tree", campaign_id: camp.metaId, kind, period: perOf(period) }, true);
+  const [set, setSet] = useState(null);
+  const [tab, setTab] = useState("sets");
+  const [ad, setAd] = useState(null);
+  const d = q.status === "ready" ? q.data : null;
+  const k = d ? d.kind : kind;
+  const cost = x => x.results > 0 ? brl2(x.spend / x.results) : "—";
+  const crumb = html`<nav className="crumb-drill" aria-label="Níveis">
+    <button type="button" className="link-btn" onClick=${onBack}><${Icon} n="chevR" s=${13} /></button>
+    <button type="button" className="link-btn" onClick=${onBack}>Campanhas</button><span>/</span>
+    ${set ? html`<button type="button" className="link-btn" onClick=${() => setSet(null)} title=${camp.name}>${camp.name}</button><span>/</span><b title=${set.name}>${set.name}</b>` : html`<b title=${camp.name}>${camp.name}</b>`}
+  </nav>`;
+  if (q.status !== "ready") return html`<div className="stack">${crumb}<div className="card card-pad"><${BreakNote}>${q.status === "error" ? "Não consegui abrir a campanha: " + q.error : "Buscando conjuntos e anúncios na Meta…"}<//></div></div>`;
+  const c = d.campaign;
+  const scope = set ? d.ads.filter(a => a.adsetId === set.id) : d.ads;
+  const tot = (set ? [set] : d.adsets).reduce((a, x) => ({ spend: a.spend + x.spend, results: a.results + x.results, impr: a.impr + x.impr, clicks: a.clicks + x.clicks, reach: a.reach + x.reach }), { spend: 0, results: 0, impr: 0, clicks: 0, reach: 0 });
+  const showAds = set || tab === "ads";
+  const adTable = html`<div className="card card-pad"><div className="tbl-wrap" style=${{ marginTop: -18 }}><table className="tbl drill-tbl">
+    <thead><tr><th>Anúncio</th><th>Status</th><th className="r">Investido</th><th className="r">${kindLabel(k)}</th><th className="r">${kindCost(k)}</th><th className="r">CTR</th><th className="r">Freq.</th><th></th></tr></thead>
+    <tbody>${scope.map(a => html`<tr key=${a.id} className=${"row-click" + (a.on ? "" : " off")} onClick=${() => setAd(a)} tabIndex="0" onKeyDown=${e => { if (e.key === "Enter") setAd(a); }}>
+      <td><span style=${{ display: "flex", gap: 10, alignItems: "center", minWidth: 0 }}><span className="mini-thumb sm">${a.thumb ? html`<img src=${a.thumb} alt="" loading="lazy" referrerPolicy="no-referrer" onError=${e => { e.target.style.display = "none"; }} />` : null}</span>
+        <span style=${{ minWidth: 0 }}><span className="cname" title=${a.name}>${a.name}</span><small className="card-sub">${a.format}${!set ? " · " + ((d.adsets.find(s => s.id === a.adsetId) || {}).name || "") : ""}</small></span></span></td>
+      <td>${statusPill(a.status, a.statusLabel)}</td>
+      <td className="r num">${brl2(a.spend)}</td><td className="r num">${fmtInt(a.results)}</td><td className="r num">${cost(a)}</td>
+      <td className="r num">${a.impr ? pct(a.clicks / a.impr, 2) : "—"}</td><td className="r num">${a.freq ? dec(a.freq, 1) : "—"}</td>
+      <td><span className="link-btn">Detalhes<${Icon} n="chevR" s=${13} /></span></td></tr>`)}
+      ${!scope.length ? html`<tr><td colSpan="8" style=${{ textAlign: "center", padding: 28 }}>Nenhum anúncio${set ? " neste conjunto" : ""}.</td></tr>` : null}</tbody></table></div></div>`;
+  return html`<div className="stack">
+    ${crumb}
+    <div className="drill-head">
+      <div style=${{ minWidth: 0 }}><div className="eyebrow">${set ? "Conjunto de anúncios" : "Campanha"} · Meta Ads</div><h2 className="drill-title">${set ? set.name : c.name}</h2>
+        <div className="card-sub" style=${{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>${set ? statusPill(set.status, set.statusLabel) : statusPill(c.status, c.statusLabel)}
+          <span>${(set ? (GOAL_PT[set.goal] || set.goal) : OBJ_PT[c.objective] || c.objective) + " · Orçamento "}${set ? (set.budget ? brl(set.budget) + "/dia" : set.lifetimeBudget ? brl(set.lifetimeBudget) + " total" : "na campanha") : c.budgetLevel === "campanha" ? (c.budget ? brl(c.budget) + "/dia" : "total da campanha") : "nos conjuntos (ABO)"}</span></div></div>
+    </div>
+    <div className="grid g4">
+      <${Kpi} label="Investido" value=${brl(tot.spend)} /><${Kpi} label=${kindLabel(k)} value=${fmtInt(tot.results)} />
+      <${Kpi} label=${kindCost(k)} value=${tot.results > 0 ? brl2(tot.spend / tot.results) : "—"} /><${Kpi} label="CTR" value=${tot.impr ? pct(tot.clicks / tot.impr, 2) : "—"} hint=${kfmt(tot.impr) + " impressões · " + kfmt(tot.reach) + " alcance"} />
+    </div>
+    ${set ? null : html`<div className="seg" role="tablist" aria-label="Nível"><button className=${tab === "sets" ? "on" : ""} onClick=${() => setTab("sets")}>Conjuntos <span className="cnt-s">${d.adsets.length}</span></button><button className=${tab === "ads" ? "on" : ""} onClick=${() => setTab("ads")}>Anúncios <span className="cnt-s">${d.ads.length}</span></button></div>`}
+    ${showAds ? adTable : html`<div className="card card-pad"><div className="tbl-wrap" style=${{ marginTop: -18 }}><table className="tbl drill-tbl">
+      <thead><tr><th>Conjunto</th><th>Status</th><th className="r">Orçamento</th><th className="r">Investido</th><th className="r">${kindLabel(k)}</th><th className="r">${kindCost(k)}</th><th className="r">CTR</th><th className="r">Anúncios</th><th></th></tr></thead>
+      <tbody>${d.adsets.map(s => html`<tr key=${s.id} className=${"row-click" + (s.on ? "" : " off")} onClick=${() => setSet(s)} tabIndex="0" onKeyDown=${e => { if (e.key === "Enter") setSet(s); }}>
+        <td><span className="cname" title=${s.name}>${s.name}</span><small className="card-sub">${GOAL_PT[s.goal] || s.goal || ""}</small></td>
+        <td>${statusPill(s.status, s.statusLabel)}</td>
+        <td className="r num">${s.budget ? brl(s.budget) + "/dia" : s.lifetimeBudget ? brl(s.lifetimeBudget) + " total" : "—"}</td>
+        <td className="r num">${brl2(s.spend)}</td><td className="r num">${fmtInt(s.results)}</td><td className="r num">${cost(s)}</td>
+        <td className="r num">${s.impr ? pct(s.clicks / s.impr, 2) : "—"}</td><td className="r num">${s.adsOn}/${s.ads}</td>
+        <td><span className="link-btn">Abrir<${Icon} n="chevR" s=${13} /></span></td></tr>`)}
+        ${!d.adsets.length ? html`<tr><td colSpan="9" style=${{ textAlign: "center", padding: 28 }}>Nenhum conjunto nesta campanha.</td></tr>` : null}</tbody></table></div></div>`}
+    <p className="demo-note"><${Icon} n="check" s=${13} />Todos os conjuntos e anúncios da campanha, inclusive os que não gastaram no período. Clique num anúncio para ver os números e o link da postagem.</p>
+    ${ad ? html`<${CreativeDrawer} meta=${meta} base=${ad} kind=${k} period=${period} onClose=${() => setAd(null)} />` : null}
+  </div>`;
+}
+
+/* barra lateral do criativo: números do período e links da postagem */
+function CreativeDrawer({ meta, base, kind, period, onClose }) {
+  const q = useMetaQuery(meta, { action: "ad", ad_id: base.id, kind, period: perOf(period) }, !!meta);
+  useEffect(() => { const f = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", f); return () => window.removeEventListener("keydown", f); }, []);
+  const d = q.status === "ready" ? q.data : null;
+  const a = d || base;
+  const k = (d && d.kind) || kind;
+  const links = a.links || {};
+  const sells = a.revenue > 0;
+  const stat = (l, v, h) => html`<div className="cd-stat"><small>${l}</small><b className="num">${v}</b>${h ? html`<span>${h}</span>` : null}</div>`;
+  const lk = (href, ic, label, sub) => href ? html`<a className="cd-link" href=${href} target="_blank" rel="noopener noreferrer"><span className="cd-link-ico"><${Icon} n=${ic} s=${15} /></span><span><b>${label}</b><small>${sub}</small></span><${Icon} n="arrowR" s=${14} /></a>` : null;
+  const series = d && d.series && d.series.length > 1 ? d.series : null;
+  const v = d && d.video;
+  return html`<${Fragment}><div className="drawer-bg" style=${{ zIndex: 60 }} onClick=${onClose}></div>
+    <aside className="drawer cd" style=${{ zIndex: 61 }} role="dialog" aria-modal="true" aria-label=${"Criativo " + a.name}>
+      <div className="drawer-head"><div style=${{ minWidth: 0 }}><div className="eyebrow">Criativo · ${a.format || "Anúncio"}</div><h2 style=${{ fontSize: 18, fontWeight: 700, overflowWrap: "anywhere" }}>${a.name}</h2>
+        <div className="card-sub" style=${{ overflowWrap: "anywhere" }}>${(d && d.campaign ? d.campaign.name : a.campaign) || ""}${(d && d.adset ? d.adset.name : a.adset) ? " › " + (d && d.adset ? d.adset.name : a.adset) : ""}</div></div>
+        <button type="button" className="btn btn-ghost btn-sm" onClick=${onClose} aria-label="Fechar"><${Icon} n="x" /></button></div>
+      <div className="drawer-body">
+        <div className=${"cd-hero" + (a.thumb ? "" : " noimg")}>${a.thumb ? html`<img src=${a.thumb} alt="" referrerPolicy="no-referrer" onError=${e => { e.target.style.display = "none"; }} />` : html`<${Icon} n="image" s=${28} />`}
+          <span className="fmt">${a.format}</span>${a.status ? html`<span className="cd-st">${statusPill(a.status, a.statusLabel)}</span>` : null}</div>
+        <div className="cd-links">
+          ${lk(links.instagram, "image", "Ver postagem no Instagram", "Abre o post no Instagram")}
+          ${lk(links.facebook, "msg", "Ver postagem no Facebook", "Abre o post da página")}
+          ${lk(links.preview, "eye", "Pré-visualização do anúncio", "Como o anúncio aparece no feed")}
+          ${lk(links.manager, "sliders", "Abrir no Gerenciador de Anúncios", "Editar na Meta")}
+          ${!links.instagram && !links.facebook && !links.preview ? html`<div className="card-sub">${q.status === "loading" ? "Buscando os links da postagem…" : "Este anúncio não tem uma postagem pública vinculada (anúncio dinâmico ou só no Gerenciador)."}</div>` : null}
+        </div>
+        ${d && d.issues && d.issues.length ? html`<div className="cov cov-bad"><${Icon} n="alert" s=${15} /><div><b>Problemas apontados pela Meta</b>${d.issues.map((t, i) => html`<div key=${i}>${t}</div>`)}</div></div>` : null}
+        <div>
+          <div className="cd-sec">Desempenho no período${d && d.period ? html` <span>${d.period.since.split("-").reverse().join("/")} a ${d.period.until.split("-").reverse().join("/")}</span>` : null}</div>
+          <div className="cd-stats">
+            ${stat("Investido", brl2(a.spend))}
+            ${stat(kindLabel(k), fmtInt(a.results))}
+            ${sells ? stat("ROAS", xroas(a.revenue / a.spend), brl2(a.revenue) + " de receita") : stat(kindCost(k), a.results > 0 ? brl2(a.spend / a.results) : "—")}
+            ${stat("Impressões", kfmt(a.impr))}
+            ${stat("Alcance", d ? kfmt(d.reach) : "…")}
+            ${stat("Frequência", a.freq ? dec(a.freq, 1) : "—")}
+            ${stat("CTR", a.impr ? pct(a.clicks / a.impr, 2) : "—", fmtInt(a.clicks) + " cliques · CPC " + (a.clicks ? brl2(a.spend / a.clicks) : "—"))}
+            ${stat("CTR do link", d && d.impr ? pct(d.linkClicks / d.impr, 2) : d ? "—" : "…", d ? fmtInt(d.linkClicks) + " cliques no link" : "")}
+            ${stat("CPM", d && d.cpm ? brl2(d.cpm) : a.impr ? brl2(a.spend / a.impr * 1000) : "—")}
+          </div>
+        </div>
+        ${series ? html`<div><div className="cd-sec">Investimento por dia <span>${kindLabel(k).toLowerCase()} no total: ${fmtInt(series.reduce((s, x) => s + x.results, 0))}</span></div>
+          <${Columns} values=${series.map(x => x.spend)} labels=${series.map(x => x.d.slice(8) + "/" + x.d.slice(5, 7))} height=${130} highlight=${i => series[i].results > 0} /></div>` : null}
+        ${v ? html`<div><div className="cd-sec">Vídeo</div>
+          <div className="cd-funnel">${[["Reproduções 3s", v.plays], ["25%", v.p25], ["50%", v.p50], ["75%", v.p75], ["100%", v.p100]].map(([l, n]) => html`<div key=${l}><span>${l}</span><i><u style=${{ width: (v.plays ? Math.min(1, n / v.plays) : 0) * 100 + "%" }}></u></i><b className="num">${fmtInt(n)}</b></div>`)}</div>
+          <div className="card-sub">Retenção 3s: ${pct(v.hook, 0)} das impressões · ThruPlay: ${fmtInt(v.thruplay)}${v.avg ? " · tempo médio " + dec(v.avg, 0) + "s" : ""}</div></div>` : null}
+        ${d && (d.title || d.body || d.cta) ? html`<div><div className="cd-sec">Texto do anúncio</div><div className="cd-copy">
+          ${d.title ? html`<b>${d.title}</b>` : null}${d.body ? html`<p>${d.body}</p>` : null}
+          ${d.cta || d.dest ? html`<div className="card-sub">${d.cta ? "Botão: " + d.cta : ""}${d.cta && d.dest ? " · " : ""}${d.dest ? html`<a href=${d.dest} target="_blank" rel="noopener noreferrer" style=${{ overflowWrap: "anywhere" }}>${d.dest}</a>` : null}</div>` : null}</div></div>` : null}
+        ${q.status === "loading" ? html`<div className="card-sub">Carregando os números completos…</div>` : q.status === "error" ? html`<div className="card-sub">Não consegui buscar os detalhes: ${q.error}</div>` : null}
+      </div>
+      <div className="drawer-foot"><span className="card-sub" style=${{ alignSelf: "center" }}>ID do anúncio ${a.id}</span><button type="button" className="btn btn-line" onClick=${onClose}>Fechar</button></div>
+    </aside><//>`;
+}
+
+function Campaigns({ camps, setCamps, toast, chat, idle, others, coverage, meta, period }) {
+  const [drill, setDrill] = useState(null);
   const [ch, setCh] = useState("all"); const [st, setSt] = useState("all"); const [sort, setSort] = useState("rec"); const [rf, setRf] = useState("all");
   const [pending, setPending] = useState(null);
+  const canDrill = c => !!(meta && c.ch === "meta" && (c.metaId || /^m\d+$/.test(c.id)));
+  const openDrill = c => setDrill({ metaId: c.metaId || String(c.id).replace(/^m/, ""), name: c.name });
+  if (drill) return html`<${CampaignDrill} meta=${meta} camp=${drill} kind=${resultKind(camps)} period=${period} onBack=${() => setDrill(null)} />`;
   const withRec = camps.map(c => ({ ...c, rec: recFor(c) }));
   const list = withRec.filter(c => (ch === "all" || c.ch === ch) && (st === "all" || c.status === st) && (rf === "all" || c.rec.k === rf))
     .sort((a, b) => sort === "rec" ? (REC_ORDER[a.rec.k] - REC_ORDER[b.rec.k]) || (b.spend - a.spend) : sort === "roas" ? (roasOf(b) || 0) - (roasOf(a) || 0) : b.spend - a.spend);
@@ -2367,14 +2597,15 @@ function Campaigns({ camps, setCamps, toast, chat, idle }) {
       <${Kpi} label="Investido" value=${brl(t.spend)} /><${Kpi} label=${kindLabel(kind)} value=${fmtInt(t.purchases)} /><${Kpi} label=${kindCost(kind)} value=${brl2(t.cpa)} />
       ${sells ? html`<${Kpi} label="ROAS" value=${xroas(t.roas)} hint=${hasTarget() ? "Meta da conta: " + xroas(ACTIVE.target) : "Sem meta de ROAS definida"} />` : html`<${Kpi} label="CTR" value=${pct(t.ctr, 2)} hint=${kfmt(t.impr) + " impressões"} />`}
     </div>
+    ${ACTIVE.live && coverage ? html`<${Coverage} cov=${coverage} />` : null}
     <div className="card card-pad"><div className="tbl-wrap" style=${{ marginTop: -18 }}><table className="tbl camp-tbl">
       <thead><tr><th>Campanha</th><th>Ligada</th><th className="r">Orçamento/dia</th><th className="r">Investido</th><th className="r">${kindCost(kind)}</th>${sells ? html`<th>${hasTarget() ? "ROAS x meta" : "ROAS"}</th>` : html`<th className="r">CTR</th>`}<th>${ACTIVE.live ? "14 dias" : "7 dias"}</th><th>Recomendação</th><th>Ação</th></tr></thead>
       <tbody>${list.map(c => { const roas = roasOf(c); const sp = c.daily ? c.daily : ACTIVE.live ? null : series(c.revenue, c.id.length * 13 + c.spend % 97, c.d7 * 2, .3).slice(-14); const on = c.status === "ativa";
         const sev = { pause: "var(--bad)", review: "var(--warn)", scale: "var(--good)", reactivate: "var(--accent)" }[c.rec.k];
         return html`<${Fragment} key=${c.id}><tr className=${on ? "" : "off"}>
-          <td style=${{ boxShadow: sev ? "inset 3px 0 0 " + sev : "none" }}><span className="cname" title=${c.name}>${c.name}</span><span style=${{ display: "flex", gap: 8, alignItems: "center", marginTop: 3 }}><${ChTag} ch=${c.ch} />${c.limited ? html`<span className="pill pill-info" style=${{ height: 19, fontSize: 11 }}>Limitada pelo orçamento</span>` : null}</span></td>
-          <td><span style=${{ display: "inline-flex", alignItems: "center", gap: 8 }}><${Toggle} on=${on} onChange=${v => setStatus(c, v)} label=${(on ? "Pausar " : "Ativar ") + c.name} /><span style=${{ fontSize: 12.5, fontWeight: 600, color: on ? "var(--good)" : "var(--muted)" }}>${on ? "Ativa" : "Pausada"}</span></span></td>
-          <td className="r num">${on ? brl(c.budget) : "—"}</td><td className="r num">${brl(c.spend)}</td>
+          <td style=${{ boxShadow: sev ? "inset 3px 0 0 " + sev : "none" }}>${canDrill(c) ? html`<button type="button" className="cname cname-link" title=${"Abrir conjuntos e anúncios de " + c.name} onClick=${() => openDrill(c)}>${c.name}<${Icon} n="chevR" s=${13} /></button>` : html`<span className="cname" title=${c.name}>${c.name}</span>`}<span style=${{ display: "flex", gap: 8, alignItems: "center", marginTop: 3 }}><${ChTag} ch=${c.ch} />${c.limited ? html`<span className="pill pill-info" style=${{ height: 19, fontSize: 11 }}>Limitada pelo orçamento</span>` : null}</span></td>
+          <td><span style=${{ display: "inline-flex", alignItems: "center", gap: 8 }}>${c.metaStatus === "DELETED" ? null : html`<${Toggle} on=${on} onChange=${v => setStatus(c, v)} label=${(on ? "Pausar " : "Ativar ") + c.name} />`}<span style=${{ fontSize: 12.5, fontWeight: 600, color: c.metaStatus === "WITH_ISSUES" ? "var(--bad)" : on ? "var(--good)" : "var(--muted)" }}>${c.statusLabel && c.metaStatus !== "ACTIVE" && c.metaStatus !== "PAUSED" ? c.statusLabel : on ? "Ativa" : "Pausada"}</span></span></td>
+          <td className="r num" title=${c.budgetLevel === "conjunto" ? "Soma dos orçamentos dos conjuntos ativos (ABO)" : ""}>${on ? (c.budget ? brl(c.budget) : c.lifetimeBudget ? brl(c.lifetimeBudget) + " total" : "—") : "—"}${on && c.budgetLevel === "conjunto" && c.budget ? html`<small className="budget-lvl">nos conjuntos</small>` : null}</td><td className="r num">${brl(c.spend)}</td>
           <td className="r num">${brl2(c.spend / c.purchases)}</td>
           ${sells ? html`<td><span style=${{ display: "inline-flex", alignItems: "center", gap: 8 }}><${RoasBar} roas=${roas} /><b className="num" style=${{ color: roasColor(roas), minWidth: 44 }}>${xroas(roas)}</b></span></td>` : html`<td className="r num">${pct(c.clicks / c.impr, 2)}</td>`}
           <td><span style=${{ display: "inline-flex", alignItems: "center", gap: 6 }} title=${c.daily ? (c.dailyMetric === "receita" ? "Receita" : "Investimento") + " por dia, últimos 14 dias. A variação compara os últimos 7 dias com os 7 anteriores." : ""}>${sp && sp.some(v => v > 0) ? html`<${Spark} values=${sp} color=${c.d7 >= 0 ? "var(--good)" : "var(--bad)"} />` : null}<span className=${"delta " + (c.d7 >= 0 ? "up" : "down")}>${c.d7 >= 0 ? "+" : "−"}${pct(Math.abs(c.d7), 0)}</span></span></td>
@@ -2386,7 +2617,7 @@ function Campaigns({ camps, setCamps, toast, chat, idle }) {
         <//>`; })}
         ${list.length === 0 ? html`<tr><td colSpan="9" style=${{ textAlign: "center", padding: 28 }}>Nenhuma campanha com esses filtros.</td></tr>` : null}
       </tbody></table></div></div>
-    ${ACTIVE.live ? html`<${IdleCampaigns} idle=${idle} />` : null}
+    ${ACTIVE.live ? (others ? html`<${OtherCampaigns} list=${others.filter(c => c.ch === "meta")} onOpen=${meta ? openDrill : null} />` : html`<${IdleCampaigns} idle=${idle} />`) : null}
   </div>`;
 }
 
@@ -2467,7 +2698,8 @@ function creStatus(k, sells) {
   if (sells && hasTarget() && k.spend > 0 && k.revenue / k.spend < ACTIVE.target) return ["pill-bad", "Abaixo da meta", "ROAS abaixo da meta de " + xroas(ACTIVE.target)];
   return ["pill-good", "Saudável", "Sem sinal de fadiga"];
 }
-function LiveCreatives({ cre }) {
+function LiveCreatives({ cre, meta, period }) {
+  const [sel, setSel] = useState(null);
   const [view, setViewS] = useState(() => store.get("readyai_cre_view", "grid"));
   const setView = v => { setViewS(v); store.set("readyai_cre_view", v); };
   const [q, setQ] = useState(""); const [stF, setStF] = useState("all"); const [fmtF, setFmtF] = useState("all"); const [campF, setCampF] = useState("all");
@@ -2517,7 +2749,7 @@ function LiveCreatives({ cre }) {
     ${!list.length ? html`<div className="card card-pad"><${BreakNote}>Nenhum anúncio com esses filtros. <button type="button" className="link-btn" onClick=${clear}>Limpar filtros</button><//></div>`
     : view === "list" ? html`<div className="card cre-list">
       <div className="cre-row cre-row-head"><span></span><button type="button" className=${"th-sort" + (sort.k === "rank" ? " on" : "")} onClick=${() => setSort({ k: "rank", dir: 1 })}>Anúncio</button><span>Status</span>${th("main", main(ranked[0])[0])}${th("ctr", "CTR")}${th("results", kl)}${th("spend", "Investido")}</div>
-      ${list.map(k => html`<div key=${k.id} className="cre-row">
+      ${list.map(k => html`<div key=${k.id} className="cre-row row-click" role="button" tabIndex="0" onClick=${() => setSel(k)} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSel(k); } }} aria-label=${"Ver detalhes de " + k.name}>
         <span className="mini-thumb" style=${{ background: "var(--surface-2)" }}>${thumb(k)}</span>
         <span style=${{ minWidth: 0 }}><b className="cname" style=${{ fontSize: 13.5 }} title=${k.name}>#${k.rank} · ${k.name}</b><span className="cre-meta"><${ChTag} ch="meta" /><span title=${k.campaign}>${k.format} · ${k.campaign}</span></span></span>
         <span><span className=${"pill " + k.st[0]} title=${k.st[2]}>${k.st[1]}</span></span>
@@ -2526,7 +2758,7 @@ function LiveCreatives({ cre }) {
         <span className="r num">${fmtInt(k.results)}</span>
         <span className="r num">${brl2(k.spend)}</span>
       </div>`)}
-    </div>` : html`<div className="cre-grid">${list.map(k => html`<article key=${k.id} className="card cre">
+    </div>` : html`<div className="cre-grid">${list.map(k => html`<article key=${k.id} className="card cre cre-click" role="button" tabIndex="0" onClick=${() => setSel(k)} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSel(k); } }} aria-label=${"Ver detalhes de " + k.name}>
       <div className=${"thumb" + (k.thumb ? "" : " noimg")}>${thumb(k, "real")}<span className="fmt">${k.format}</span>${k.text ? html`<span className="hl" style=${{ maxWidth: "20ch", fontSize: 14 }}>${k.text.length > 60 ? k.text.slice(0, 58) + "…" : k.text}</span>` : html`<span></span>`}</div>
       <div className="cre-body">
         <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><b style=${{ fontSize: 13.5, lineHeight: 1.3, overflowWrap: "anywhere" }}>${k.name}</b><span className="mono" style=${{ color: "var(--muted)" }}>#${k.rank}</span></div>
@@ -2534,11 +2766,12 @@ function LiveCreatives({ cre }) {
         <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, flexWrap: "wrap" }}><span style=${{ fontSize: 12.5, color: "var(--muted-2)" }}>${fmtInt(k.results)} ${kl.toLowerCase()}</span><span className=${"pill " + k.st[0]} title=${k.st[2]}>${k.st[1]}</span></div>
         <div className="cre-stats"><div><small>${main(k)[0]}</small><b className="num">${main(k)[1]}</b></div><div><small>CTR</small><b className="num">${pct(k.clicks / k.impr, 1)}</b></div><div><small>${third(k)[0]}</small><b className="num">${third(k)[1]}</b></div></div>
       </div></article>`)}</div>`}
-    <p className="demo-note"><${Icon} n="check" s=${13} />${d.total > ads.length ? "Os " + ads.length + " anúncios com mais investimento, de " + d.total + "," : ads.length + (ads.length === 1 ? " anúncio" : " anúncios")} da Meta com investimento no período. Passe o mouse no status para ver o motivo. O Google Ads ainda não entrega criativos.</p>
+    <p className="demo-note"><${Icon} n="check" s=${13} />${d.total > ads.length ? "Os " + ads.length + " anúncios com mais investimento, de " + d.total + "," : ads.length + (ads.length === 1 ? " anúncio" : " anúncios")} da Meta com investimento no período. Clique num criativo para ver os números completos e o link da postagem. O Google Ads ainda não entrega criativos.</p>
+    ${sel ? html`<${CreativeDrawer} meta=${meta} base=${sel} kind=${kind} period=${period} onClose=${() => setSel(null)} />` : null}
   </div>`;
 }
-function Creatives({ camps, cre }) {
-  if (ACTIVE.live) return html`<${LiveCreatives} cre=${cre} />`;
+function Creatives({ camps, cre, meta, period }) {
+  if (ACTIVE.live) return html`<${LiveCreatives} cre=${cre} meta=${meta} period=${period} />`;
   const [ch, setCh] = useState("all");
   const [view, setViewS] = useState(() => store.get("readyai_cre_view", "grid"));
   const setView = v => { setViewS(v); store.set("readyai_cre_view", v); };
@@ -2876,16 +3109,18 @@ function useLiveData(client, enabled, period) {
         const v = r.value || {};
         camps.push(...(v.campaigns || []));
         if (v.prev) Object.keys(prev).forEach(k => { prev[k] += v.prev[k] || 0; });
-        sources.push({ ch, label: ch === "meta" ? (c.accountName || c.accountId) : (c.customerName || c.customerId), n: (v.campaigns || []).length, note: v.note, lastSpend: v.lastSpend || null, period: v.period || null, idle: v.idleActive || [], days: v.days || null });
+        sources.push({ ch, label: ch === "meta" ? (c.accountName || c.accountId) : (c.customerName || c.customerId), n: (v.campaigns || []).length, note: v.note, lastSpend: v.lastSpend || null, period: v.period || null, idle: v.idleActive || [], others: v.others || [], coverage: v.coverage || null, days: v.days || null });
       });
       const lastSpend = sources.map(x => x.lastSpend).filter(Boolean).sort().pop() || null;
       const period = (sources.find(x => x.period) || {}).period || null;
       const idle = sources.flatMap(x => x.idle.map(c => ({ ...c, ch: x.ch })));
+      const others = sources.flatMap(x => (x.others || []).map(c => ({ ...c, ch: x.ch })));
+      const coverage = (sources.find(x => x.ch === "meta" && x.coverage) || {}).coverage || null;
       // linha do tempo: soma, dia a dia, os canais que mandam a série diária
       const withDays = sources.filter(x => x.days && x.days.length);
       let days = null;
       if (withDays.length) { const by = {}; withDays.forEach(x => x.days.forEach(d => { const o = by[d.d] || (by[d.d] = { d: d.d, spend: 0, impr: 0, clicks: 0, compras: 0, leads: 0, conversas: 0, revenue: 0 }); for (const k in o) if (k !== "d") o[k] += d[k] || 0; })); days = Object.values(by).sort((a, b) => a.d < b.d ? -1 : 1); }
-      setSt({ status: sources.length ? "ready" : "error", camps, prev, errors, sources, lastSpend, period, idle, days, dayCh: withDays.map(x => x.ch), at: new Date() });
+      setSt({ status: sources.length ? "ready" : "error", camps, prev, errors, sources, lastSpend, period, idle, others, coverage, days, dayCh: withDays.map(x => x.ch), at: new Date() });
     });
     return () => { dead = true; };
   }, [key]);
@@ -3527,8 +3762,8 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   else if (screen === "portfolio" && noRows) body = html`<${PortfolioEmpty} pf=${pf} hasToken=${agencyMeta} connect=${connect} agency=${client.company} />`;
   else if (screen === "overview") body = html`<${Overview} camps=${camps} days=${isLive ? live.days : demoDays(camps)} />`;
   else if (screen === "analytics") body = html`<${Analytics} camps=${camps} brk=${brk} />`;
-  else if (screen === "campaigns") body = html`<${Campaigns} camps=${camps} setCamps=${setCamps} toast=${toast} chat=${chat} idle=${isLive ? live.idle : null} />`;
-  else if (screen === "creatives") body = html`<${Creatives} camps=${camps} cre=${cre} />`;
+  else if (screen === "campaigns") body = html`<${Campaigns} camps=${camps} setCamps=${setCamps} toast=${toast} chat=${chat} idle=${isLive ? live.idle : null} others=${isLive ? live.others : null} coverage=${isLive ? live.coverage : null} meta=${isLive ? brkMeta : null} period=${periodR} />`;
+  else if (screen === "creatives") body = html`<${Creatives} camps=${camps} cre=${cre} meta=${isLive ? brkMeta : null} period=${periodR} />`;
   else if (screen === "report") body = html`<${Report} camps=${camps} toast=${toast} user=${client} account=${accountName} agency=${isAgency ? client.company : null} demo=${demo && !isLive} insights=${insights} />`;
   else if (screen === "portfolio") body = html`<${Portfolio} chat=${chat} openClient=${openClient} toast=${toast} agency=${client.company} rows=${pfRows} />`;
   else if (screen === "media") body = html`<${MediaPlanScreen} camps=${campsPlan} inp=${mediaIn} setInp=${setMediaIn} stale=${staleTxt} />`;
