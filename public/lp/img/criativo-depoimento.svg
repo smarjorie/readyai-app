@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 200" width="480" height="200" role="img" aria-label="Anúncio de depoimento de cliente com avaliação cinco estrelas">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb36b"/><stop offset="1" stop-color="#ff5f86"/></linearGradient>
+    <clipPath id="av"><circle cx="112" cy="100" r="54"/></clipPath>
+    <path id="star" d="M0-8l2.35 4.76 5.26.77-3.8 3.7.9 5.24L0 3.99l-4.7 2.48.9-5.24-3.8-3.7 5.26-.77z"/>
+  </defs>
+  <rect width="480" height="200" fill="url(#bg)"/>
+  <circle cx="440" cy="20" r="70" fill="#fff" opacity=".12"/>
+  <circle cx="30" cy="190" r="60" fill="#fff" opacity=".1"/>
+  <!-- cliente -->
+  <circle cx="112" cy="100" r="58" fill="#fff" opacity=".28"/>
+  <g clip-path="url(#av)">
+    <rect x="58" y="46" width="108" height="108" fill="#ffe3cf"/>
+    <circle cx="112" cy="88" r="22" fill="#c9774f"/>
+    <path d="M90 82c0-16 10-26 22-26s24 9 24 26c-6-8-14-11-24-11s-17 4-22 11z" fill="#3b2230"/>
+    <ellipse cx="112" cy="150" rx="40" ry="34" fill="#1e6bff"/>
+    <path d="M100 118l12 10 12-10" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- card do depoimento -->
+  <g transform="translate(192 38)">
+    <rect width="252" height="124" rx="18" fill="#fff"/>
+    <text x="16" y="56" font-family="Georgia, serif" font-size="64" font-weight="700" fill="#ff5f86">“</text>
+    <g fill="#ffb020"><use href="#star" x="64" y="28"/><use href="#star" x="84" y="28"/><use href="#star" x="104" y="28"/><use href="#star" x="124" y="28"/><use href="#star" x="144" y="28"/></g>
+    <rect x="22" y="58" width="208" height="10" rx="5" fill="#ece6ef"/>
+    <rect x="22" y="76" width="176" height="10" rx="5" fill="#ece6ef"/>
+    <rect x="22" y="98" width="86" height="12" rx="6" fill="#ffd2dc"/>
+    <circle cx="214" cy="104" r="11" fill="#12b76a"/>
+    <path d="M209 104l3.5 3.5 6.5-7" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

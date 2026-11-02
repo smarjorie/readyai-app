@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 200" width="480" height="200" role="img" aria-label="Anúncio de antes e depois com tela dividida">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d2c4ff"/><stop offset="1" stop-color="#6d28d9"/></linearGradient>
+    <linearGradient id="dull" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8f88a6"/><stop offset="1" stop-color="#5f5878"/></linearGradient>
+  </defs>
+  <rect width="480" height="200" fill="url(#bg)"/>
+  <!-- antes: metade apagada -->
+  <rect width="240" height="200" fill="url(#dull)"/>
+  <g transform="translate(120 0)">
+    <path d="M0 150c-2-22 0-40 4-56" fill="none" stroke="#9c9a8a" stroke-width="4" stroke-linecap="round"/>
+    <path d="M3 104c-14 4-24 14-28 30 12 0 22-8 28-22" fill="#a7a28c"/>
+    <path d="M4 96c10 6 16 18 16 34-10-4-16-16-16-28" fill="#b3ad96"/>
+    <path d="M-22 150h44l-6 34h-32z" fill="#7b6f8f"/>
+    <rect x="-26" y="144" width="52" height="10" rx="4" fill="#6c6180"/>
+  </g>
+  <!-- depois: metade viva -->
+  <g transform="translate(360 0)">
+    <path d="M0 150c-2-30 0-62 6-92" fill="none" stroke="#1f9d55" stroke-width="5" stroke-linecap="round"/>
+    <path d="M2 120c-22-2-38-16-42-38 22 0 38 14 42 36z" fill="#2fbf6c"/>
+    <path d="M3 104c18-6 34-24 34-46-20 4-32 22-34 44z" fill="#22a95c"/>
+    <path d="M5 80c-18-6-28-22-26-42 18 6 28 22 26 40z" fill="#3fd17d"/>
+    <path d="M6 64c12-12 26-16 40-14-6 14-20 20-38 18z" fill="#2fbf6c"/>
+    <circle cx="-30" cy="78" r="7" fill="#ff7ab0"/><circle cx="34" cy="52" r="6" fill="#ffd34d"/><circle cx="-14" cy="40" r="5" fill="#ff7ab0"/>
+    <path d="M-26 150h52l-7 34h-38z" fill="#ff8a5b"/>
+    <rect x="-30" y="144" width="60" height="10" rx="4" fill="#f06e3e"/>
+  </g>
+  <!-- etiquetas -->
+  <rect x="16" y="14" width="64" height="24" rx="12" fill="#fff" opacity=".85"/>
+  <text x="48" y="31" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#4b4466">Antes</text>
+  <rect x="392" y="14" width="72" height="24" rx="12" fill="#fff"/>
+  <text x="428" y="31" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#6d28d9">Depois</text>
+  <!-- divisor arrastável -->
+  <rect x="238" y="0" width="4" height="200" fill="#fff"/>
+  <circle cx="240" cy="100" r="17" fill="#fff"/>
+  <path d="M234 94l-6 6 6 6M246 94l6 6-6 6" fill="none" stroke="#6d28d9" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
