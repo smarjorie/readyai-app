@@ -4156,6 +4156,39 @@ function LoginSide() {
 // auth(email, senha) faz o login (no servidor ou neste navegador) e lança um erro com a mensagem para a pessoa
 function Login({ auth, showDemo, notice }) {
   const [email, setEmail] = useState(""); const [pass, setPass] = useState(""); const [err, setErr] = useState(""); const [showPass, setShowPass] = useState(false); const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState("login"); // login | forgot | sent
+  const [fEmail, setFEmail] = useState("");
+  const toForgot = () => { setFEmail(email.trim()); setErr(""); setBusy(false); setMode("forgot"); };
+  const toLogin = () => { setErr(""); setBusy(false); setMode("login"); };
+  const forgot = async e => {
+    e.preventDefault(); if (busy) return; setErr("");
+    const v = fEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return setErr("Digite um e-mail válido, como voce@empresa.com.br.");
+    setBusy(true);
+    try { await srv("/api/auth", { action: "forgot", email: v }); setFEmail(v); setMode("sent"); }
+    catch (x) { setErr(x.message); }
+    setBusy(false);
+  };
+  const side = html`<span style=${{ position: "absolute", top: 16, right: "max(16px, env(safe-area-inset-right, 0px))" }}><${ThemeToggle} withLabel /></span>`;
+  if (mode === "forgot") return html`<div className="login">
+    <${LoginSide} />
+    <section className="login-main" style=${{ position: "relative" }}>${side}<form className="login-box" onSubmit=${forgot}>
+      <div><h2>Esqueceu a senha?</h2><p style=${{ color: "var(--muted)", marginTop: 4 }}>Informe o e-mail da sua conta. Vamos enviar um link para você criar uma nova senha.</p></div>
+      <div className="field"><label htmlFor="fg-e">E-mail</label><input id="fg-e" className="input" type="email" autoComplete="username" value=${fEmail} onInput=${e => setFEmail(e.target.value)} placeholder="voce@empresa.com.br" autoFocus /></div>
+      ${err ? html`<div className="err" role="alert">${err}</div>` : null}
+      <button className="btn btn-primary" style=${{ height: 42 }} type="submit" disabled=${busy}>${busy ? "Enviando…" : "Enviar link"}</button>
+      <button type="button" className="btn btn-ghost" style=${{ height: 40 }} onClick=${toLogin}>Voltar para o login</button>
+    </form></section>
+  </div>`;
+  if (mode === "sent") return html`<div className="login">
+    <${LoginSide} />
+    <section className="login-main" style=${{ position: "relative" }}>${side}<div className="login-box">
+      <div><h2>Confira seu e-mail</h2><p style=${{ color: "var(--muted)", marginTop: 4 }}>Se existir uma conta com <b style=${{ color: "var(--ink)" }}>${fEmail}</b>, enviamos um link para criar uma nova senha. Ele vale por 1 hora e só pode ser usado uma vez.</p></div>
+      <div className="notice info" style=${{ padding: "10px 12px" }}><${Icon} n="mail" s=${15} /><span>Não chegou em alguns minutos? Confira a caixa de spam ou peça de novo.</span></div>
+      <button className="btn btn-primary" style=${{ height: 42 }} onClick=${toLogin}>Voltar para o login</button>
+      <button type="button" className="btn btn-ghost" style=${{ height: 40 }} onClick=${() => { setErr(""); setMode("forgot"); }}>Enviar de novo</button>
+    </div></section>
+  </div>`;
   const submit = async e => {
     e.preventDefault(); if (busy) return; setErr(""); setBusy(true);
     try { await auth(email.trim().toLowerCase(), pass); } catch (x) { setErr(x.message); setBusy(false); }
@@ -4164,10 +4197,10 @@ function Login({ auth, showDemo, notice }) {
   return html`<div className="login">
     <${LoginSide} />
     <section className="login-main" style=${{ position: "relative" }}><span style=${{ position: "absolute", top: 16, right: "max(16px, env(safe-area-inset-right, 0px))" }}><${ThemeToggle} withLabel /></span><form className="login-box" onSubmit=${submit}>
-      <div><h2>Entrar</h2><p style=${{ color: "var(--muted)", marginTop: 4 }}>${showDemo ? "Use o e-mail e a senha enviados pelo seu gestor de conta." : "Use o e-mail do convite e a senha que você criou."}</p></div>
+      <div><h2>Entrar</h2><p style=${{ color: "var(--muted)", marginTop: 4 }}>${showDemo ? "Use o e-mail e a senha enviados pelo seu gestor de conta." : "Use o e-mail e a senha da sua conta."}</p></div>
       ${notice ? html`<div className="notice info" style=${{ padding: "10px 12px" }}><${Icon} n="check" s=${15} /><span>${notice}</span></div>` : null}
       <div className="field"><label htmlFor="lg-e">E-mail</label><input id="lg-e" className="input" type="email" autoComplete="username" value=${email} onInput=${e => setEmail(e.target.value)} placeholder="voce@empresa.com.br" /></div>
-      <div className="field"><label htmlFor="lg-p">Senha</label><div className="pass-wrap"><input id="lg-p" className="input" type=${showPass ? "text" : "password"} autoComplete="current-password" value=${pass} onInput=${e => setPass(e.target.value)} placeholder="••••••••" />
+      <div className="field"><div style=${{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}><label htmlFor="lg-p">Senha</label>${showDemo ? null : html`<button type="button" className="link-btn" onClick=${toForgot}>Esqueci minha senha</button>`}</div><div className="pass-wrap"><input id="lg-p" className="input" type=${showPass ? "text" : "password"} autoComplete="current-password" value=${pass} onInput=${e => setPass(e.target.value)} placeholder="••••••••" />
         <button type="button" className="pass-eye" onClick=${() => setShowPass(v => !v)} aria-label=${showPass ? "Ocultar senha" : "Mostrar senha"} aria-pressed=${showPass} title=${showPass ? "Ocultar senha" : "Mostrar senha"}><${Icon} n=${showPass ? "eyeOff" : "eye"} s=${17} /></button></div></div>
       ${err ? html`<div className="err" role="alert">${err}</div>` : null}
       <button className="btn btn-primary" style=${{ height: 42 }} type="submit" disabled=${busy}>${busy ? "Entrando…" : "Entrar"}</button>
@@ -4175,6 +4208,41 @@ function Login({ auth, showDemo, notice }) {
         ${[["camila@lojaaurora.com.br", "demo123", "Loja Aurora", "Plano Pro"], ["rafael@nortex.com.br", "demo123", "Grupo Nortex", "Plano Scale, com todos os módulos"], ["marina@studiovitta.com.br", "demo123", "Studio Vitta", "Plano Starter, com módulos bloqueados"]].map(([e, p, l, d]) => html`<button key=${e} type="button" className="cred" onClick=${() => fill(e, p)}><span><b style=${{ fontSize: 13 }}>${l}</b><small>${d}</small></span><span className="mono" style=${{ color: "var(--muted)" }}>${p}</span></button>`)}
       </div>` : null}
     </form></section>
+  </div>`;
+}
+
+/* ================= nova senha (link de recuperação do e-mail) ================= */
+function PasswordReset({ token, onDone, onLeave }) {
+  const [info, setInfo] = useState(null); const [err, setErr] = useState(null);
+  const [p1, setP1] = useState(""); const [p2, setP2] = useState(""); const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false); const [ferr, setFerr] = useState("");
+  useEffect(() => {
+    if (SERVER.mode !== "server") { setErr("Este link precisa do servidor da metrikabr. Abra-o pelo endereço publicado do app."); return; }
+    srv("/api/auth", { action: "reset_info", token }).then(setInfo).catch(e => setErr(e.message));
+  }, []);
+  const submit = async e => {
+    e.preventDefault(); if (busy) return; setFerr("");
+    if (p1.length < 8) return setFerr("A senha precisa ter pelo menos 8 caracteres.");
+    if (p1 !== p2) return setFerr("As duas senhas não são iguais.");
+    setBusy(true);
+    try { const j = await srv("/api/auth", { action: "reset", token, password: p1 }); onDone(j); }
+    catch (x) { setFerr(x.message); setBusy(false); }
+  };
+  return html`<div className="login">
+    <${LoginSide} />
+    <section className="login-main" style=${{ position: "relative" }}><span style=${{ position: "absolute", top: 16, right: "max(16px, env(safe-area-inset-right, 0px))" }}><${ThemeToggle} withLabel /></span>
+      ${err ? html`<div className="login-box"><div><h2>Link indisponível</h2></div><div className="err" role="alert">${err}</div><button className="btn btn-primary" style=${{ height: 42 }} onClick=${onLeave}>Ir para o login</button></div>`
+      : !info ? html`<div className="login-box"><div style=${{ display: "flex", alignItems: "center", gap: 10, color: "var(--muted)" }}><span className="spin" aria-hidden="true"></span>Abrindo o link…</div></div>`
+      : html`<form className="login-box" onSubmit=${submit}>
+        <div><h2>Crie uma nova senha</h2><p style=${{ color: "var(--muted)", marginTop: 4 }}>A senha nova passa a valer na hora e você já entra no painel.</p></div>
+        <div className="field"><label htmlFor="rs-e">E-mail de login</label><input id="rs-e" className="input" type="email" autoComplete="username" value=${info.email} readOnly /></div>
+        <div className="field"><label htmlFor="rs-p1">Nova senha</label><div className="pass-wrap"><input id="rs-p1" className="input" type=${show ? "text" : "password"} autoComplete="new-password" value=${p1} onInput=${e => setP1(e.target.value)} placeholder="Pelo menos 8 caracteres" autoFocus />
+          <button type="button" className="pass-eye" onClick=${() => setShow(v => !v)} aria-label=${show ? "Ocultar senha" : "Mostrar senha"} aria-pressed=${show}><${Icon} n=${show ? "eyeOff" : "eye"} s=${17} /></button></div></div>
+        <div className="field"><label htmlFor="rs-p2">Confirme a senha</label><input id="rs-p2" className="input" type=${show ? "text" : "password"} autoComplete="new-password" value=${p2} onInput=${e => setP2(e.target.value)} /></div>
+        ${ferr ? html`<div className="err" role="alert">${ferr}</div>` : null}
+        <button className="btn btn-primary" style=${{ height: 42 }} type="submit" disabled=${busy}>${busy ? "Salvando…" : "Salvar senha e entrar"}</button>
+      </form>`}
+    </section>
   </div>`;
 }
 
@@ -4220,6 +4288,7 @@ const KEY = "readyai_demo_v3";
 function App() {
   const [ready, setReady] = useState(false);
   const [invite, setInvite] = useState(() => { try { return new URLSearchParams(location.search).get("convite"); } catch (e) { return null; } });
+  const [resetTok, setResetTok] = useState(() => { try { return new URLSearchParams(location.search).get("redefinir"); } catch (e) { return null; } });
   const [accepted, setAccepted] = useState(null);
   useEffect(() => {
     srv("/api/auth", { action: "status" })
@@ -4227,8 +4296,9 @@ function App() {
       .catch(() => { SERVER = { mode: "local", db: false, email: false }; })
       .finally(() => setReady(true));
   }, []);
-  const clearInvite = () => { try { history.replaceState(null, "", location.pathname); } catch (e) {} setInvite(null); };
+  const clearInvite = () => { try { history.replaceState(null, "", location.pathname); } catch (e) {} setInvite(null); setResetTok(null); };
   if (!ready) return html`<div className="boot">Carregando metrikabr…</div>`;
+  if (resetTok) return html`<${PasswordReset} token=${resetTok} onLeave=${clearInvite} onDone=${j => { store.set(SESSION_KEY, { token: j.token, role: "client", clientId: j.client.id }); setAccepted(j.client); clearInvite(); }} />`;
   if (invite) return html`<${InviteAccept} token=${invite} onLeave=${clearInvite} onAccepted=${j => { store.set(SESSION_KEY, { token: j.token, role: "client", clientId: j.client.id }); setAccepted(j.client); clearInvite(); }} />`;
   return SERVER.mode === "server" ? html`<${ServerApp} welcome=${accepted} />` : html`<${LocalApp} />`;
 }
