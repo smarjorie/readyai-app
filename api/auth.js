@@ -12,6 +12,7 @@ import {
   hashPassword, checkPassword, isAdminLogin, adminEmail, ADMIN_NAME,
   signSession, readSession, publicClient, sendEmail,
 } from "./_store.js";
+import { trialEnded, trialEndedMsg } from "./_plans.js";
 
 const BAD_LOGIN = "E-mail ou senha incorretos. Confira os dados e tente de novo.";
 const PLAN_NAMES = { starter: "Starter", pro: "Pro", scale: "Scale" };
@@ -35,6 +36,7 @@ export default async function handler(req, res) {
         throw new HttpError(401, BAD_LOGIN);
       }
       if (c.status === "suspenso") throw new HttpError(403, "Seu acesso está suspenso. Fale com comercial@readyai.com para reativar.");
+      if (trialEnded(c)) throw new HttpError(403, trialEndedMsg(), "trial_ended");
       const now = new Date().toISOString();
       who.lastAccess = now;
       if (hit.u) { hit.u.status = "ativo"; c.lastAccess = now; }
@@ -50,6 +52,7 @@ export default async function handler(req, res) {
       const c = await getClient(s.sub);
       if (!c) throw new HttpError(401, "Seu acesso foi removido. Fale com o seu gestor de conta.", "no_session");
       if (c.status === "suspenso") throw new HttpError(403, "Seu acesso está suspenso. Fale com comercial@readyai.com para reativar.", "no_session");
+      if (trialEnded(c)) throw new HttpError(403, trialEndedMsg(), "no_session");
       if (s.uid && !(c.users || []).some(u => u.id === s.uid)) throw new HttpError(401, "Seu acesso foi removido. Fale com o responsável pela conta.", "no_session");
       return send(res, 200, { role: "client", client: publicClient(c) });
     }

@@ -24,14 +24,7 @@ import {
   newInvite, dropInvite, hashPassword, tempPassword, sendEmail, inviteEmail, appUrl, publicClient,
 } from "./_store.js";
 
-const PLANS = { starter: "Starter", pro: "Pro", scale: "Scale" };
-// pacote padrão de cada plano (o mesmo do app); vale quando o cadastro chega sem a lista de módulos
-const PLAN_MODULES = {
-  starter: ["copilot", "overview", "campaigns"],
-  pro: ["copilot", "overview", "analytics", "campaigns", "creatives", "report", "insights"],
-  scale: ["portfolio", "copilot", "overview", "analytics", "campaigns", "creatives", "report", "insights", "skills"],
-};
-const MODULES = ["copilot", "overview", "analytics", "campaigns", "creatives", "report", "skills", "insights", "portfolio", "whatsapp"];
+import { PLANS, PLAN_MODULES, MODULES } from "./_plans.js";
 const STATUS = ["convite", "ativo", "suspenso"];
 const isEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 const txt = (v, max = 120) => String(v == null ? "" : v).trim().slice(0, max);
@@ -62,6 +55,7 @@ function applyAdminPatch(c, p) {
   if (p.targetRoas !== undefined) c.targetRoas = cleanRoas(p.targetRoas); // meta é opcional: vazio ou null apaga
   if (p.conn !== undefined) c.conn = cleanConn(p.conn);
   if (p.ai !== undefined) c.ai = cleanAi(p.ai);
+  if (p.trialEndsAt !== undefined) { const t = p.trialEndsAt === null ? null : Date.parse(p.trialEndsAt); c.trialEndsAt = t ? new Date(t).toISOString() : null; } // null encerra o teste (cliente virou pagante)
   if (p.demo !== undefined) c.demo = p.demo === null ? undefined : !!p.demo; // conta de demonstração: mostra dados de exemplo
   return c;
 }
@@ -70,7 +64,7 @@ function applyAdminPatch(c, p) {
 async function inviteAndEmail(req, c, u) {
   const who = u || c;
   const token = await newInvite(c, u);
-  const link = appUrl(req) + "/?convite=" + token;
+  const link = appUrl(req) + "/app/?convite=" + token;
   const mail = inviteEmail(c, link, PLANS[c.plan] || c.plan, u);
   const r = await sendEmail({ to: who.email, ...mail, key: "invite-" + who.invite.tokenHash.slice(0, 32) });
   who.invite = { ...who.invite, sentAt: new Date().toISOString(), sentTo: who.email, emailId: r.id || null, emailError: r.sent ? null : r.error };
