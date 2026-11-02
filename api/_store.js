@@ -154,7 +154,7 @@ export function readSession(req) {
 }
 
 // ---------- e-mail (Resend) ----------
-const FROM = () => process.env.RESEND_FROM || "ReadyAI <onboarding@resend.dev>";
+const FROM = () => process.env.RESEND_FROM || "metricabr <onboarding@resend.dev>";
 export async function sendEmail({ to, subject, html, text, key }) {
   if (!emailReady()) return { sent: false, error: "E-mail não configurado (falta RESEND_API_KEY na Vercel)." };
   let r;
@@ -179,15 +179,15 @@ const esc = s => String(s || "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<":
 export function inviteEmail(c, link, planName, u) {
   const first = String((u || c).name || "").split(" ")[0] || "Olá";
   const exp = new Date((u || c).invite.expiresAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
-  const subject = `Seu acesso à ReadyAI (${c.company})`;
-  const text = `${first}, você foi convidado(a) para acessar a ReadyAI como ${c.company} (plano ${planName}).\n\nCrie sua senha e entre pelo link abaixo:\n${link}\n\nO link vale até ${exp}. Se você não esperava este convite, ignore este e-mail.`;
+  const subject = `Seu acesso à metricabr (${c.company})`;
+  const text = `${first}, você foi convidado(a) para acessar a metricabr como ${c.company} (plano ${planName}).\n\nCrie sua senha e entre pelo link abaixo:\n${link}\n\nO link vale até ${exp}. Se você não esperava este convite, ignore este e-mail.`;
   const html = `<!doctype html><html><body style="margin:0;background:#f4f5f7;font-family:Arial,Helvetica,sans-serif;color:#111827">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;padding:32px 12px"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #e6e8ec;border-radius:14px">
 <tr><td style="padding:28px 28px 8px"><div style="font-size:18px;font-weight:700">Ready<span style="color:#1e6bff">AI</span></div>
 <div style="font-size:12px;color:#6b7280">Assistente de Marketing</div></td></tr>
 <tr><td style="padding:12px 28px 4px"><h1 style="font-size:20px;line-height:1.3;margin:0 0 10px">${esc(first)}, seu acesso está pronto</h1>
-<p style="font-size:14px;line-height:1.6;color:#4b5563;margin:0 0 18px">Você foi convidado(a) para acessar a ReadyAI como <b style="color:#111827">${esc(c.company)}</b>, no plano ${esc(planName)}. Crie sua senha para entrar no painel e conectar suas contas de anúncio.</p>
+<p style="font-size:14px;line-height:1.6;color:#4b5563;margin:0 0 18px">Você foi convidado(a) para acessar a metricabr como <b style="color:#111827">${esc(c.company)}</b>, no plano ${esc(planName)}. Crie sua senha para entrar no painel e conectar suas contas de anúncio.</p>
 <a href="${esc(link)}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 20px;border-radius:10px">Aceitar convite e criar senha</a>
 <p style="font-size:12px;line-height:1.6;color:#6b7280;margin:18px 0 0">O link vale até ${esc(exp)}. Se o botão não funcionar, copie e cole este endereço no navegador:<br><span style="word-break:break-all;color:#1557e0">${esc(link)}</span></p></td></tr>
 <tr><td style="padding:18px 28px 26px"><p style="font-size:12px;color:#9aa3b1;margin:0">Se você não esperava este convite, ignore este e-mail.</p></td></tr>
