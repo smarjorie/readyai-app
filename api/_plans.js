@@ -10,6 +10,6 @@ export const MODULES = ["copilot", "overview", "analytics", "campaigns", "creati
 
 // teste grátis de quem se cadastra pela LP
 export const TRIAL_DAYS = Number(process.env.TRIAL_DAYS) > 0 ? Number(process.env.TRIAL_DAYS) : 7;
-export const SALES_EMAIL = () => process.env.SALES_EMAIL || "comercial@readyai.com";
+export const SALES_EMAIL = () => process.env.SALES_EMAIL || "comercial@metrikabr.com";
 export const trialEnded = c => !!(c && c.trialEndsAt && Date.parse(c.trialEndsAt) <= Date.now());
 export const trialEndedMsg = () => `Seu teste grátis de ${TRIAL_DAYS} dias terminou. Fale com ${SALES_EMAIL()} para continuar usando a metrikabr.`;

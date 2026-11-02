@@ -35,7 +35,7 @@ export default async function handler(req, res) {
         if (who && !who.passHash) throw new HttpError(401, "Você ainda não criou sua senha. Use o link do convite que chegou no seu e-mail.");
         throw new HttpError(401, BAD_LOGIN);
       }
-      if (c.status === "suspenso") throw new HttpError(403, "Seu acesso está suspenso. Fale com comercial@readyai.com para reativar.");
+      if (c.status === "suspenso") throw new HttpError(403, "Seu acesso está suspenso. Fale com comercial@metrikabr.com para reativar.");
       if (trialEnded(c)) throw new HttpError(403, trialEndedMsg(), "trial_ended");
       const now = new Date().toISOString();
       who.lastAccess = now;
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
       if (s.role === "admin") return send(res, 200, { role: "admin", admin: { name: ADMIN_NAME(), email: adminEmail() } });
       const c = await getClient(s.sub);
       if (!c) throw new HttpError(401, "Seu acesso foi removido. Fale com o seu gestor de conta.", "no_session");
-      if (c.status === "suspenso") throw new HttpError(403, "Seu acesso está suspenso. Fale com comercial@readyai.com para reativar.", "no_session");
+      if (c.status === "suspenso") throw new HttpError(403, "Seu acesso está suspenso. Fale com comercial@metrikabr.com para reativar.", "no_session");
       if (trialEnded(c)) throw new HttpError(403, trialEndedMsg(), "no_session");
       if (s.uid && !(c.users || []).some(u => u.id === s.uid)) throw new HttpError(401, "Seu acesso foi removido. Fale com o responsável pela conta.", "no_session");
       return send(res, 200, { role: "client", client: publicClient(c) });
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
       const t = await inviteTarget(body.token);
       const c = t && t.c, who = t && (t.u || t.c);
       if (!c || (who.invite && who.invite.acceptedAt)) throw new HttpError(404, "Este convite expirou ou já foi usado. Peça um novo convite ao seu gestor de conta.", "invite_invalid");
-      if (c.status === "suspenso") throw new HttpError(403, "Este acesso está suspenso. Fale com comercial@readyai.com.", "invite_invalid");
+      if (c.status === "suspenso") throw new HttpError(403, "Este acesso está suspenso. Fale com comercial@metrikabr.com.", "invite_invalid");
       return send(res, 200, { company: c.company, name: who.name, email: who.email, plan: PLAN_NAMES[c.plan] || c.plan });
     }
 
@@ -71,7 +71,7 @@ export default async function handler(req, res) {
       const t = await inviteTarget(body.token);
       const c = t && t.c, who = t && (t.u || t.c);
       if (!c || (who.invite && who.invite.acceptedAt)) throw new HttpError(404, "Este convite expirou ou já foi usado. Peça um novo convite ao seu gestor de conta.", "invite_invalid");
-      if (c.status === "suspenso") throw new HttpError(403, "Este acesso está suspenso. Fale com comercial@readyai.com.", "invite_invalid");
+      if (c.status === "suspenso") throw new HttpError(403, "Este acesso está suspenso. Fale com comercial@metrikabr.com.", "invite_invalid");
       const now = new Date().toISOString();
       await dropInvite(who);
       who.passHash = hashPassword(pass);

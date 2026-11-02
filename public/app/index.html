@@ -1010,7 +1010,7 @@ const PLANS = {
   scale: { name: "Scale", price: 1497, tag: "Para agências", note: "Até 10 clientes incluídos · R$ 79 por cliente adicional", modules: ["portfolio", "copilot", "overview", "analytics", "campaigns", "creatives", "report", "insights", "skills"] },
 };
 // teste grátis (contas criadas pela LP): dias que faltam, 0 no último dia
-const SALES_EMAIL = "comercial@readyai.com";
+const SALES_EMAIL = "comercial@metrikabr.com";
 function trialInfo(c) {
   if (!c || !c.trialEndsAt) return null;
   const end = new Date(c.trialEndsAt), left = Math.ceil((end - Date.now()) / 86400e3);
@@ -3425,7 +3425,7 @@ function Locked({ mod, plan }) {
   return html`<div className="card locked"><div className="lock-ico"><${Icon} n="lock" s=${24} /></div>
     <h2 style=${{ fontSize: 20, fontWeight: 700 }}>${m ? m.label : "Este módulo"} não está no seu plano</h2>
     <p style=${{ color: "var(--muted)" }}>${m ? m.desc + "." : ""} Seu plano atual é ${PLANS[plan] ? PLANS[plan].name : "personalizado"}${needs ? html`; esse módulo está incluído a partir do plano <b>${needs[1].name}</b>` : ""}.</p>
-    <p style=${{ fontSize: 13, color: "var(--muted)" }}>Para liberar, fale com seu gestor de conta: <span className="mono" style=${{ userSelect: "all", color: "var(--ink)" }}>comercial@readyai.com</span></p></div>`;
+    <p style=${{ fontSize: 13, color: "var(--muted)" }}>Para liberar, fale com seu gestor de conta: <span className="mono" style=${{ userSelect: "all", color: "var(--ink)" }}>comercial@metrikabr.com</span></p></div>`;
 }
 
 /* ================= carteira da agência com as contas reais do token da Meta ================= */
@@ -4306,7 +4306,7 @@ function LocalApp() {
     const c = clients.find(x => x.email.toLowerCase() === email || (x.users || []).some(u => u.email.toLowerCase() === email && u.password === pass));
     const okPass = c && (c.email.toLowerCase() === email ? c.password === pass : true);
     if (!c || !okPass) throw new Error("E-mail ou senha incorretos. Confira os dados e tente de novo.");
-    if (c.status === "suspenso") throw new Error("Seu acesso está suspenso. Fale com comercial@readyai.com para reativar.");
+    if (c.status === "suspenso") throw new Error("Seu acesso está suspenso. Fale com comercial@metrikabr.com para reativar.");
     setSession({ role: "client", clientId: c.id });
     setClients(cs => cs.map(x => x.id === c.id ? { ...x, lastAccess: "agora", status: x.status === "convite" ? "ativo" : x.status } : x));
   };
