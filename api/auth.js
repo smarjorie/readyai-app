@@ -81,9 +81,9 @@ export default async function handler(req, res) {
       if (process.env.NOTIFY_EMAIL) {
         await sendEmail({
           to: process.env.NOTIFY_EMAIL, key: "accept-" + c.id + "-" + now,
-          subject: `${c.company} aceitou o convite da ReadyAI`,
+          subject: `${c.company} aceitou o convite da metrikabr`,
           text: `${who.name} (${who.email}) aceitou o convite e criou a senha em ${new Date(now).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}.`,
-          html: `<p style="font-family:Arial,sans-serif;font-size:14px"><b>${who.name}</b> (${who.email}) aceitou o convite de <b>${c.company}</b> e já pode entrar na ReadyAI.</p>`,
+          html: `<p style="font-family:Arial,sans-serif;font-size:14px"><b>${who.name}</b> (${who.email}) aceitou o convite de <b>${c.company}</b> e já pode entrar na metrikabr.</p>`,
         }).catch(() => null);
       }
       return send(res, 200, { token: signSession({ role: "client", sub: c.id, uid: t.u ? t.u.id : undefined }), role: "client", client: publicClient(c) });

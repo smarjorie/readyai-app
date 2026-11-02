@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>ReadyAI Assistente de Marketing</title><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>metrikabr · Copilot de Marketing</title><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
@@ -896,7 +896,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 @media (max-width:640px){.m-alloc{grid-template-columns:44px minmax(0,1fr) 70px;gap:8px}}
 </style>
 
-<div id="root"><div class="boot">Carregando ReadyAI…</div></div>
+<div id="root"><div class="boot">Carregando metrikabr…</div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
@@ -991,7 +991,7 @@ function Icon({ n, s = 16, w = 2 }) {
 
 /* ================= produto: módulos, planos, navegação ================= */
 const MODULES = [
-  { key: "copilot", label: "Assistente de Marketing", desc: "Copilot conversacional + insights do dia", group: "Assistente de Marketing", core: true },
+  { key: "copilot", label: "Copilot de Marketing", desc: "Copilot conversacional + insights do dia", group: "Copilot de Marketing", core: true },
   { key: "overview", label: "Visão geral", desc: "KPIs, receita x investimento, canais e funil", group: "Painel analítico" },
   { key: "analytics", label: "Performance analítica", desc: "Horários, públicos, regiões e dispositivos", group: "Painel analítico" },
   { key: "campaigns", label: "Campanhas multicanal", desc: "Meta, Google e TikTok numa tabela só", group: "Gerenciador de campanhas" },
@@ -1009,7 +1009,7 @@ const PLANS = {
 };
 const NAV = [
   { id: "portfolio", label: "Carteira de clientes", icon: "users", key: "portfolio" },
-  { id: "copilot", label: "Assistente de Marketing", icon: "sparkles", key: "copilot", accent: true },
+  { id: "copilot", label: "Copilot de Marketing", icon: "sparkles", key: "copilot", accent: true },
   { id: "painel", label: "Painel analítico", icon: "chart", children: [{ key: "overview", label: "Visão geral" }, { key: "analytics", label: "Performance analítica" }] },
   { id: "whatsapp", label: "WhatsApp", icon: "msg", hidden: true, children: [{ key: "whatsapp", label: "WhatsApp CRM" }] },
   { id: "gerenciador", label: "Gerenciador de campanhas", icon: "megaphone", children: [{ key: "campaigns", label: "Campanhas" }, { key: "creatives", label: "Criativos" }, { key: "report", label: "Enviar relatório" }] },
@@ -1253,7 +1253,7 @@ function aiContext({ camps, screen, account, isAgency, rows, insights, budget, d
 }
 function aiSystem(data, screens, isAgency) {
   return [
-    "Você é o Copilot de Marketing da ReadyAI, assistente de gestores de tráfego pago (Meta Ads, Google Ads e TikTok Ads).",
+    "Você é o copilot de marketing da metrikabr, assistente de gestores de tráfego pago (Meta Ads, Google Ads e TikTok Ads).",
     "Responda sempre em português do Brasil, de forma direta e prática, como um analista sênior de mídia paga.",
     "Use SOMENTE os números em DADOS. Não invente métricas; se algo não estiver nos dados, diga que essa informação não está disponível.",
     "Campanhas com roas null (Google Ads) não informam receita: avalie essas pelo CPA e pelas conversões.",
@@ -1394,7 +1394,7 @@ function AIConnectDrawer({ toast }) {
           <select id="ai-model" className="input" value=${model} onChange=${e => setModel(e.target.value)}>${options.map(id => html`<option key=${id} value=${id}>${id}</option>`)}</select>
           ${models ? html`<span className="card-sub">${models.length} modelos disponíveis na sua conta.</span>` : null}</div>
         ${err ? html`<div className=${"err"} role="alert">${err}</div>` : null}
-        <div className="ai-note"><${Icon} n="shield" s=${15} /><div>A chave fica salva só na sua conta${SERVER.mode === "server" ? ", no seu cadastro da ReadyAI, e vale em qualquer computador" : ", neste navegador"}. Outras contas não usam essa chave. A cada pergunta ela passa pelo servidor do ReadyAI direto para ${prov === "groq" ? "o" : "a"} ${P.vendor}, sem ser gravada. ${prov === "groq" ? "O uso conta no limite da sua conta do Groq (o plano gratuito tem limite de requisições por minuto e por dia)." : "O uso é cobrado na sua conta de API da " + P.vendor + ", separado de assinaturas como " + (prov === "anthropic" ? "Claude Pro" : "ChatGPT Plus") + "."}</div></div>
+        <div className="ai-note"><${Icon} n="shield" s=${15} /><div>A chave fica salva só na sua conta${SERVER.mode === "server" ? ", no seu cadastro da metrikabr, e vale em qualquer computador" : ", neste navegador"}. Outras contas não usam essa chave. A cada pergunta ela passa pelo servidor da metrikabr direto para ${prov === "groq" ? "o" : "a"} ${P.vendor}, sem ser gravada. ${prov === "groq" ? "O uso conta no limite da sua conta do Groq (o plano gratuito tem limite de requisições por minuto e por dia)." : "O uso é cobrado na sua conta de API da " + P.vendor + ", separado de assinaturas como " + (prov === "anthropic" ? "Claude Pro" : "ChatGPT Plus") + "."}</div></div>
       </div>
       <div className="drawer-foot">
         ${isCurrent ? html`<button type="button" className="btn btn-line" onClick=${() => { aiStore.disconnect(); aiStore.close(); toast && toast(P.name + " desconectado"); }}>Desconectar</button>` : html`<button type="button" className="btn btn-line" onClick=${close}>Cancelar</button>`}
@@ -1466,15 +1466,16 @@ function Gauge({ value }) {
 }
 
 /* ================= logo ================= */
-// Marca: bloco azul com uma linha de crescimento que termina numa faísca (IA pronta para agir).
+// Marca metrikabr: bloco azul com três barras crescentes (métricas que sobem), a última em destaque.
 function Logo({ s = 30 }) {
   return html`<svg width=${s} height=${s} viewBox="0 0 32 32" aria-hidden="true" style=${{ flex: "none", display: "block" }}>
     <rect width="32" height="32" rx="9" fill="var(--accent)" />
-    <polyline points="7,22.5 12,17.5 16,20.5 21.5,14.5" fill="none" stroke="var(--on-accent)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M24.5 5.5 L25.6 8.4 L28.5 9.5 L25.6 10.6 L24.5 13.5 L23.4 10.6 L20.5 9.5 L23.4 8.4 Z" fill="var(--on-accent)" />
+    <rect x="7.5" y="17" width="4.4" height="8" rx="2.2" fill="var(--on-accent)" opacity=".55" />
+    <rect x="13.8" y="12.5" width="4.4" height="12.5" rx="2.2" fill="var(--on-accent)" opacity=".8" />
+    <rect x="20.1" y="7" width="4.4" height="18" rx="2.2" fill="var(--on-accent)" />
   </svg>`;
 }
-function Wordmark() { return html`<b style=${{ letterSpacing: "-.02em" }}>Ready<span style=${{ color: "var(--accent)" }}>AI</span></b>`; }
+function Wordmark() { return html`<b style=${{ letterSpacing: "-.03em" }}>metrika<span style=${{ color: "var(--accent)" }}>br</span></b>`; }
 
 /* ================= tema ================= */
 const THEME_KEY = "readyai_theme";
@@ -3297,7 +3298,7 @@ function MetaConnectDrawer({ client, onUpdate, onClose, toast, agency }) {
           </li>
         </ol>
         ${err ? html`<div className="err" role="alert">${err}</div>` : null}
-        <div className="ai-note"><${Icon} n="shield" s=${15} /><div>O token fica salvo ${SERVER.mode === "server" ? "no cadastro de " + client.company + ", no banco da ReadyAI," : "neste navegador, no cadastro de " + client.company + ","} e só é usado para ler campanhas. Pausar ou alterar orçamento pelo painel continua sendo simulação.</div></div>
+        <div className="ai-note"><${Icon} n="shield" s=${15} /><div>O token fica salvo ${SERVER.mode === "server" ? "no cadastro de " + client.company + ", no banco da metrikabr," : "neste navegador, no cadastro de " + client.company + ","} e só é usado para ler campanhas. Pausar ou alterar orçamento pelo painel continua sendo simulação.</div></div>
       </div>
       <div className="drawer-foot">
         ${cur ? html`<button type="button" className="btn btn-line" onClick=${() => { const c = { ...(client.conn || {}) }; delete c.meta; onUpdate({ conn: c }); toast("Meta Ads desconectado"); onClose(); }}>Desconectar</button>` : html`<button type="button" className="btn btn-line" onClick=${onClose}>Cancelar</button>`}
@@ -3775,7 +3776,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
     ${impersonating ? html`<div className="imp-banner"><span>Você está vendo como ${client.name} (${client.company}) · plano ${PLANS[client.plan].name}</span><button onClick=${onBackToConsole}>Voltar ao console</button></div>` : null}
     <div className="shell" style=${{ flex: 1, minHeight: 0 }}>
       <aside className=${"side" + (sideOpen ? " open" : "")} aria-label="Navegação">
-        <div className="brand"><${Logo} /><div><${Wordmark} /><small>${isAgency ? client.company : "Assistente de Marketing"}</small></div></div>
+        <div className="brand"><${Logo} /><div><${Wordmark} /><small>${isAgency ? client.company : "Copilot de Marketing"}</small></div></div>
         ${isAgency && !inClient ? html`<nav className="nav">
           <button className="nav-item on" onClick=${toPortfolio}><span className="ico-wrap"><${Icon} n="users" s=${16} /></span>Carteira de clientes</button>
           <div className="nav-label">Clientes</div>
@@ -4129,7 +4130,7 @@ function LoginStage() {
 function LoginSide() {
   return html`<section className="login-side">
       <div className="login-inner">
-      <div className="brand" style=${{ padding: 0 }}><${Logo} s=${34} /><span style=${{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", fontSize: 17 }}><${Wordmark} /><span style=${{ color: "var(--line-2)" }}>|</span><span style=${{ fontWeight: 500, color: "var(--muted-2)" }}>Assistente de Marketing</span></span></div>
+      <div className="brand" style=${{ padding: 0 }}><${Logo} s=${34} /><span style=${{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", fontSize: 17 }}><${Wordmark} /><span style=${{ color: "var(--line-2)" }}>|</span><span style=${{ fontWeight: 500, color: "var(--muted-2)" }}>Copilot de Marketing</span></span></div>
       <div><h1>Seu copilot de marketing para <em>todas as campanhas</em>.</h1>
         <p className="lead"><b style=${{ color: "var(--ink)", fontWeight: 600 }}>Sua gestão de mídia multicanal em uma única plataforma.</b> Um agente acompanha todos os canais lado a lado, aponta o que fazer e só mexe nas contas quando você confirma.</p>
         <div className="ch-chips">${[["Meta Ads", "var(--c-meta)"], ["Google Ads", "var(--c-google)"], ["TikTok Ads", "var(--c-tiktok)"]].map(([l, c]) => html`<span key=${l}><span className="ch-dot" style=${{ background: c }}></span>${l}</span>`)}</div></div>
@@ -4169,7 +4170,7 @@ function InviteAccept({ token, onAccepted, onLeave }) {
   const [p1, setP1] = useState(""); const [p2, setP2] = useState(""); const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false); const [ferr, setFerr] = useState("");
   useEffect(() => {
-    if (SERVER.mode !== "server") { setErr("Este link de convite precisa do servidor da ReadyAI. Abra-o pelo endereço publicado do app."); return; }
+    if (SERVER.mode !== "server") { setErr("Este link de convite precisa do servidor da metrikabr. Abra-o pelo endereço publicado do app."); return; }
     srv("/api/auth", { action: "invite_info", token }).then(setInfo).catch(e => setErr(e.message));
   }, []);
   const submit = async e => {
@@ -4187,7 +4188,7 @@ function InviteAccept({ token, onAccepted, onLeave }) {
       ${err ? html`<div className="login-box"><div><div className="eyebrow">Convite</div><h2>Convite indisponível</h2></div><div className="err" role="alert">${err}</div><button className="btn btn-primary" style=${{ height: 42 }} onClick=${onLeave}>Ir para o login</button></div>`
       : !info ? html`<div className="login-box"><div style=${{ display: "flex", alignItems: "center", gap: 10, color: "var(--muted)" }}><span className="spin" aria-hidden="true"></span>Abrindo seu convite…</div></div>`
       : html`<form className="login-box" onSubmit=${submit}>
-        <div><div className="eyebrow">Convite · ${info.company}</div><h2>Crie sua senha</h2><p style=${{ color: "var(--muted)", marginTop: 4 }}>${first ? first + ", você" : "Você"} vai acessar a ReadyAI como <b style=${{ color: "var(--ink)" }}>${info.company}</b>, no plano ${info.plan}.</p></div>
+        <div><div className="eyebrow">Convite · ${info.company}</div><h2>Crie sua senha</h2><p style=${{ color: "var(--muted)", marginTop: 4 }}>${first ? first + ", você" : "Você"} vai acessar a metrikabr como <b style=${{ color: "var(--ink)" }}>${info.company}</b>, no plano ${info.plan}.</p></div>
         <div className="field"><label htmlFor="iv-e">E-mail de login</label><input id="iv-e" className="input" type="email" autoComplete="username" value=${info.email} readOnly /></div>
         <div className="field"><label htmlFor="iv-p1">Nova senha</label><div className="pass-wrap"><input id="iv-p1" className="input" type=${show ? "text" : "password"} autoComplete="new-password" value=${p1} onInput=${e => setP1(e.target.value)} placeholder="Pelo menos 8 caracteres" />
           <button type="button" className="pass-eye" onClick=${() => setShow(v => !v)} aria-label=${show ? "Ocultar senha" : "Mostrar senha"} aria-pressed=${show}><${Icon} n=${show ? "eyeOff" : "eye"} s=${17} /></button></div></div>
@@ -4213,7 +4214,7 @@ function App() {
       .finally(() => setReady(true));
   }, []);
   const clearInvite = () => { try { history.replaceState(null, "", location.pathname); } catch (e) {} setInvite(null); };
-  if (!ready) return html`<div className="boot">Carregando ReadyAI…</div>`;
+  if (!ready) return html`<div className="boot">Carregando metrikabr…</div>`;
   if (invite) return html`<${InviteAccept} token=${invite} onLeave=${clearInvite} onAccepted=${j => { store.set(SESSION_KEY, { token: j.token, role: "client", clientId: j.client.id }); setAccepted(j.client); clearInvite(); }} />`;
   return SERVER.mode === "server" ? html`<${ServerApp} welcome=${accepted} />` : html`<${LocalApp} />`;
 }
@@ -4265,7 +4266,7 @@ function ServerApp({ welcome }) {
     importLegacy: async list => { const j = await call("/api/clients", { action: "import", clients: list }); setClients(j.clients); return j; },
   };
   const logout = () => { setSess(null); setClients([]); setAdmin(null); };
-  if (phase === "loading") return html`<div className="boot">Carregando ReadyAI…</div>`;
+  if (phase === "loading") return html`<div className="boot">Carregando metrikabr…</div>`;
   if (!sess) return html`<${Login} auth=${auth} showDemo=${false} notice=${notice} />`;
   const asGone = sess.as && !clients.some(c => c.id === sess.as); // cliente excluído enquanto estava aberto
   if (sess.role === "admin" && (!sess.as || asGone)) return html`<${AdminConsole} clients=${clients} api=${api} adminName=${admin ? admin.name : "Gestora"} onLogout=${logout} onImpersonate=${(id, to) => setSess({ ...sess, as: id, to })} />`;
