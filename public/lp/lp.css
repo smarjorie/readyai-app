@@ -367,6 +367,10 @@ dialog::backdrop{background:rgba(5,10,25,.6);backdrop-filter:blur(3px)}
   .calc-out .btn{align-self:stretch}
   .calc-out .big{font-size:clamp(40px,12vw,56px)}
   .rng label{flex-wrap:wrap}
+  .cri-row{display:flex!important;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;margin:0 -12px;padding:0 12px 4px;scrollbar-width:none}
+  .cri-row::-webkit-scrollbar{display:none}
+  .cri-row>.kpi{flex:0 0 78%;scroll-snap-align:start}
+  .cri-row>.kpi img{height:110px!important}
   .rr{grid-template-columns:minmax(0,96px) minmax(0,1fr) 36px}
   .tbl .hide-sm{display:none}
   .theme-pick{bottom:12px}
