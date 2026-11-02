@@ -38,6 +38,8 @@ const K = {
   client: id => P + "client:" + id,
   email: e => P + "email:" + e.toLowerCase(),
   invite: h => P + "invite:" + h,
+  reset: h => P + "reset:" + h,
+  rl: k => P + "rl:" + k,
 };
 
 export async function getClient(id) { const v = await cmd("GET", K.client(id)); return v ? JSON.parse(v) : null; }
@@ -105,6 +107,34 @@ export async function inviteTarget(token) {
 }
 export async function clientByInvite(token) { const t = await inviteTarget(token); return t ? t.c : null; }
 export async function dropInvite(who) { if (who && who.invite && who.invite.tokenHash) await cmd("DEL", K.invite(who.invite.tokenHash)); }
+
+// ---------- recuperação de senha ----------
+// Link de uso único que vale 1 hora. O banco guarda só o hash do token.
+const RESET_MINUTES = 60;
+export async function newReset(c, u) {
+  const token = crypto.randomBytes(24).toString("base64url");
+  await cmd("SET", K.reset(sha256(token)), u ? c.id + "#" + u.id : c.id, "EX", String(RESET_MINUTES * 60));
+  return token;
+}
+export async function resetTarget(token) {
+  if (!/^[A-Za-z0-9_-]{20,64}$/.test(String(token || ""))) return null;
+  const v = await cmd("GET", K.reset(sha256(token)));
+  if (!v) return null;
+  const [cid, uid] = String(v).split("#");
+  const c = await getClient(cid);
+  if (!c) return null;
+  const u = uid ? (c.users || []).find(x => x.id === uid) || null : null;
+  if (uid && !u) return null;
+  return { c, u };
+}
+export async function dropReset(token) { await cmd("DEL", K.reset(sha256(token))); }
+// limite simples de tentativas: true quando passou do máximo na janela
+export async function overLimit(key, max, seconds) {
+  const k = K.rl(key);
+  const n = await cmd("INCR", k);
+  if (n === 1) await cmd("EXPIRE", k, seconds);
+  return n > max;
+}
 
 // ---------- senhas ----------
 export function hashPassword(p) {
@@ -184,13 +214,31 @@ export function inviteEmail(c, link, planName, u) {
   const html = `<!doctype html><html><body style="margin:0;background:#f4f5f7;font-family:Arial,Helvetica,sans-serif;color:#111827">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;padding:32px 12px"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #e6e8ec;border-radius:14px">
-<tr><td style="padding:28px 28px 8px"><div style="font-size:18px;font-weight:700">Ready<span style="color:#1e6bff">AI</span></div>
+<tr><td style="padding:28px 28px 8px"><div style="font-size:18px;font-weight:700">metrika<span style="color:#1e6bff">br</span></div>
 <div style="font-size:12px;color:#6b7280">Copilot de Marketing</div></td></tr>
 <tr><td style="padding:12px 28px 4px"><h1 style="font-size:20px;line-height:1.3;margin:0 0 10px">${esc(first)}, seu acesso está pronto</h1>
 <p style="font-size:14px;line-height:1.6;color:#4b5563;margin:0 0 18px">Você foi convidado(a) para acessar a metrikabr como <b style="color:#111827">${esc(c.company)}</b>, no plano ${esc(planName)}. Crie sua senha para entrar no painel e conectar suas contas de anúncio.</p>
 <a href="${esc(link)}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 20px;border-radius:10px">Aceitar convite e criar senha</a>
 <p style="font-size:12px;line-height:1.6;color:#6b7280;margin:18px 0 0">O link vale até ${esc(exp)}. Se o botão não funcionar, copie e cole este endereço no navegador:<br><span style="word-break:break-all;color:#1557e0">${esc(link)}</span></p></td></tr>
 <tr><td style="padding:18px 28px 26px"><p style="font-size:12px;color:#9aa3b1;margin:0">Se você não esperava este convite, ignore este e-mail.</p></td></tr>
+</table></td></tr></table></body></html>`;
+  return { subject, html, text };
+}
+
+export function resetEmail(who, link) {
+  const first = String(who.name || "").split(" ")[0] || "Olá";
+  const subject = "Crie uma nova senha na metrikabr";
+  const text = `${first}, recebemos um pedido para criar uma nova senha na metrikabr.\n\nCrie a nova senha pelo link abaixo:\n${link}\n\nO link vale por ${RESET_MINUTES} minutos e só pode ser usado uma vez. Se você não pediu isso, ignore este e-mail: sua senha atual continua valendo.`;
+  const html = `<!doctype html><html><body style="margin:0;background:#f4f5f7;font-family:Arial,Helvetica,sans-serif;color:#111827">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;padding:32px 12px"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #e6e8ec;border-radius:14px">
+<tr><td style="padding:28px 28px 8px"><div style="font-size:18px;font-weight:700">metrika<span style="color:#1e6bff">br</span></div>
+<div style="font-size:12px;color:#6b7280">Copilot de Marketing</div></td></tr>
+<tr><td style="padding:12px 28px 4px"><h1 style="font-size:20px;line-height:1.3;margin:0 0 10px">${esc(first)}, vamos criar uma nova senha</h1>
+<p style="font-size:14px;line-height:1.6;color:#4b5563;margin:0 0 18px">Recebemos um pedido para criar uma nova senha para <b style="color:#111827">${esc(who.email)}</b>. Clique no botão abaixo para escolher a nova senha e entrar no painel.</p>
+<a href="${esc(link)}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 20px;border-radius:10px">Criar nova senha</a>
+<p style="font-size:12px;line-height:1.6;color:#6b7280;margin:18px 0 0">O link vale por ${RESET_MINUTES} minutos e só pode ser usado uma vez. Se o botão não funcionar, copie e cole este endereço no navegador:<br><span style="word-break:break-all;color:#1557e0">${esc(link)}</span></p></td></tr>
+<tr><td style="padding:18px 28px 26px"><p style="font-size:12px;color:#9aa3b1;margin:0">Se você não pediu uma nova senha, ignore este e-mail. Sua senha atual continua valendo.</p></td></tr>
 </table></td></tr></table></body></html>`;
   return { subject, html, text };
 }

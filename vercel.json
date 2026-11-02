@@ -34,6 +34,17 @@
       "permanent": false
     },
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "redefinir"
+        }
+      ],
+      "destination": "/app/",
+      "permanent": false
+    },
+    {
       "source": "/login",
       "destination": "/app/",
       "permanent": false
