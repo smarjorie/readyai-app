@@ -1,247 +1,53 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>metrikabr · Copilot de Marketing para Meta Ads e Google Ads</title>
-<meta name="description" content="A metrikabr junta Meta Ads e Google Ads num painel só, compara cada campanha com a sua meta de ROAS e um copilot de IA aponta o que fazer primeiro. Teste grátis por 7 dias, sem cartão.">
+<meta name="description" content="Pare de gastar verba em campanha que não vende. A metrikabr junta Meta Ads e Google Ads, mede tudo contra a sua meta de ROAS e um copilot de IA diz o que fazer primeiro. 7 dias grátis, sem cartão.">
 <meta property="og:title" content="metrikabr · Copilot de Marketing">
-<meta property="og:description" content="Saiba onde mexer nas suas campanhas antes de gastar mais. 7 dias grátis, sem cartão.">
-<meta name="theme-color" content="#1e6bff">
+<meta property="og:description" content="Meta Ads e Google Ads num painel só, com um copilot de IA que diz o que fazer primeiro. 7 dias grátis, sem cartão.">
+<meta name="theme-color" content="#070d1f">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%231e6bff'/%3E%3Crect x='7.5' y='17' width='4.4' height='8' rx='2.2' fill='%23fff' opacity='.55'/%3E%3Crect x='13.8' y='12.5' width='4.4' height='12.5' rx='2.2' fill='%23fff' opacity='.8'/%3E%3Crect x='20.1' y='7' width='4.4' height='18' rx='2.2' fill='%23fff'/%3E%3C/svg%3E">
+<script>
+  // convites antigos (/?convite=...) abrem o app
+  if (/[?&]convite=/.test(location.search)) location.replace("/app/" + location.search);
+  // visual: ?tema=escuro|claro, depois a escolha salva no preview, senão o padrão do <html>
+  (function () { var q = (location.search.match(/[?&]tema=(\w+)/) || [])[1], t = q === "claro" ? "light" : q === "escuro" ? "dark" : null;
+    try { t = t || localStorage.getItem("mk_lp_theme"); } catch (e) {}
+    if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap">
-<script>
-  // links de convite antigos (/?convite=...) agora abrem o app em /app
-  if (/[?&]convite=/.test(location.search)) location.replace("/app/" + location.search);
-</script>
-<style>
-:root{
-  --white:#ffffff; --mist:#f3f6fb; --ink:#0e1a33; --ink-2:#3d4a63; --muted:#66728a;
-  --line:#dfe5ee; --line-2:#c9d2df;
-  --blue:#1e6bff; --blue-ink:#1557e0; --blue-soft:#e8f0ff; --blue-deep:#0f3fa8;
-  --google:#e0730f; --good:#15803d; --good-soft:#e5f5ea; --bad:#b91c1c; --bad-soft:#fdeaea;
-  --f:"Hanken Grotesk",Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
-  --wrap:1160px; --gut:clamp(16px,4vw,40px);
-}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth;scroll-padding-top:76px}
-body{margin:0;background:var(--white);color:var(--ink);font-family:var(--f);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
-img,svg{display:block;max-width:100%}
-a{color:inherit}
-button,input{font:inherit;color:inherit}
-:focus-visible{outline:3px solid var(--blue);outline-offset:3px;border-radius:6px}
-.wrap{max-width:var(--wrap);margin:0 auto;padding:0 var(--gut)}
-.num{font-variant-numeric:tabular-nums}
-.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-
-/* botões */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 22px;border-radius:12px;border:1px solid transparent;font-weight:700;font-size:16px;text-decoration:none;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
-.btn:active{transform:translateY(1px)}
-.btn-blue{background:var(--blue);color:#fff}
-.btn-blue:hover{background:var(--blue-ink)}
-.btn-line{background:var(--white);border-color:var(--line-2);color:var(--ink)}
-.btn-line:hover{border-color:var(--ink)}
-.btn-sm{min-height:40px;padding:0 16px;font-size:15px;border-radius:10px}
-
-/* topo */
-.top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid transparent;transition:border-color .2s}
-.top.scrolled{border-color:var(--line)}
-.top .wrap{display:flex;align-items:center;gap:28px;height:68px}
-.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:800;font-size:20px;letter-spacing:-.03em}
-.brand span{color:var(--blue)}
-.top nav{display:flex;gap:24px;margin-right:auto}
-.top nav a{text-decoration:none;color:var(--ink-2);font-weight:600;font-size:15px}
-.top nav a:hover{color:var(--ink)}
-.top .login{text-decoration:none;font-weight:700;font-size:15px}
-
-/* hero */
-.hero{padding:clamp(40px,7vw,88px) 0 clamp(56px,8vw,104px)}
-.hero .wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.04fr);gap:clamp(32px,5vw,72px);align-items:center}
-h1{font-size:clamp(40px,5.6vw,66px);line-height:1.02;letter-spacing:-.04em;font-weight:800;margin:0 0 22px;max-width:15ch}
-.lead{font-size:clamp(18px,1.7vw,20px);color:var(--ink-2);max-width:34em;margin:0 0 32px}
-.cta-row{display:flex;gap:12px;flex-wrap:wrap}
-.fine{margin:14px 0 0;color:var(--muted);font-size:15px}
-
-/* régua de ROAS: a peça central da página */
-.board{background:var(--white);border:1px solid var(--line);border-radius:20px;padding:22px 22px 18px;box-shadow:0 1px 0 var(--line),0 24px 48px -24px rgba(14,26,51,.22)}
-.board-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.board-head b{font-size:16px}
-.board-head small{color:var(--muted);font-size:14px}
-.rows{position:relative;display:grid;gap:4px}
-.goal{position:absolute;top:-6px;bottom:-6px;width:0;border-left:2px dashed rgba(14,26,51,.45);pointer-events:none}
-.goal-tag{position:absolute;top:-28px;transform:translateX(-50%);font-size:12px;font-weight:700;white-space:nowrap;background:var(--ink);color:#fff;padding:2px 8px;border-radius:999px}
-.row{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1fr) 52px;align-items:center;gap:14px;padding:7px 8px;border-radius:10px}
-.row.low{background:var(--bad-soft)}
-.row .nm{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;min-width:0}
-.row .nm i{flex:none;width:9px;height:9px;border-radius:50%}
-.row .nm em{font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.track{height:12px;border-radius:6px;background:var(--mist);overflow:hidden}
-.bar{display:block;height:100%;border-radius:6px;background:var(--blue);transform-origin:left;transform:scaleX(var(--v))}
-.row.low .bar{background:var(--bad)}
-.row .rv{text-align:right;font-weight:800;font-size:15px}
-.row.low .rv{color:var(--bad)}
-.note{display:flex;gap:12px;margin-top:18px;padding:16px;border-radius:14px;background:var(--blue-soft)}
-.note .ai{flex:none;width:32px;height:32px;border-radius:9px;background:var(--blue);display:grid;place-items:center}
-.note p{margin:0;font-size:15px;line-height:1.5}
-.note .acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.chip{min-height:36px;padding:0 14px;border-radius:9px;border:1px solid var(--line-2);background:var(--white);font-weight:700;font-size:14px;cursor:pointer}
-.chip:hover{border-color:var(--ink)}
-.why{margin-top:10px;font-size:14px;color:var(--ink-2)}
-.why[hidden]{display:none}
-
-/* entrada: uma só sequência, na régua */
-@media (prefers-reduced-motion:no-preference){
-  .play .bar{animation:grow .9s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(.15s + var(--i) * .08s)}
-  .play .goal{animation:fade .4s ease .7s both}
-  .play .note{animation:rise .5s ease 1.25s both}
-  @keyframes grow{from{transform:scaleX(0)}}
-  @keyframes fade{from{opacity:0}}
-  @keyframes rise{from{opacity:0;transform:translateY(8px)}}
-}
-
-/* faixa de canais */
-.channels{border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.channels .wrap{display:flex;align-items:center;gap:clamp(18px,4vw,48px);flex-wrap:wrap;min-height:76px;padding-top:14px;padding-bottom:14px;font-weight:700;color:var(--ink-2)}
-.channels .wrap>span:first-child{color:var(--muted);font-weight:500}
-.ch{display:inline-flex;align-items:center;gap:9px}
-.ch i{width:10px;height:10px;border-radius:50%}
-.soon{font-size:12px;font-weight:700;color:var(--muted);border:1px solid var(--line-2);border-radius:999px;padding:1px 8px;margin-left:2px}
-
-/* seções */
-section{padding:clamp(64px,9vw,112px) 0}
-.alt{background:var(--mist)}
-h2{font-size:clamp(30px,3.6vw,44px);line-height:1.08;letter-spacing:-.035em;font-weight:800;margin:0 0 16px;max-width:20ch}
-.sub{color:var(--ink-2);max-width:36em;margin:0 0 48px;font-size:18px}
-h3{font-size:20px;line-height:1.25;letter-spacing:-.02em;margin:0 0 8px}
-
-/* como funciona: é uma sequência de verdade */
-.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(24px,4vw,56px);counter-reset:s;list-style:none;margin:0;padding:0}
-.steps li{counter-increment:s;border-top:2px solid var(--ink);padding-top:20px}
-.steps li::before{content:counter(s);display:block;font-size:48px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--blue);margin-bottom:18px}
-.steps p{margin:0;color:var(--ink-2)}
-
-/* recursos: espelha o menu do produto */
-.feat{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(32px,5vw,72px)}
-.feat-list{border-top:1px solid var(--line-2)}
-.feat-item{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr);gap:24px;padding:24px 0;border-bottom:1px solid var(--line-2)}
-.feat-item h3{font-size:18px}
-.feat-item ul{margin:0;padding:0;list-style:none;display:grid;gap:8px;color:var(--ink-2)}
-.feat-item li b{color:var(--ink)}
-.side-note{position:sticky;top:96px;align-self:start}
-.side-note p{color:var(--ink-2);margin:0 0 24px}
-
-/* planos */
-.plans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--line-2);border-radius:20px;background:var(--white);overflow:hidden}
-.plan{padding:32px 28px;display:flex;flex-direction:column;gap:20px;border-left:1px solid var(--line-2)}
-.plan:first-child{border-left:0}
-.plan.hl{background:var(--blue-soft);box-shadow:inset 0 4px 0 var(--blue)}
-.plan-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.plan h3{font-size:24px;margin:0}
-.flag{font-size:13px;font-weight:700;background:var(--blue);color:#fff;border-radius:999px;padding:3px 10px}
-.who{margin:-12px 0 0;color:var(--muted);font-size:15px}
-.price{display:flex;align-items:baseline;gap:6px}
-.price b{font-size:44px;letter-spacing:-.04em;line-height:1}
-.price span{color:var(--muted);font-size:15px}
-.trial{margin:-10px 0 0;font-weight:700;color:var(--good);font-size:15px}
-.plan ul{list-style:none;margin:0;padding:0;display:grid;gap:10px;font-size:15px}
-.plan li{display:grid;grid-template-columns:18px 1fr;gap:10px;align-items:start}
-.plan li svg{margin-top:3px}
-.plan li.more{color:var(--muted);grid-template-columns:1fr}
-.plan .btn{margin-top:auto}
-.plan-foot{margin:20px 0 0;color:var(--muted);font-size:15px}
-
-/* dúvidas */
-.faq{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:clamp(32px,5vw,72px)}
-details{border-bottom:1px solid var(--line-2)}
-details:first-child{border-top:1px solid var(--line-2)}
-summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:16px;padding:20px 0;font-weight:700;font-size:18px}
-summary::-webkit-details-marker{display:none}
-summary::after{content:"+";font-weight:500;font-size:26px;line-height:.9;color:var(--blue);transition:transform .2s}
-details[open] summary::after{transform:rotate(45deg)}
-details p{margin:-6px 0 22px;color:var(--ink-2);max-width:40em}
-
-/* chamada final */
-.final{background:var(--blue);color:#fff}
-.final .wrap{display:flex;justify-content:space-between;align-items:center;gap:32px;flex-wrap:wrap}
-.final h2{margin:0;color:#fff;max-width:16ch}
-.final p{margin:10px 0 0;color:#dbe6ff}
-.final .btn{background:#fff;color:var(--blue-deep)}
-.final .btn:hover{background:var(--blue-soft)}
-
-footer{padding:36px 0 calc(36px + env(safe-area-inset-bottom,0px));font-size:15px;color:var(--muted)}
-footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
-footer nav{display:flex;gap:20px;flex-wrap:wrap}
-footer a{text-decoration:none}
-footer a:hover{color:var(--ink)}
-
-/* cadastro */
-dialog{border:0;padding:0;border-radius:20px;width:min(520px,calc(100vw - 24px));max-height:calc(100dvh - 24px);box-shadow:0 30px 80px -20px rgba(14,26,51,.45);color:var(--ink)}
-dialog::backdrop{background:rgba(14,26,51,.45)}
-.dlg{padding:28px}
-.dlg-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
-.dlg h2{font-size:28px;margin:0 0 4px}
-.dlg-head p{margin:0;color:var(--ink-2);font-size:16px}
-.x{flex:none;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--white);cursor:pointer;font-size:22px;line-height:1}
-.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:5px;background:var(--mist);border-radius:12px;margin-bottom:18px}
-.seg label{position:relative;display:block;text-align:center;padding:9px 6px;border-radius:9px;cursor:pointer;font-weight:700;font-size:15px}
-.seg label small{display:block;font-weight:500;color:var(--muted);font-size:12px;white-space:nowrap}
-.seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
-.seg label:has(input:checked){background:var(--white);box-shadow:0 1px 3px rgba(14,26,51,.14)}
-.seg label:has(input:focus-visible){outline:3px solid var(--blue);outline-offset:1px}
-.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.f{display:grid;gap:6px}
-.f.full{grid-column:1/-1}
-.f span{font-weight:600;font-size:14px}
-.f span em{font-style:normal;font-weight:500;color:var(--muted)}
-.f input{height:48px;padding:0 14px;border:1px solid var(--line-2);border-radius:10px;background:var(--white);font-size:16px}
-.f input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
-.hp{position:absolute;left:-9999px}
-.err{margin:16px 0 0;padding:12px 14px;border-radius:10px;background:var(--bad-soft);color:var(--bad);font-size:15px;font-weight:600}
-.err a{color:inherit}
-.dlg .btn{width:100%;margin-top:18px}
-.dlg .btn[disabled]{opacity:.7;cursor:progress}
-.legal{margin:12px 0 0;text-align:center;color:var(--muted);font-size:14px}
-
-/* responsivo */
-@media (max-width:980px){
-  .hero .wrap,.feat,.faq{grid-template-columns:1fr}
-  .side-note{position:static}
-  .plans{grid-template-columns:1fr}
-  .plan{border-left:0;border-top:1px solid var(--line-2)}
-  .plan:first-child{border-top:0}
-  .top nav{display:none}
-  .top .wrap{justify-content:space-between}
-  .brand{margin-right:auto}
-}
-@media (max-width:640px){
-  body{font-size:16px}
-  .steps{grid-template-columns:1fr}
-  .feat-item{grid-template-columns:1fr;gap:10px}
-  .row{grid-template-columns:minmax(0,118px) minmax(0,1fr) 44px;gap:10px;padding:7px 4px}
-  .row .nm{font-size:13px}
-  .board{padding:18px 14px 14px}
-  .fields{grid-template-columns:1fr}
-  .dlg{padding:22px 18px}
-  .top .login{display:none}
-  .cta-row .btn{flex:1 1 100%}
-}
-</style>
+<link rel="stylesheet" href="/lp/lp.css">
 </head>
-<body>
+<body data-lp="lp">
 
-<header class="top" id="top">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 7l2-3h12M16 14h2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-logo" viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="#1e6bff"/><rect x="7.5" y="17" width="4.4" height="8" rx="2.2" fill="#fff" opacity=".55"/><rect x="13.8" y="12.5" width="4.4" height="12.5" rx="2.2" fill="#fff" opacity=".8"/><rect x="20.1" y="7" width="4.4" height="18" rx="2.2" fill="#fff"/></symbol>
+</svg>
+
+<header class="top on-hero">
   <div class="wrap">
     <a class="brand" href="/" aria-label="metrikabr, início">
-      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#1e6bff"/><rect x="7.5" y="17" width="4.4" height="8" rx="2.2" fill="#fff" opacity=".55"/><rect x="13.8" y="12.5" width="4.4" height="12.5" rx="2.2" fill="#fff" opacity=".8"/><rect x="20.1" y="7" width="4.4" height="18" rx="2.2" fill="#fff"/></svg>
-      <b>metrika<span>br</span></b>
+      <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#1e6bff"/><rect x="7.5" y="17" width="4.4" height="8" rx="2.2" fill="#fff" opacity=".55"/><rect x="13.8" y="12.5" width="4.4" height="12.5" rx="2.2" fill="#fff" opacity=".8"/><rect x="20.1" y="7" width="4.4" height="18" rx="2.2" fill="#fff"/></svg>
+      <span>metrika<span class="br">br</span></span>
     </a>
     <nav aria-label="Seções">
-      <a href="#como-funciona">Como funciona</a>
-      <a href="#recursos">Recursos</a>
+      <a href="#produto">Produto</a>
+      <a href="#calculadora">Calculadora</a>
       <a href="#planos">Planos</a>
-      <a href="#duvidas">Dúvidas</a>
+      <a href="/agencias">Para agências</a>
     </nav>
     <a class="login" href="/app/">Entrar</a>
     <button class="btn btn-blue btn-sm" data-signup="pro">Testar grátis</button>
@@ -249,102 +55,323 @@ dialog::backdrop{background:rgba(14,26,51,.45)}
 </header>
 
 <main>
-  <section class="hero" aria-labelledby="hero-title">
-    <div class="wrap">
-      <div>
-        <h1 id="hero-title">Saiba onde mexer nas campanhas antes de gastar mais.</h1>
-        <p class="lead">A metrikabr junta Meta Ads e Google Ads num painel só, compara cada campanha com a sua meta de ROAS e um copilot de IA aponta o que fazer primeiro.</p>
-        <div class="cta-row">
-          <button class="btn btn-blue" data-signup="pro">Começar 7 dias grátis</button>
-          <a class="btn btn-line" href="#planos">Ver os planos</a>
-        </div>
-        <p class="fine">Sem cartão de crédito. Você entra no painel assim que cria a conta.</p>
+  <section class="hero" aria-labelledby="hero-title" style="padding-bottom:0">
+    <div class="wrap hero-copy">
+      <span class="pill"><b>7 dias grátis</b>Copilot de IA para Meta Ads e Google Ads</span>
+      <h1 id="hero-title">Pare de gastar verba em campanha que não vende.</h1>
+      <p class="lead">A metrikabr junta Meta Ads e Google Ads num painel só, mostra onde o seu dinheiro está indo embora e um copilot de IA diz para onde levar a verba. Todo dia, antes do café.</p>
+      <div class="cta-row">
+        <button class="btn btn-blue" data-signup="pro">Testar 7 dias grátis</button>
+        <a class="btn btn-ghost" href="#produto">Ver o produto por dentro</a>
       </div>
+      <p class="fine">
+        <span><svg width="16" height="16"><use href="#i-check"/></svg>Sem cartão de crédito</span>
+        <span><svg width="16" height="16"><use href="#i-check"/></svg>Acesso na hora</span>
+        <span><svg width="16" height="16"><use href="#i-check"/></svg>Meta Ads e Google Ads</span>
+      </p>
+    </div>
 
-      <figure class="board" id="board" aria-label="Exemplo do painel: campanhas comparadas com a meta de ROAS" style="margin:0">
-        <div class="board-head"><b>ROAS das campanhas, últimos 30 dias</b><small>Exemplo com dados fictícios</small></div>
-        <div class="rows" id="rows" style="margin-top:34px"></div>
-        <div class="note" role="note">
-          <span class="ai" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></span>
-          <div>
-            <p><b>Comece por Topo · Vídeos UGC.</b> Gastou <span class="num">R$ 5.200</span> com ROAS de <span class="num">1,1x</span>, bem abaixo da sua meta de <span class="num">3,0x</span>. Vale reduzir a verba dela e reforçar PMax Coleção Verão, que está em <span class="num">4,3x</span>.</p>
-            <div class="acts"><button class="chip" id="why-btn" aria-expanded="false" aria-controls="why">Ver o motivo</button></div>
-            <p class="why" id="why" hidden>O criativo principal segura só 17% das pessoas nos 3 primeiros segundos, e a frequência subiu para 4,8 na última semana. O público já viu o anúncio vezes demais.</p>
+    <div class="hero-shot">
+      <div class="win" role="img" aria-label="Painel da metrikabr com dados fictícios: indicadores da conta, campanhas comparadas com a meta de ROAS e o copilot sugerindo onde mexer">
+        <div class="win-bar"><i></i><i></i><i></i><span>app.metrikabr.com.br</span></div>
+        <div class="app">
+          <aside class="app-side">
+            <div class="b"><svg width="22" height="22"><use href="#i-logo"/></svg>metrika<em>br</em></div>
+            <a class="on"><i></i>Copilot de Marketing</a><a><i></i>Visão geral</a><a><i></i>Campanhas</a><a><i></i>Criativos</a><a><i></i>Enviar relatório</a><a><i></i>Insights</a><a><i></i>Integrações</a>
+          </aside>
+          <div class="app-main">
+            <div class="app-head"><b>Bom dia, Camila. Três coisas pedem atenção hoje.</b><small class="hide-sm">Últimos 30 dias</small></div>
+            <div class="kpis">
+              <div class="kpi"><small>Investimento</small><b class="num">R$ 84.320</b><span class="down">▲ 6,6%</span></div>
+              <div class="kpi"><small>Receita</small><b class="num">R$ 362.580</b><span class="up">▲ 13,9%</span></div>
+              <div class="kpi"><small>ROAS</small><b class="num">4,30x</b><span class="up">▲ 6,8%</span></div>
+              <div class="kpi"><small>CPA</small><b class="num">R$ 39,26</b><span class="up">▼ 6,7%</span></div>
+            </div>
+            <div class="app-cols">
+              <div class="panel"><h4>ROAS por campanha <span>meta 3,0x</span></h4>
+                <div class="ruler" data-goal="3" data-max="5.5">
+                  <div class="rr" style="--i:0"><span class="n"><i class="dot" style="background:var(--meta)"></i><em>Remarketing 30d</em></span><span class="trk"><span style="--v:.87"></span></span><span class="v num">4,8x</span></div>
+                  <div class="rr" style="--i:1"><span class="n"><i class="dot" style="background:var(--google)"></i><em>PMax Coleção Verão</em></span><span class="trk"><span style="--v:.78"></span></span><span class="v num">4,3x</span></div>
+                  <div class="rr" style="--i:2"><span class="n"><i class="dot" style="background:var(--meta)"></i><em>Lookalike Compradores</em></span><span class="trk"><span style="--v:.58"></span></span><span class="v num">3,2x</span></div>
+                  <div class="rr low" style="--i:3"><span class="n"><i class="dot" style="background:var(--google)"></i><em>Pesquisa Genérica</em></span><span class="trk"><span style="--v:.38"></span></span><span class="v num">2,1x</span></div>
+                  <div class="rr low" style="--i:4"><span class="n"><i class="dot" style="background:var(--meta)"></i><em>Topo Vídeos UGC</em></span><span class="trk"><span style="--v:.2"></span></span><span class="v num">1,1x</span></div>
+                  <span class="goal"><b>Meta 3,0x</b></span>
+                </div>
+              </div>
+              <div class="panel"><h4>Copilot <span>agora</span></h4>
+                <div class="chat">
+                  <div class="msg me">Onde estou perdendo dinheiro essa semana?</div>
+                  <div class="msg ai"><span class="ai-ico"><svg width="12" height="12" style="color:#fff"><use href="#i-spark"/></svg></span><b>Topo Vídeos UGC.</b> Gastou R$ 5.200 a ROAS 1,1x, longe da sua meta de 3,0x. O criativo principal segura só 17% das pessoas nos 3 primeiros segundos. Sugiro levar R$ 150/dia para PMax Coleção Verão, que está em 4,3x.
+                    <div class="acts"><span class="pri">Mover a verba</span><span>Ver criativos</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </figure>
+      </div>
     </div>
   </section>
 
-  <div class="channels" aria-label="Canais">
+  <div class="proof needs-content" aria-label="Quem usa">
     <div class="wrap">
-      <span>Funciona com</span>
-      <span class="ch"><i style="background:var(--blue)"></i>Meta Ads</span>
-      <span class="ch"><i style="background:var(--google)"></i>Google Ads</span>
-      <span class="ch"><i style="background:#0f9488"></i>TikTok Ads <span class="soon">em breve</span></span>
-      <span class="ch">Claude, ChatGPT e Groq no copilot</span>
+      <p>Gestores de tráfego, e-commerces e times de marketing já acompanham as contas pela metrikabr.</p>
+      <div class="logos"><span class="logo-ph">Logo cliente</span><span class="logo-ph">Logo cliente</span><span class="logo-ph">Logo cliente</span><span class="logo-ph">Logo cliente</span><span class="logo-ph">Logo cliente</span></div>
     </div>
   </div>
 
-  <section id="como-funciona" aria-labelledby="como-title">
+  <section aria-labelledby="dor-title">
     <div class="wrap">
-      <h2 id="como-title">Do login à primeira decisão em poucos minutos</h2>
-      <p class="sub">Você não precisa montar planilha nem relatório. Conecte as contas e o painel já organiza tudo pela sua meta.</p>
-      <ol class="steps">
-        <li><h3>Conecte as contas de anúncio</h3><p>Meta Ads pela Marketing API ou pelo MCP oficial da Meta, e Google Ads com o login da sua conta Google.</p></li>
-        <li><h3>Defina a meta de ROAS</h3><p>Insights, recomendações e o copilot passam a medir cada campanha contra o número que importa para você.</p></li>
-        <li><h3>Comece pelo que pesa mais</h3><p>O painel ordena alertas e oportunidades. Pergunte ao copilot o porquê de cada um antes de decidir.</p></li>
-      </ol>
-    </div>
-  </section>
-
-  <section id="recursos" class="alt" aria-labelledby="rec-title">
-    <div class="wrap feat">
-      <div class="side-note">
-        <h2 id="rec-title">Tudo o que um gestor de tráfego abre todo dia</h2>
-        <p>Os mesmos módulos do produto, do jeito que aparecem no menu. O plano define quais ficam liberados.</p>
-        <button class="btn btn-blue" data-signup="pro">Testar o plano Pro</button>
+      <div class="sec-head">
+        <h2 id="dor-title">Sua segunda-feira não precisa começar com três gerenciadores abertos.</h2>
+        <p class="sub">O problema não é falta de dado. É ele estar espalhado, chegar tarde e não dizer o que fazer.</p>
       </div>
-      <div class="feat-list">
-        <div class="feat-item"><h3>Copilot de Marketing</h3><ul><li>Converse sobre as suas campanhas e peça análises em português, com a sua chave do Claude, do ChatGPT ou do Groq.</li><li>Insights do dia logo na entrada.</li></ul></div>
-        <div class="feat-item"><h3>Painel analítico</h3><ul><li><b>Visão geral:</b> KPIs, receita contra investimento, canais e funil.</li><li><b>Performance analítica:</b> horários, públicos, regiões e dispositivos.</li></ul></div>
-        <div class="feat-item"><h3>Gerenciador de campanhas</h3><ul><li><b>Campanhas:</b> Meta e Google numa tabela só.</li><li><b>Criativos:</b> ranking e fadiga por canal.</li><li><b>Relatórios:</b> envio e agendamento por e-mail, WhatsApp, Slack e Teams.</li></ul></div>
-        <div class="feat-item"><h3>Inteligências do agente</h3><ul><li><b>Insights:</b> alertas e oportunidades em ordem de prioridade.</li><li><b>Planejamento de mídia:</b> diga quanto quer investir e veja onde colocar a verba.</li><li><b>Habilidades:</b> rotinas que o agente executa sozinho.</li></ul></div>
-        <div class="feat-item"><h3>Carteira de clientes</h3><ul><li>Para agências: todas as contas dos clientes num painel só, com quem precisa de atenção no topo.</li></ul></div>
+      <div class="vs">
+        <div class="before">
+          <h3><svg width="22" height="22" style="color:var(--bad)"><use href="#i-x"/></svg>Sem a metrikabr</h3>
+          <ul>
+            <li><svg width="20" height="20" style="color:var(--bad)"><use href="#i-x"/></svg><div><span class="t num">7h40</span><b>Abre Meta, Google e a planilha.</b> Copia número de uma aba para outra até as contas baterem.</div></li>
+            <li><svg width="20" height="20" style="color:var(--bad)"><use href="#i-x"/></svg><div><span class="t num">9h10</span><b>Descobre a campanha de topo a ROAS 1,1x.</b> Ela está assim desde quinta. Já foram R$ 5 mil.</div></li>
+            <li><svg width="20" height="20" style="color:var(--bad)"><use href="#i-x"/></svg><div><span class="t num">11h30</span><b>Ainda montando print para o relatório.</b> A otimização fica para a tarde, se der.</div></li>
+          </ul>
+        </div>
+        <div class="after">
+          <h3><svg width="22" height="22"><use href="#i-check"/></svg>Com a metrikabr</h3>
+          <ul>
+            <li><svg width="20" height="20"><use href="#i-check"/></svg><div><span class="t num">8h00</span><b>Abre um painel só.</b> Meta e Google juntos, já comparados com a sua meta de ROAS.</div></li>
+            <li><svg width="20" height="20"><use href="#i-check"/></svg><div><span class="t num">8h02</span><b>O copilot aponta o que está fora da meta</b> e explica o motivo, com os seus números.</div></li>
+            <li><svg width="20" height="20"><use href="#i-check"/></svg><div><span class="t num">8h10</span><b>O relatório agendado já saiu.</b> Você passa a manhã otimizando, não copiando dado.</div></li>
+          </ul>
+        </div>
       </div>
     </div>
   </section>
 
-  <section id="planos" aria-labelledby="planos-title">
+  <section id="produto" class="alt" aria-labelledby="prod-title">
     <div class="wrap">
-      <h2 id="planos-title">Escolha um plano e teste 7 dias de graça</h2>
-      <p class="sub">Todos os planos têm teste grátis, sem cartão. Durante o teste, você usa tudo o que o plano inclui.</p>
-      <div class="plans" id="plans"></div>
-      <p class="plan-foot">Depois dos 7 dias o acesso pausa e nada é cobrado. Para continuar com os mesmos dados e conexões, é só falar com o comercial.</p>
+      <div class="sec-head c">
+        <h2 id="prod-title">Veja o que você abre amanhã cedo</h2>
+        <p class="sub">Telas reais do produto, com dados fictícios de uma loja de exemplo.</p>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Partes do produto">
+        <button class="tab" role="tab" id="t-cop" aria-controls="p-cop" aria-selected="true">Copilot</button>
+        <button class="tab" role="tab" id="t-cam" aria-controls="p-cam" aria-selected="false" tabindex="-1">Campanhas</button>
+        <button class="tab" role="tab" id="t-cri" aria-controls="p-cri" aria-selected="false" tabindex="-1">Criativos</button>
+        <button class="tab" role="tab" id="t-rel" aria-controls="p-rel" aria-selected="false" tabindex="-1">Relatórios</button>
+      </div>
+
+      <div class="showcase" role="tabpanel" id="p-cop" aria-labelledby="t-cop">
+        <div class="copy">
+          <h3>Pergunte em português. A resposta vem com os seus números.</h3>
+          <p>O copilot lê as suas campanhas de Meta e Google, compara com a sua meta e responde como um analista sênior responderia.</p>
+          <ul>
+            <li><svg width="20" height="20" style="color:var(--good)"><use href="#i-check"/></svg>Funciona com Claude, ChatGPT ou Groq, usando a sua chave</li>
+            <li><svg width="20" height="20" style="color:var(--good)"><use href="#i-check"/></svg>Sugere a ação e explica o porquê</li>
+            <li><svg width="20" height="20" style="color:var(--good)"><use href="#i-check"/></svg>Nada muda na sua conta sem a sua confirmação</li>
+          </ul>
+        </div>
+        <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>Copilot de Marketing</span></div>
+          <div class="app-main" style="gap:10px">
+            <div class="chat">
+              <div class="msg me">Qual campanha eu escalo essa semana?</div>
+              <div class="msg ai"><span class="ai-ico"><svg width="12" height="12" style="color:#fff"><use href="#i-spark"/></svg></span><b>PMax Coleção Verão.</b> ROAS de 4,3x com frequência baixa (1,6) e o orçamento limitando a entrega há 4 dias. Subir de R$ 300 para R$ 450/dia deve render cerca de <b>+R$ 20 mil</b> no mês, mantendo o ROAS acima da meta.
+                <div class="acts"><span class="pri">Aplicar R$ 450/dia</span><span>Ver a previsão</span></div></div>
+              <div class="msg me">E o que eu pauso?</div>
+              <div class="msg ai"><span class="ai-ico"><svg width="12" height="12" style="color:#fff"><use href="#i-spark"/></svg></span><b>Pesquisa Genérica</b> está em 2,1x há 12 dias e 64% dos cliques vêm de termos sem intenção de compra. Antes de pausar, vale negativar 9 termos. Quer ver a lista?
+                <div class="acts"><span>Ver termos</span><span>Pausar mesmo assim</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="showcase" role="tabpanel" id="p-cam" aria-labelledby="t-cam" hidden>
+        <div class="copy">
+          <h3>Meta e Google na mesma tabela, na mesma régua.</h3>
+          <p>Investimento, receita e ROAS de todos os canais lado a lado, com a ação sugerida para cada campanha.</p>
+          <ul>
+            <li><svg width="20" height="20" style="color:var(--good)"><use href="#i-check"/></svg>Status contra a sua meta, não contra a média</li>
+            <li><svg width="20" height="20" style="color:var(--good)"><use href="#i-check"/></svg>Filtros por canal, período e situação</li>
+          </ul>
+        </div>
+        <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>Campanhas multicanal</span></div>
+          <div class="app-main"><div class="panel" style="padding:4px 6px;overflow-x:auto">
+            <table class="tbl">
+              <thead><tr><th>Campanha</th><th class="hide-sm">Investido</th><th class="r">ROAS</th><th>Situação</th><th class="hide-sm">Sugestão</th></tr></thead>
+              <tbody>
+                <tr><td><i class="dot" style="background:var(--meta)"></i> Remarketing 30d</td><td class="num hide-sm">R$ 12.400</td><td class="r num"><b>4,8x</b></td><td><span class="tag good">Acima da meta</span></td><td class="hide-sm">Escalar</td></tr>
+                <tr><td><i class="dot" style="background:var(--google)"></i> PMax Coleção Verão</td><td class="num hide-sm">R$ 9.000</td><td class="r num"><b>4,3x</b></td><td><span class="tag good">Acima da meta</span></td><td class="hide-sm">Escalar</td></tr>
+                <tr><td><i class="dot" style="background:var(--meta)"></i> Lookalike Compradores</td><td class="num hide-sm">R$ 15.800</td><td class="r num"><b>3,2x</b></td><td><span class="tag info">Na meta</span></td><td class="hide-sm">Manter</td></tr>
+                <tr><td><i class="dot" style="background:var(--google)"></i> Pesquisa Genérica</td><td class="num hide-sm">R$ 7.300</td><td class="r num"><b>2,1x</b></td><td><span class="tag warn">Atenção</span></td><td class="hide-sm">Revisar termos</td></tr>
+                <tr><td><i class="dot" style="background:var(--meta)"></i> Topo Vídeos UGC</td><td class="num hide-sm">R$ 5.200</td><td class="r num"><b>1,1x</b></td><td><span class="tag bad">Fora da meta</span></td><td class="hide-sm">Reduzir verba</td></tr>
+                <tr><td><i class="dot" style="background:var(--google)"></i> Shopping Marca</td><td class="num hide-sm">R$ 4.100</td><td class="r num"><b>6,2x</b></td><td><span class="tag good">Acima da meta</span></td><td class="hide-sm">Manter</td></tr>
+              </tbody>
+            </table></div></div>
+        </div>
+      </div>
+
+      <div class="showcase" role="tabpanel" id="p-cri" aria-labelledby="t-cri" hidden>
+        <div class="copy">
+          <h3>Saiba qual criativo cansou antes de o público cansar dele.</h3>
+          <p>Ranking por canal com retenção, CTR e frequência. O alerta de fadiga chega antes da queda no resultado.</p>
+          <ul>
+            <li><svg width="20" height="20" style="color:var(--good)"><use href="#i-check"/></svg>Retenção nos 3 primeiros segundos</li>
+            <li><svg width="20" height="20" style="color:var(--good)"><use href="#i-check"/></svg>Frequência e CTR na mesma linha do tempo</li>
+          </ul>
+        </div>
+        <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>Criativos</span></div>
+          <div class="app-main"><div class="kpis" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+            <div class="kpi" style="padding:0;overflow:hidden"><div style="height:92px;background:linear-gradient(135deg,#ffb36b,#ff6b8b)"></div><div style="padding:10px 12px"><small>Depoimento cliente · Meta</small><b class="num">CTR 2,8%</b><span class="tag good">Melhor do mês</span></div></div>
+            <div class="kpi" style="padding:0;overflow:hidden"><div style="height:92px;background:linear-gradient(135deg,#7dd3fc,#3b7bff)"></div><div style="padding:10px 12px"><small>Carrossel verão · Meta</small><b class="num">CTR 1,9%</b><span class="tag info">Estável</span></div></div>
+            <div class="kpi" style="padding:0;overflow:hidden"><div style="height:92px;background:linear-gradient(135deg,#c4b5fd,#6d28d9)"></div><div style="padding:10px 12px"><small>Antes e depois · Meta</small><b class="num">CTR 0,7%</b><span class="tag bad">Fadiga: freq. 4,8</span></div></div>
+          </div>
+          <div class="panel"><h4>Retenção nos 3 primeiros segundos</h4>
+            <div class="ruler" data-goal="25" data-max="50" style="padding-top:18px">
+              <div class="rr"><span class="n"><em>Depoimento cliente</em></span><span class="trk"><span style="--v:.84"></span></span><span class="v num">42%</span></div>
+              <div class="rr"><span class="n"><em>Carrossel verão</em></span><span class="trk"><span style="--v:.6"></span></span><span class="v num">30%</span></div>
+              <div class="rr low"><span class="n"><em>Antes e depois</em></span><span class="trk"><span style="--v:.34"></span></span><span class="v num">17%</span></div>
+              <span class="goal"><b>Referência 25%</b></span>
+            </div></div></div>
+        </div>
+      </div>
+
+      <div class="showcase" role="tabpanel" id="p-rel" aria-labelledby="t-rel" hidden>
+        <div class="copy">
+          <h3>Relatório pronto, no canal que quem paga lê.</h3>
+          <p>Agende uma vez e ele sai sozinho, com os números do período e os destaques escritos pelo copilot.</p>
+          <ul>
+            <li><svg width="20" height="20" style="color:var(--good)"><use href="#i-check"/></svg>E-mail, WhatsApp, Slack e Teams</li>
+            <li><svg width="20" height="20" style="color:var(--good)"><use href="#i-check"/></svg>Semanal, quinzenal ou mensal</li>
+          </ul>
+        </div>
+        <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>Enviar relatório</span></div>
+          <div class="app-main">
+            <div class="panel"><h4>Agendados <span>3 ativos</span></h4>
+              <table class="tbl"><tbody>
+                <tr><td><b>Resumo semanal</b><br><span style="color:var(--muted)">Toda segunda, 08:00</span></td><td><span class="tag good">WhatsApp</span></td><td class="r hide-sm" style="color:var(--muted)">4 pessoas</td></tr>
+                <tr><td><b>Fechamento do mês</b><br><span style="color:var(--muted)">Dia 1, 09:00</span></td><td><span class="tag info">E-mail</span></td><td class="r hide-sm" style="color:var(--muted)">diretoria@</td></tr>
+                <tr><td><b>Alertas do dia</b><br><span style="color:var(--muted)">Dias úteis, 08:30</span></td><td><span class="tag warn">Slack</span></td><td class="r hide-sm" style="color:var(--muted)">#marketing</td></tr>
+              </tbody></table></div>
+            <div class="msg ai" style="max-width:100%"><b>Semana 44:</b> receita de R$ 86 mil (+12%) com ROAS 4,4x. O destaque foi PMax Coleção Verão. Na próxima semana, a verba de Topo Vídeos UGC vai para remarketing.</div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section id="duvidas" class="alt" aria-labelledby="faq-title">
+  <section id="calculadora" aria-labelledby="calc-title">
+    <div class="wrap">
+      <div class="calc" data-calc="gap">
+        <div class="calc-in">
+          <h3 id="calc-title">Quanto custa uma campanha abaixo da meta?</h3>
+          <p>Mexa nos valores de uma campanha sua e veja quanto de receita fica na mesa todo mês.</p>
+          <div class="rng"><label for="c-spend">Investimento por dia <output for="c-spend"></output></label><input type="range" id="c-spend" name="spend" min="50" max="5000" step="50" value="300" data-pre="R$ "></div>
+          <div class="rng"><label for="c-roas">ROAS atual da campanha <output for="c-roas"></output></label><input type="range" id="c-roas" name="roas" min="0.3" max="8" step="0.1" value="1.5" data-dec="1" data-suf="x"></div>
+          <div class="rng"><label for="c-meta">Sua meta de ROAS <output for="c-meta"></output></label><input type="range" id="c-meta" name="meta" min="1" max="10" step="0.1" value="3" data-dec="1" data-suf="x"></div>
+        </div>
+        <div class="calc-out" aria-live="polite">
+          <small>Receita que deixa de entrar por mês</small>
+          <div class="big num" data-out="big"></div>
+          <p data-out="text"></p>
+          <button class="btn btn-white" data-signup="pro">Achar essas campanhas na minha conta</button>
+        </div>
+      </div>
+      <p class="calc-note">A conta: (meta − ROAS atual) × investimento por dia × 30 dias. Nenhuma estimativa escondida.</p>
+    </div>
+  </section>
+
+  <section class="alt" aria-labelledby="rec-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="rec-title">Tudo o que um gestor de tráfego abre todo dia, num lugar só</h2>
+      </div>
+      <div class="feats">
+        <div class="feat"><span class="ic"><svg width="22" height="22"><use href="#i-spark"/></svg></span><h3>Copilot de Marketing</h3><p>Pergunte sobre qualquer campanha e receba a resposta com os seus números e o próximo passo.</p></div>
+        <div class="feat"><span class="ic"><svg width="22" height="22"><use href="#i-chart"/></svg></span><h3>Visão geral e performance</h3><p>Receita contra investimento, funil, horários, públicos, regiões e dispositivos.</p></div>
+        <div class="feat"><span class="ic"><svg width="22" height="22"><use href="#i-bell"/></svg></span><h3>Insights priorizados</h3><p>Alertas e oportunidades em ordem do que pesa mais no resultado. Comece pelo topo.</p></div>
+        <div class="feat"><span class="ic"><svg width="22" height="22"><use href="#i-wallet"/></svg></span><h3>Planejamento de mídia</h3><p>Diga quanto quer investir e veja onde colocar a verba, com a previsão de resultado.</p></div>
+        <div class="feat wide"><span class="ic"><svg width="22" height="22"><use href="#i-shield"/></svg></span><div><h3>Você continua no comando</h3><p>A metrikabr lê as contas para analisar. Pausar, escalar ou mexer em orçamento sempre pede a sua confirmação.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="needs-content" aria-labelledby="dep-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="dep-title">Quem testou não voltou para a planilha</h2>
+      </div>
+      <div class="quotes">
+        <figure class="quote"><div class="stat num">−32%<small>de CPA em 30 dias</small></div><blockquote>“Eu levava a manhã inteira juntando Meta e Google. Hoje abro o painel, vejo o que está fora da meta e já sei por onde começar.”</blockquote><figcaption><span class="av">NS</span><span><b>Nome Sobrenome</b><span>Gestor de tráfego, Empresa</span></span></figcaption></figure>
+        <figure class="quote"><div class="stat num">4,1x<small>de ROAS médio na conta</small></div><blockquote>“O alerta de fadiga pegou um criativo cansando três dias antes de o resultado cair. Isso pagou o ano.”</blockquote><figcaption><span class="av">NS</span><span><b>Nome Sobrenome</b><span>Head de marketing, E-commerce</span></span></figcaption></figure>
+        <figure class="quote"><div class="stat num">6h<small>a menos por semana com relatório</small></div><blockquote>“O relatório de segunda sai sozinho no WhatsApp da diretoria. Ninguém mais me pede print.”</blockquote><figcaption><span class="av">NS</span><span><b>Nome Sobrenome</b><span>Analista de mídia, Empresa</span></span></figcaption></figure>
+      </div>
+      <p class="ph-note">Depoimentos e números de exemplo: aparecem só no preview. Troque pelos reais e tire a classe needs-content para publicar.</p>
+    </div>
+  </section>
+
+  <section id="planos" class="alt" aria-labelledby="planos-title">
+    <div class="wrap">
+      <div class="sec-head c">
+        <h2 id="planos-title">Escolha o plano e teste 7 dias de graça</h2>
+        <p class="sub">Sem cartão de crédito. Durante o teste você usa tudo o que o plano inclui, com as suas contas de verdade.</p>
+      </div>
+      <div class="plans n2">
+        <article class="plan" aria-labelledby="pl-s">
+          <h3 id="pl-s">Starter</h3>
+          <p class="who">Para quem está começando a organizar as contas</p>
+          <div class="price"><b class="num">R$ 297</b><span>/mês</span></div>
+          <p class="trial">7 dias grátis para testar</p>
+          <ul>
+            <li><svg width="20" height="20" style="color:var(--blue)"><use href="#i-check"/></svg>Copilot de Marketing</li>
+            <li><svg width="20" height="20" style="color:var(--blue)"><use href="#i-check"/></svg>Visão geral da conta</li>
+            <li><svg width="20" height="20" style="color:var(--blue)"><use href="#i-check"/></svg>Campanhas de Meta e Google numa tabela</li>
+          </ul>
+          <button class="btn btn-line" data-signup="starter">Testar o Starter grátis</button>
+        </article>
+        <article class="plan hl" aria-labelledby="pl-p">
+          <span class="flag">Mais escolhido</span>
+          <h3 id="pl-p">Pro</h3>
+          <p class="who">Para gestores de tráfego e e-commerces que vivem de resultado</p>
+          <div class="price"><b class="num">R$ 697</b><span>/mês</span></div>
+          <p class="trial">7 dias grátis para testar</p>
+          <ul>
+            <li class="more">Tudo do Starter, mais:</li>
+            <li><svg width="20" height="20" style="color:var(--blue)"><use href="#i-check"/></svg>Performance analítica</li>
+            <li><svg width="20" height="20" style="color:var(--blue)"><use href="#i-check"/></svg>Ranking e fadiga de criativos</li>
+            <li><svg width="20" height="20" style="color:var(--blue)"><use href="#i-check"/></svg>Relatórios agendados</li>
+            <li><svg width="20" height="20" style="color:var(--blue)"><use href="#i-check"/></svg>Insights priorizados</li>
+          </ul>
+          <button class="btn btn-blue" data-signup="pro">Testar o Pro grátis</button>
+        </article>
+        <article class="plan ag" aria-labelledby="pl-a">
+          <h3 id="pl-a">Tem uma agência?</h3>
+          <p>O plano Scale coloca todos os clientes numa tela só, com quem precisa de atenção no topo. 10 clientes incluídos.</p>
+          <div class="price"><b class="num" style="font-size:36px">R$ 1.497</b><span style="color:#c9d6f5">/mês</span></div>
+          <a class="btn" href="/agencias">Conhecer o plano para agências</a>
+        </article>
+      </div>
+      <p class="plans-foot">Depois dos 7 dias o acesso pausa e nada é cobrado. Para continuar com os mesmos dados e conexões, fale com o comercial.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="faq-title">
     <div class="wrap faq">
-      <h2 id="faq-title">Dúvidas comuns</h2>
+      <h2 id="faq-title">Dúvidas antes de testar</h2>
       <div>
         <details><summary>Preciso cadastrar cartão de crédito?</summary><p>Não. O teste não pede cartão e não vira cobrança automática quando termina.</p></details>
-        <details><summary>O que acontece depois dos 7 dias?</summary><p>O acesso fica pausado. Fale com o comercial para escolher o plano e continuar de onde parou, com as mesmas contas conectadas e metas.</p></details>
+        <details><summary>O que acontece depois dos 7 dias?</summary><p>O acesso pausa. Fale com o comercial para escolher o plano e continuar de onde parou, com as mesmas contas conectadas e metas.</p></details>
         <details><summary>Quais canais posso conectar?</summary><p>Meta Ads e Google Ads. O TikTok Ads está a caminho e aparece no painel assim que o conector ficar pronto.</p></details>
         <details><summary>A metrikabr mexe nas minhas campanhas?</summary><p>Ela lê os dados para analisar. Qualquer mudança sugerida, como pausar uma campanha ou trocar orçamento, sempre pede a sua confirmação.</p></details>
         <details><summary>Como funciona a IA do copilot?</summary><p>Você conecta a sua chave de API do Claude, do ChatGPT ou do Groq. O uso é cobrado direto pelo provedor, e o Groq tem um plano gratuito para começar.</p></details>
-        <details><summary>Sou agência. Qual plano faz sentido?</summary><p>O Scale. Ele inclui a carteira de clientes, com até 10 clientes no valor do plano e R$ 79 por cliente adicional.</p></details>
+        <details><summary>Quanto tempo leva para ver os meus dados?</summary><p>Poucos minutos. Você conecta a conta da Meta e do Google em Integrações, informa a meta de ROAS e o painel já aparece com as suas campanhas.</p></details>
       </div>
     </div>
   </section>
 
   <section class="final" aria-labelledby="final-title">
     <div class="wrap">
-      <div>
-        <h2 id="final-title">Teste com as suas campanhas, não com as nossas.</h2>
-        <p>7 dias grátis, sem cartão. Leva menos de um minuto para criar a conta.</p>
-      </div>
-      <button class="btn" data-signup="pro">Começar 7 dias grátis</button>
+      <h2 id="final-title">Cada dia sem olhar é verba gasta em campanha que não vende.</h2>
+      <p>Descubra hoje onde o dinheiro está indo embora. Teste 7 dias grátis, sem cartão, com as suas contas de verdade.</p>
+      <button class="btn btn-white" data-signup="pro">Testar 7 dias grátis</button>
     </div>
   </section>
 </main>
@@ -353,20 +380,21 @@ dialog::backdrop{background:rgba(14,26,51,.45)}
   <div class="wrap">
     <span>© 2026 metrikabr</span>
     <nav aria-label="Rodapé">
-      <a href="/app/">Entrar</a>
+      <a href="/agencias">Para agências</a>
       <a href="#planos">Planos</a>
+      <a href="/app/">Entrar</a>
       <a href="mailto:comercial@readyai.com">comercial@readyai.com</a>
     </nav>
   </div>
 </footer>
 
-<dialog id="signup" aria-labelledby="su-title">
+<dialog id="signup" aria-labelledby="su-title" data-default="pro">
   <form class="dlg" id="su-form" novalidate>
     <div class="dlg-head">
-      <div><h2 id="su-title">Criar sua conta</h2><p id="su-sub">7 dias grátis do plano Pro. Sem cartão.</p></div>
+      <div><h2 id="su-title">Criar sua conta</h2><p id="su-sub">7 dias grátis do plano Pro. Sem cartão de crédito.</p></div>
       <button type="button" class="x" id="su-close" aria-label="Fechar">×</button>
     </div>
-    <fieldset class="seg" style="border:0;margin:0 0 18px">
+    <fieldset class="seg">
       <legend class="sr">Plano</legend>
       <label><input type="radio" name="plan" value="starter">Starter<small class="num">R$ 297/mês</small></label>
       <label><input type="radio" name="plan" value="pro" checked>Pro<small class="num">R$ 697/mês</small></label>
@@ -374,120 +402,18 @@ dialog::backdrop{background:rgba(14,26,51,.45)}
     </fieldset>
     <div class="fields">
       <label class="f"><span>Seu nome</span><input name="name" autocomplete="name" required></label>
-      <label class="f"><span>Empresa ou agência</span><input name="company" autocomplete="organization" required></label>
+      <label class="f"><span>Empresa</span><input name="company" autocomplete="organization" required></label>
       <label class="f full"><span>E-mail</span><input name="email" type="email" autocomplete="email" inputmode="email" required></label>
       <label class="f"><span>WhatsApp <em>(opcional)</em></span><input name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(11) 90000-0000"></label>
       <label class="f"><span>Senha</span><input name="password" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres" required></label>
       <label class="hp" aria-hidden="true">Site<input name="website" tabindex="-1" autocomplete="off"></label>
     </div>
     <p class="err" id="su-err" role="alert" hidden></p>
-    <button class="btn btn-blue" id="su-btn" type="submit">Criar conta e entrar</button>
+    <button class="btn btn-blue" id="su-btn" type="submit">Criar conta e começar o teste</button>
     <p class="legal">Já tem conta? <a href="/app/">Entrar</a></p>
   </form>
 </dialog>
 
-<script>
-(() => {
-  const PLANS = {
-    starter: { name: "Starter", price: 297, who: "Para quem está começando", mods: ["Copilot de Marketing", "Visão geral", "Campanhas multicanal"] },
-    pro: { name: "Pro", price: 697, who: "Para gestores de tráfego e e-commerces", flag: "Mais escolhido", more: "Tudo do Starter, mais:", mods: ["Performance analítica", "Criativos", "Envio de relatórios", "Insights priorizados"] },
-    scale: { name: "Scale", price: 1497, who: "Para agências", more: "Tudo do Pro, mais:", mods: ["Carteira de clientes", "Habilidades do agente", "Até 10 clientes incluídos", "R$ 79 por cliente adicional"] },
-  };
-  const brl = n => n.toLocaleString("pt-BR");
-  const check = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1e6bff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
-
-  document.getElementById("plans").innerHTML = Object.entries(PLANS).map(([k, p]) => `
-    <article class="plan${k === "pro" ? " hl" : ""}" aria-labelledby="p-${k}">
-      <div class="plan-top"><h3 id="p-${k}">${p.name}</h3>${p.flag ? `<span class="flag">${p.flag}</span>` : ""}</div>
-      <p class="who">${p.who}</p>
-      <div class="price"><b class="num">R$ ${brl(p.price)}</b><span>/mês</span></div>
-      <p class="trial">7 dias grátis para testar</p>
-      <ul>${p.more ? `<li class="more">${p.more}</li>` : ""}${p.mods.map(m => `<li>${check}<span>${m}</span></li>`).join("")}</ul>
-      <button class="btn ${k === "pro" ? "btn-blue" : "btn-line"}" data-signup="${k}">Testar o ${p.name} grátis</button>
-    </article>`).join("");
-
-  // régua de ROAS (exemplo)
-  const GOAL = 3, MAX = 5.5;
-  const CAMPS = [
-    ["Remarketing 30d", "var(--blue)", 4.8],
-    ["PMax Coleção Verão", "var(--google)", 4.3],
-    ["Prospecção Lookalike", "var(--blue)", 3.2],
-    ["Pesquisa Marca", "var(--google)", 2.1],
-    ["Topo · Vídeos UGC", "var(--blue)", 1.1],
-  ];
-  const rows = document.getElementById("rows");
-  rows.innerHTML = CAMPS.map(([n, c, v], i) => `
-    <div class="row${v < GOAL ? " low" : ""}" style="--i:${i}">
-      <span class="nm"><i style="background:${c}"></i><em>${n}</em></span>
-      <span class="track"><span class="bar" style="--v:${v / MAX}"></span></span>
-      <span class="rv num">${v.toFixed(1).replace(".", ",")}x</span>
-    </div>`).join("") + `<span class="goal" id="goal"><span class="goal-tag">Meta 3,0x</span></span>`;
-  // a linha da meta acompanha a largura da trilha
-  const placeGoal = () => {
-    const t = rows.querySelector(".track"), r = rows.getBoundingClientRect(), tr = t.getBoundingClientRect();
-    document.getElementById("goal").style.left = (tr.left - r.left + tr.width * GOAL / MAX) + "px";
-  };
-  placeGoal(); addEventListener("resize", placeGoal);
-  if (document.fonts) document.fonts.ready.then(placeGoal);
-  document.getElementById("board").classList.add("play");
-
-  const whyBtn = document.getElementById("why-btn"), why = document.getElementById("why");
-  whyBtn.addEventListener("click", () => {
-    const open = why.hidden; why.hidden = !open;
-    whyBtn.setAttribute("aria-expanded", String(open));
-    whyBtn.textContent = open ? "Esconder o motivo" : "Ver o motivo";
-  });
-
-  const top = document.getElementById("top");
-  const onScroll = () => top.classList.toggle("scrolled", scrollY > 8);
-  addEventListener("scroll", onScroll, { passive: true }); onScroll();
-
-  // cadastro
-  const dlg = document.getElementById("signup"), form = document.getElementById("su-form");
-  const err = document.getElementById("su-err"), btn = document.getElementById("su-btn"), sub = document.getElementById("su-sub");
-  const setPlan = k => { form.plan.value = k; sub.textContent = `7 dias grátis do plano ${PLANS[k].name}. Sem cartão.`; };
-  form.addEventListener("change", e => { if (e.target.name === "plan") setPlan(e.target.value); });
-  document.addEventListener("click", e => {
-    const b = e.target.closest("[data-signup]");
-    if (!b) return;
-    setPlan(PLANS[b.dataset.signup] ? b.dataset.signup : "pro");
-    err.hidden = true;
-    dlg.showModal();
-    form.name.focus();
-  });
-  document.getElementById("su-close").addEventListener("click", () => dlg.close());
-  dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
-
-  const showErr = msg => { err.innerHTML = msg; err.hidden = false; };
-  form.addEventListener("submit", async e => {
-    e.preventDefault();
-    err.hidden = true;
-    const d = Object.fromEntries(new FormData(form));
-    if (!d.name.trim() || !d.company.trim()) return showErr("Preencha seu nome e o nome da empresa.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim())) return showErr("Digite um e-mail válido, como voce@empresa.com.br.");
-    if (d.password.length < 8) return showErr("A senha precisa ter pelo menos 8 caracteres.");
-    btn.disabled = true; btn.textContent = "Criando sua conta…";
-    let done = false;
-    try {
-      const r = await fetch("/api/signup", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(d) });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) {
-        if (j.code === "email_taken") return showErr('Já existe uma conta com esse e-mail. <a href="/app/">Entre por aqui</a> ou use outro e-mail.');
-        return showErr(j.error || "Não foi possível criar a conta agora. Tente de novo em instantes.");
-      }
-      if (!j.token) return showErr("Não foi possível criar a conta agora. Tente de novo em instantes.");
-      // mesma sessão que o app usa no login
-      try { localStorage.setItem("readyai_session_v1", JSON.stringify({ token: j.token, role: "client", clientId: j.client.id })); } catch (x) {}
-      done = true;
-      btn.textContent = "Conta criada. Abrindo o painel…";
-      location.href = "/app/";
-    } catch (x) {
-      showErr("Sem conexão com o servidor. Confira sua internet e tente de novo.");
-    } finally {
-      if (!done) { btn.disabled = false; btn.textContent = "Criar conta e entrar"; }
-    }
-  });
-})();
-</script>
+<script src="/lp/lp.js" defer></script>
 </body>
 </html>

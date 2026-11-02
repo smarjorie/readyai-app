@@ -1,6 +1,6 @@
 // Cadastro pela landing page: cria a conta com teste grátis e já devolve a sessão.
 //
-// POST /api/signup { plan, company, name, email, password, phone?, website? }
+// POST /api/signup { plan, company, name, email, password, phone?, source?, website? }
 //   -> { token, role: "client", client }
 // "website" é um campo escondido na LP (armadilha para robôs): se vier preenchido, o cadastro é ignorado.
 
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
     const now = new Date();
     const c = {
       id: "cl" + crypto.randomBytes(6).toString("hex"), company, name, email, phone: txt(f.phone, 30) || null,
-      plan, modules: [...PLAN_MODULES[plan]], status: "ativo", source: "lp",
+      plan, modules: [...PLAN_MODULES[plan]], status: "ativo", source: ["lp", "lp-agencias"].includes(f.source) ? f.source : "lp",
       since: now.toISOString().slice(0, 10), createdAt: now.toISOString(), lastAccess: now.toISOString(),
       trialEndsAt: new Date(now.getTime() + TRIAL_DAYS * 86400e3).toISOString(),
       targetRoas: null, conn: {}, invite: null, passHash: hashPassword(pass),

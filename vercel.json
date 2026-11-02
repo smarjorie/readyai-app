@@ -43,6 +43,10 @@
     {
       "source": "/app",
       "destination": "/app/index.html"
+    },
+    {
+      "source": "/agencias",
+      "destination": "/agencias/index.html"
     }
   ]
 }
