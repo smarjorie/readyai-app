@@ -266,7 +266,8 @@ h3{font-size:21px;line-height:1.25;letter-spacing:-.02em;margin:0 0 8px}
 .plan .flag{position:absolute;top:-13px;left:28px;background:var(--blue);color:#fff;font-weight:800;font-size:13px;border-radius:999px;padding:4px 12px}
 .plan h3{font-size:26px;margin:0}
 .plan .who{margin:-10px 0 0;color:var(--muted);font-size:15px}
-.price{display:flex;align-items:baseline;gap:6px}
+.price{display:flex;align-items:baseline;gap:4px 8px;flex-wrap:wrap}
+.price b{white-space:nowrap}
 .price b{font-size:48px;letter-spacing:-.045em;line-height:1}
 .price span{color:var(--muted)}
 .trial{margin:-8px 0 0;font-weight:800;color:var(--good);font-size:15px}
@@ -343,10 +344,10 @@ dialog::backdrop{background:rgba(5,10,25,.6);backdrop-filter:blur(3px)}
   .brand{margin-right:auto}
   .app{grid-template-columns:1fr}
   .app-side{display:none}
-  .showcase,.calc,.faq,.vs{grid-template-columns:1fr}
-  .feats,.quotes{grid-template-columns:1fr 1fr}
+  .showcase,.calc,.faq,.vs{grid-template-columns:minmax(0,1fr)}
+  .feats,.quotes{grid-template-columns:repeat(2,minmax(0,1fr))}
   .feat.wide{grid-column:1/-1}
-  .plans.n2{grid-template-columns:1fr 1fr}
+  .plans.n2{grid-template-columns:repeat(2,minmax(0,1fr))}
   .plans.n2 .plan.ag{grid-column:1/-1}
 }
 @media (max-width:680px){
@@ -357,11 +358,15 @@ dialog::backdrop{background:rgba(5,10,25,.6);backdrop-filter:blur(3px)}
   .app-cols{grid-template-columns:1fr}
   .app-main{padding:12px}
   .hide-sm{display:none}
-  .feats,.quotes,.plans.n2,.plans.n1{grid-template-columns:1fr}
+  .feats,.quotes,.plans.n2,.plans.n1{grid-template-columns:minmax(0,1fr)}
   .feat.wide{flex-direction:column;align-items:flex-start}
-  .fields{grid-template-columns:1fr}
+  .fields{grid-template-columns:minmax(0,1fr)}
   .dlg{padding:22px 18px}
   .cta-row .btn{flex:1 1 100%}
+  .btn{white-space:normal;text-align:center;line-height:1.25;padding-top:12px;padding-bottom:12px}
+  .calc-out .btn{align-self:stretch}
+  .calc-out .big{font-size:clamp(40px,12vw,56px)}
+  .rng label{flex-wrap:wrap}
   .rr{grid-template-columns:minmax(0,96px) minmax(0,1fr) 36px}
   .tbl .hide-sm{display:none}
   .theme-pick{bottom:12px}
