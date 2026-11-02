@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "metricabr: painel de marketing multicanal com copilot conectado ao Claude ou ao ChatGPT.",
+  "description": "metrikabr: painel de marketing multicanal com copilot conectado ao Claude ou ao ChatGPT.",
   "scripts": {
     "dev": "vercel dev"
   },

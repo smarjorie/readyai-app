@@ -1,4 +1,4 @@
-# metricabr · Assistente de Marketing
+# metrikabr · Copilot de Marketing
 
 > Antigo ReadyAI. Identificadores internos (prefixo do banco `readyai-app:`, chaves do navegador `readyai_*`, slug padrão `readyai-<empresa>`) foram mantidos de propósito para não perder dados nem sessões.
 
@@ -41,7 +41,7 @@ Com o banco configurado, os clientes ficam no servidor. Cada pessoa entra do pr�
 2. **E-mail:** crie uma conta no [Resend](https://resend.com) e gere uma API key. Na Vercel, crie `RESEND_API_KEY`.
 3. **Remetente:**
    - Sem domínio verificado, o Resend usa `onboarding@resend.dev`, que **só entrega para o e-mail da sua própria conta do Resend**. Serve para testar com você mesma.
-   - Para enviar a clientes, verifique um domínio no Resend (registros DNS) e crie `RESEND_FROM`, por exemplo `metricabr <convites@seudominio.com.br>`.
+   - Para enviar a clientes, verifique um domínio no Resend (registros DNS) e crie `RESEND_FROM`, por exemplo `metrikabr <convites@seudominio.com.br>`.
 4. Faça um **Redeploy** depois de criar as variáveis.
 
 | Variável | Obrigatória | Para quê |
