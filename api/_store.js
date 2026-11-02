@@ -125,7 +125,7 @@ export function tempPassword() {
 
 // ---------- admin ----------
 // Pode ser trocado pelas variáveis ADMIN_EMAIL e ADMIN_PASSWORD na Vercel.
-const ADMIN_EMAIL = () => (process.env.ADMIN_EMAIL || "admin@readyai.com").toLowerCase();
+const ADMIN_EMAIL = () => (process.env.ADMIN_EMAIL || "admin@metrikabr.com").toLowerCase();
 const ADMIN_HASH = "23268d8add1b0d5ea444ebd1c193c553f3bed9a6893066c962658876eb9df72c";
 export const ADMIN_NAME = () => process.env.ADMIN_NAME || "Sarah Machado";
 export function isAdminLogin(email, pass) {

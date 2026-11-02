@@ -1034,7 +1034,7 @@ function routeInfo(key) {
   return { group: "", label: "" };
 }
 // Acesso da gestora: fica fora da tela de login. A senha não aparece no código, só o hash SHA-256 dela.
-const ADMIN = { email: "admin@readyai.com", passHash: "23268d8add1b0d5ea444ebd1c193c553f3bed9a6893066c962658876eb9df72c", name: "Sarah Machado" };
+const ADMIN = { email: "admin@metrikabr.com", passHash: "23268d8add1b0d5ea444ebd1c193c553f3bed9a6893066c962658876eb9df72c", name: "Sarah Machado" };
 async function sha256(t) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)); return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, "0")).join(""); }
 const SEED_CLIENTS = [
   { id: "cl1", name: "Camila Rocha", company: "Loja Aurora", email: "camila@lojaaurora.com.br", password: "demo123", plan: "pro", modules: [...PLANS.pro.modules], status: "ativo", since: "2026-07-02", lastAccess: "hoje, 08:41", accounts: 3 },

@@ -61,7 +61,7 @@ Sem banco, o app continua funcionando no modo local, com o aviso "Modo local" no
 
 ## Passo a passo: novo cliente com dados reais
 
-1. Entre como admin (`admin@readyai.com`) e clique em **Novo cliente**. Informe empresa, gestor, e-mail, meta de ROAS e plano.
+1. Entre como admin (`admin@metrikabr.com`, ou o valor de `ADMIN_EMAIL`) e clique em **Novo cliente**. Informe empresa, gestor, e-mail, meta de ROAS e plano.
 2. Na gaveta do cliente, clique em **Conectar contas deste cliente**. A plataforma abre como esse cliente, direto em Integrações.
 3. **Meta Ads → Conectar:** cole o token, clique em *Validar e buscar contas*, escolha a conta de anúncio e clique em *Conectar conta*.
 4. **Google Ads → Conectar:** clique em *Autorizar no Google*.
@@ -144,9 +144,10 @@ Cada `git push` publica de novo. Para testar localmente: `npm i -g vercel` e dep
 
 ## Acessos de demonstração (modo local)
 
+O acesso da gestora não fica documentado aqui. Em produção, defina `ADMIN_EMAIL` e `ADMIN_PASSWORD` (como Secret) nas variáveis da Vercel.
+
 | Perfil | E-mail | Senha |
 |---|---|---|
-| Gestora (console) | admin@readyai.com | readyAI@2026 |
 | Cliente plano Pro | camila@lojaaurora.com.br | demo123 |
 | Cliente plano Starter | marina@studiovitta.com.br | demo123 |
 | Agência (plano Scale) | rafael@nortex.com.br | demo123 |
