@@ -159,3 +159,11 @@ Com o banco ativo, só a gestora entra de cara (com a mesma senha, ou a de `ADMI
 - **Admin no código.** O acesso da gestora tem senha padrão no código (só o hash). Troque com `ADMIN_PASSWORD` na Vercel.
 - **Tokens no banco em texto.** Com banco, o token da Meta, o identificador do Google e a chave da IA ficam no cadastro de cada cliente, no Upstash, sem criptografia.
 - **Pausar e mudar orçamento continuam simulação.**
+
+## Landing page e teste grátis
+
+- A LP fica em `/` (`public/index.html`) e o app em `/app` (`public/app/index.html`). `/login` e links de convite antigos (`/?convite=...`) redirecionam para `/app/`.
+- O cadastro da LP chama `POST /api/signup`: cria o cliente já ativo, com o plano escolhido, teste grátis (`trialEndsAt`) e loga direto no painel. Sem cartão.
+- Quando o teste vence, o login e a sessão são bloqueados com uma mensagem para falar com o comercial. No console, a ficha do cliente tem **+7 dias** e **Virou cliente** (remove o teste). Contas em teste não entram no MRR.
+- Limite de 5 cadastros por IP por hora, e um campo escondido contra robôs.
+- Variáveis opcionais na Vercel: `TRIAL_DAYS` (padrão 7), `SALES_EMAIL` (contato mostrado quando o teste vence) e `NOTIFY_EMAIL` (recebe um aviso a cada cadastro novo, precisa do Resend).
