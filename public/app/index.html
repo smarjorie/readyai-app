@@ -1044,9 +1044,23 @@ const SEED_CLIENTS = [
   { id: "cl5", name: "Júlia Martins", company: "Bella Pet", email: "julia@bellapet.com.br", password: "demo123", plan: "pro", modules: [...PLANS.pro.modules, "skills"], status: "convite", since: "2026-10-16", lastAccess: "nunca", accounts: 2 },
 ];
 
+/* ================= app desktop: só Meta Ads ================= */
+// O app desktop (Windows e Mac) se identifica no user agent com "metrikabrDesktop/<versão>".
+// Nele a plataforma mostra só a Meta: Google Ads e TikTok Ads somem de dados, telas, textos e copilot.
+// No site, nada muda.
+const DESKTOP_APP = /\bmetrikabrDesktop\//.test((typeof navigator !== "undefined" && navigator.userAgent) || "");
+const CHANNELS = DESKTOP_APP ? ["meta"] : ["meta", "google", "tiktok"];
+const chOn = k => CHANNELS.indexOf(k) >= 0;
+// "Meta, Google e TikTok" no site; "Meta" no app desktop
+const chList = (l, sep = " e ") => l.length > 1 ? l.slice(0, -1).join(", ") + sep + l[l.length - 1] : l[0] || "";
+const CH_NAMES = chList(CHANNELS.map(k => ({ meta: "Meta", google: "Google", tiktok: "TikTok" })[k]));
+const CH_ADS = chList(CHANNELS.map(k => ({ meta: "Meta Ads", google: "Google Ads", tiktok: "TikTok Ads" })[k]));
+// dt(texto do site, texto do app desktop)
+const dt = (web, desk) => DESKTOP_APP ? desk : web;
+
 /* ================= dados de exemplo (últimos 30 dias) ================= */
 const CH = { meta: { label: "Meta Ads", color: "var(--c-meta)" }, google: { label: "Google Ads", color: "var(--c-google)" }, tiktok: { label: "TikTok Ads", color: "var(--c-tiktok)" } };
-const CAMPAIGNS0 = [
+const CAMPAIGNS0_ALL = [
   { id: "c1", name: "Advantage+ Shopping · Coleção Verão", ch: "meta", status: "ativa", budget: 650, spend: 17800, purchases: 540, revenue: 92300, clicks: 25400, impr: 1210000, freq: 2.1, d7: .08 },
   { id: "c2", name: "Remarketing 30d · Carrinho abandonado", ch: "meta", status: "ativa", budget: 320, spend: 9400, purchases: 310, revenue: 51800, clicks: 9100, impr: 410000, freq: 4.8, d7: -.21 },
   { id: "c3", name: "Prospecção · Lookalike compradores 3%", ch: "meta", status: "ativa", budget: 520, spend: 14900, purchases: 300, revenue: 52100, clicks: 21800, impr: 1080000, freq: 1.7, d7: .04 },
@@ -1058,13 +1072,17 @@ const CAMPAIGNS0 = [
   { id: "c9", name: "Topo · Vídeos UGC", ch: "tiktok", status: "ativa", budget: 180, spend: 5200, purchases: 45, revenue: 5700, clicks: 1900, impr: 302000, freq: 2.6, d7: -.18 },
   { id: "c10", name: "Spark Ads · Influenciadoras", ch: "tiktok", status: "ativa", budget: 110, spend: 2920, purchases: 188, revenue: 13580, clicks: 1200, impr: 129000, freq: 2.2, d7: .19 },
 ];
-const PREV = { spend: 79100, revenue: 318400, purchases: 1880, clicks: 88900, impr: 4510000 };
+const CAMPAIGNS0 = CAMPAIGNS0_ALL.filter(c => chOn(c.ch));
+// período anterior e orçamento do mês: no desktop, só a parte da Meta (mesma variação do site)
+const PREV = DESKTOP_APP
+  ? { spend: 45870, revenue: 197930, purchases: 1080, clicks: 65000, impr: 3262000 }
+  : { spend: 79100, revenue: 318400, purchases: 1880, clicks: 88900, impr: 4510000 };
 const TARGET_ROAS = 3;
 // conta aberta no momento (no plano Scale muda ao trocar de cliente)
 let ACTIVE = { prev: PREV, target: TARGET_ROAS, health: 78 };
-const MONTH_BUDGET = 90000, MONTH_SPENT = 50400, MONTH_ELAPSED = 18 / 31;
+const MONTH_BUDGET = DESKTOP_APP ? 52000 : 90000, MONTH_SPENT = DESKTOP_APP ? 29300 : 50400, MONTH_ELAPSED = 18 / 31;
 
-const chPresent = camps => ["meta", "google", "tiktok"].filter(k => camps.some(c => c.ch === k));
+const chPresent = camps => CHANNELS.filter(k => camps.some(c => c.ch === k));
 function totals(list) {
   const t = list.reduce((a, c) => ({ spend: a.spend + c.spend, revenue: a.revenue + c.revenue, purchases: a.purchases + c.purchases, clicks: a.clicks + c.clicks, impr: a.impr + c.impr, tracked: a.tracked + (c.noRev ? 0 : c.spend) }), { spend: 0, revenue: 0, purchases: 0, clicks: 0, impr: 0, tracked: 0 });
   return { ...t, roas: t.revenue / t.tracked, cpa: t.spend / t.purchases, ctr: t.clicks / t.impr, ticket: t.revenue / t.purchases };
@@ -1075,7 +1093,7 @@ function series(total, seed, growth, noise) {
   const r = seeded(seed); const raw = DAYS.map((d, i) => { const wk = [0.92, 1.04, 1.02, 1, 1.03, 1.08, 0.91][d.getDay()]; return (1 + growth * i / 29) * wk * (1 + (r() - .5) * noise); });
   const s = raw.reduce((a, b) => a + b, 0); return raw.map(v => v / s * total);
 }
-const CREATIVES = [
+const CREATIVES_ALL = [
   { id: "k1", name: "Vestido Lino · Reels provador", fmt: "Vídeo 9:16", ch: "meta", camp: "c1", spend: 6200, ctr: .031, roas: 6.4, hook: .41, status: "ok", bg: "linear-gradient(150deg,#e7a977,#b5543c)", hl: "Leveza que vai do café ao jantar" },
   { id: "k2", name: "Carrossel · 5 looks de verão", fmt: "Carrossel", ch: "meta", camp: "c1", spend: 4900, ctr: .024, roas: 5.1, hook: null, status: "ok", bg: "linear-gradient(150deg,#7cc6c0,#2a7f86)", hl: "5 looks, 1 mala" },
   { id: "k3", name: "Remarketing · Você esqueceu algo", fmt: "Imagem 1:1", ch: "meta", camp: "c2", spend: 5100, ctr: .009, roas: 4.2, hook: null, status: "fadiga", bg: "linear-gradient(150deg,#9aa0ad,#4e5563)", hl: "Seu carrinho ainda está aqui" },
@@ -1085,6 +1103,7 @@ const CREATIVES = [
   { id: "k7", name: "Lookalike · Frete grátis", fmt: "Imagem 4:5", ch: "meta", camp: "c3", spend: 7600, ctr: .021, roas: 3.6, hook: null, status: "ok", bg: "linear-gradient(150deg,#8fa8f0,#3a55b8)", hl: "Frete grátis acima de R$ 199" },
   { id: "k8", name: "Lookalike · Depoimentos", fmt: "Vídeo 4:5", ch: "meta", camp: "c3", spend: 7300, ctr: .016, roas: 3.4, hook: .29, status: "atencao", bg: "linear-gradient(150deg,#b9a2e6,#5f3fa8)", hl: "“Virei cliente fiel”" },
 ];
+const CREATIVES = CREATIVES_ALL.filter(k => chOn(k.ch));
 const HOURS = [12, 7, 4, 3, 2, 3, 8, 22, 51, 78, 96, 104, 118, 121, 109, 101, 98, 112, 139, 168, 186, 171, 132, 63];
 const AGES = [["18–24", .14], ["25–34", .38], ["35–44", .29], ["45–54", .13], ["55+", .06]];
 const REGIONS = [["São Paulo", 864, 27400], ["Rio de Janeiro", 318, 12100], ["Minas Gerais", 251, 9800], ["Paraná", 196, 7200], ["Rio Grande do Sul", 158, 6100], ["Santa Catarina", 142, 5300], ["Bahia", 98, 4600], ["Outros", 121, 11820]];
@@ -1101,13 +1120,13 @@ function buildInsights(camps) {
   if (c5) list.push({ id: "i3", sev: "good", tag: "Melhoria de ROAS", icon: "up", title: `${c5 && c5.name} está limitada por orçamento`, body: `ROAS de ${xroas(c5.revenue / c5.spend)} e 38% das impressões perdidas por orçamento. Somar R$ 150/dia pode trazer cerca de ${brl(est)} a mais em 30 dias.`, metric: "+" + brl(est), ask: "Quanto posso escalar a PMax Coleção Verão?", goto: "campaigns" });
   if (c7) list.push({ id: "i4", sev: "warn", tag: "Custo subindo", icon: "wallet", title: `CPC de ${c7 && c7.name} subiu 22%`, body: `ROAS de ${xroas(c7.revenue / c7.spend)}, abaixo da meta. Termos amplos concentram 41% do gasto sem nenhuma compra.`, metric: xroas(c7.revenue / c7.spend), ask: "Por que o Search de Vestidos está caro?", goto: "campaigns" });
   if (c10) list.push({ id: "i5", sev: "info", tag: "Oportunidade", icon: "bulb", title: "Spark Ads de influenciadoras supera o resto do TikTok", body: `ROAS de ${xroas(c10.revenue / c10.spend)} com só ${brl(c10.spend)} investidos. Vale mover verba do Topo UGC para cá.`, metric: xroas(c10.revenue / c10.spend), ask: "Vale mover verba do TikTok UGC para Spark Ads?", goto: "creatives" });
-  list.push({ id: "i6", sev: "good", tag: "Tendência", icon: "target", title: "CPA geral caiu no período", body: `CPA de ${brl2(t.cpa)} contra ${brl2(ACTIVE.prev.spend / ACTIVE.prev.purchases)} nos 30 dias anteriores, puxado por Advantage+ e PMax.`, metric: pct(delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases), 0), ask: "O que fez meu CPA cair?", goto: "overview" });
+  list.push({ id: "i6", sev: "good", tag: "Tendência", icon: "target", title: "CPA geral caiu no período", body: `CPA de ${brl2(t.cpa)} contra ${brl2(ACTIVE.prev.spend / ACTIVE.prev.purchases)} nos 30 dias anteriores, puxado por ${c5 ? "Advantage+ e PMax" : "Advantage+ e Lookalike"}.`, metric: pct(delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases), 0), ask: "O que fez meu CPA cair?", goto: "overview" });
   return list;
 }
 const SEV = { bad: { c: "var(--bad)", pill: "pill-bad" }, warn: { c: "var(--warn)", pill: "pill-warn" }, good: { c: "var(--good)", pill: "pill-good" }, info: { c: "var(--accent)", pill: "pill-info" } };
 
 /* ================= carteira da agência (plano Scale) ================= */
-const PORTFOLIO = [
+const PORTFOLIO_ALL = [
   { id: "aurora", name: "Loja Aurora", seg: "Moda e acessórios", k: 1, rm: 1, target: 3, budget: 90000, spent: 50400, chs: ["meta", "google", "tiktok"], d7: .06, words: null,
     issues: [{ t: "fatigue", ch: "meta", text: "2 criativos com frequência acima de 4", act: "Ver criativos", go: "creatives" }, { t: "report", text: "Relatório semanal sai hoje às 18h", act: "Revisar relatório", go: "report" }] },
   { id: "bonacci", name: "Casa Bonacci", seg: "Móveis e decoração", k: 1.6, rm: .62, target: 3, budget: 140000, spent: 79800, chs: ["meta", "google"], d7: -.12, words: ["Linha Outono", "Sofás", "Decoração", "Guia de ambientes"],
@@ -1125,6 +1144,8 @@ const PORTFOLIO = [
   { id: "serra", name: "Café Serra Alta", seg: "Alimentos e bebidas", k: .25, rm: .9, target: 3, budget: 20000, spent: 11300, chs: ["meta"], d7: -.02, words: ["Safra 2026", "Cafés especiais", "Kits", "Guia de preparo"],
     issues: [{ t: "block", ch: "meta", text: "Limite de gastos da conta é atingido em 2 dias", act: "Ajustar limite", go: "integrations" }] },
 ];
+// no app desktop cada cliente fica só com a conta da Meta (e as pendências dela)
+const PORTFOLIO = PORTFOLIO_ALL.map(p => ({ ...p, chs: p.chs.filter(chOn), issues: p.issues.filter(i => !i.ch || chOn(i.ch)) })).filter(p => p.chs.length);
 const ISSUE = {
   block: { label: "Entrega travada", short: "Bloqueios", icon: "alert", pill: "pill-bad", c: "var(--bad)", w: 20, rank: 0 },
   waste: { label: "Verba em risco", short: "Verba em risco", icon: "wallet", pill: "pill-bad", c: "var(--bad)", w: 12, rank: 1 },
@@ -1262,10 +1283,10 @@ function aiContext({ camps, screen, account, isAgency, rows, insights, budget, d
 }
 function aiSystem(data, screens, isAgency) {
   return [
-    "Você é o copilot de marketing da metrikabr, assistente de gestores de tráfego pago (Meta Ads, Google Ads e TikTok Ads).",
+    "Você é o copilot de marketing da metrikabr, assistente de gestores de tráfego pago (" + CH_ADS + ").",
     "Responda sempre em português do Brasil, de forma direta e prática, como um analista sênior de mídia paga.",
     "Use SOMENTE os números em DADOS. Não invente métricas; se algo não estiver nos dados, diga que essa informação não está disponível.",
-    "Campanhas com roas null (Google Ads) não informam receita: avalie essas pelo CPA e pelas conversões.",
+    chOn("google") ? "Campanhas com roas null (Google Ads) não informam receita: avalie essas pelo CPA e pelas conversões." : "Fale só da Meta Ads. Não sugira nem compare com Google Ads ou TikTok Ads.",
     data.plano_de_midia ? "A pessoa montou um plano de mídia nesta conversa: ele está em plano_de_midia e o critério é ROI (lucro bruto / verba). Para simular 'e se', use a fórmula e a curva de cada canal em plano_de_midia; diga que é estimativa e mostre verba, resultados, lucro e ROI antes e depois. Canais com fonte 'custo de referência' não têm histórico. Não use confirm nesta tela." : "",
     "Valores em reais. ROAS = receita / investimento. A meta de ROAS da conta está em meta_roas; se meta_roas for null, a conta não tem meta: não compare com meta nenhuma. Formate no padrão brasileiro (R$ 12.300, 3,45x, 12%).",
     "",
@@ -1415,14 +1436,14 @@ function AIConnectDrawer({ toast }) {
 const SUGGESTIONS = {
   portfolio: ["O que preciso resolver hoje?", "Quais contas estão com entrega travada?", "Quem vai estourar ou sobrar verba?"],
   media: ["Por que essa divisão de verba?", "Vale testar outro canal?", "Até quanto vale investir com lucro?"],
-  copilot: ["Resuma minhas campanhas", "Onde estou perdendo dinheiro?", "Quanto posso escalar no Google?"],
+  copilot: ["Resuma minhas campanhas", "Onde estou perdendo dinheiro?", dt("Quanto posso escalar no Google?", "Quanto posso escalar na Meta?")],
   overview: ["Explique a variação da receita", "Qual canal tem melhor ROAS?"],
   analytics: ["Qual o melhor horário para anunciar?", "Qual público converte mais?"],
   campaigns: ["Quais campanhas devo pausar?", "Redistribua o orçamento"],
-  creatives: ["Quais criativos estão com fadiga?", "Vale mover verba para Spark Ads?"],
+  creatives: ["Quais criativos estão com fadiga?", dt("Vale mover verba para Spark Ads?", "Qual criativo merece mais verba?")],
   report: ["Monte o relatório semanal", "Resuma minhas campanhas"],
   skills: ["Crie um alerta de CPA alto", "Quais rotinas você recomenda?"],
-  insights: ["Onde estou perdendo dinheiro?", "Quanto posso escalar no Google?"],
+  insights: ["Onde estou perdendo dinheiro?", dt("Quanto posso escalar no Google?", "Quanto posso escalar na Meta?")],
   integrations: ["Resuma minhas campanhas"],
 };
 
@@ -1589,6 +1610,7 @@ const MEDIA_CH = {
   pinterest: { label: "Pinterest Ads", color: "var(--c-pinterest)" },
   kwai: { label: "Kwai Ads", color: "var(--c-kwai)" },
 };
+if (DESKTOP_APP) { delete MEDIA_CH.google; delete MEDIA_CH.tiktok; }
 // Previsão só com fontes oficiais: o histórico da própria conta (APIs do Meta e do Google).
 // Canal sem histórico na conta só entra com o custo por resultado que a pessoa informar.
 // quanto o resultado cresce quando a verba cresce (1 = linear). 0,55 = dobrar a verba rende ~1,5x resultados,
@@ -2168,7 +2190,7 @@ function Overview({ camps, days }) {
   const funnel = (ACTIVE.live ? [["Impressões", t.impr], ["Cliques", t.clicks], [kl, t.purchases]] : [["Impressões", t.impr], ["Cliques", t.clicks], ["Adições ao carrinho", 8640], ["Checkouts iniciados", 3910], ["Compras", t.purchases]]).map(([l, v]) => ({ l, v }));
   const prevCtr = ACTIVE.prev.clicks / ACTIVE.prev.impr;
   return html`<div className="stack">
-    <${PageHead} title="Visão geral" sub=${ACTIVE.period ? "Todos os canais somados em " + (ACTIVE.period.custom ? ACTIVE.period.dates : ACTIVE.period.label.toLowerCase()) + ", comparados com os " + ACTIVE.period.days + " dias anteriores." : "Todos os canais somados nos últimos 30 dias, comparados com os 30 dias anteriores."} right=${html`<${DataNote} />`} />
+    <${PageHead} title="Visão geral" sub=${ACTIVE.period ? dt("Todos os canais somados", "Todas as campanhas da Meta somadas") + " em " + (ACTIVE.period.custom ? ACTIVE.period.dates : ACTIVE.period.label.toLowerCase()) + ", comparados com os " + ACTIVE.period.days + " dias anteriores." : dt("Todos os canais somados", "Todas as campanhas da Meta somadas") + " nos últimos 30 dias, comparados com os 30 dias anteriores."} right=${html`<${DataNote} />`} />
     <div className="grid g4">
       <${Kpi} label="Investimento" value=${brl(t.spend)} d=${fin(delta(t.spend, ACTIVE.prev.spend)) ? delta(t.spend, ACTIVE.prev.spend) : undefined} invert
         tip=${[fin(ACTIVE.prev.spend) && ["Período anterior", brl(ACTIVE.prev.spend)], ["Média por dia", brl(t.spend / nDays)], ...(byCh.length > 1 ? byCh.map(([k, v]) => [CH[k].label, brl(v.spend)]) : [])]} />
@@ -2180,7 +2202,7 @@ function Overview({ camps, days }) {
         tip=${[[kl, fmtInt(t.purchases)], ["Investimento", brl(t.spend)], fin(ACTIVE.prev.spend / ACTIVE.prev.purchases) && ["Período anterior", brl2(ACTIVE.prev.spend / ACTIVE.prev.purchases)]]} />
     </div>
     <div className=${days && days.length > 1 ? "grid g-21 tl-row" : "grid"}>
-      ${days && days.length > 1 ? html`<${Timeline} days=${days} kind=${kind} sells=${sells} sub=${"Dia a dia, " + (ACTIVE.period ? (ACTIVE.period.custom ? ACTIVE.period.dates : ACTIVE.period.label.toLowerCase() + " (" + ACTIVE.period.dates + ")") : "últimos 30 dias (19/09 a 18/10)") + (ACTIVE.live && ACTIVE.dayCh && ACTIVE.dayCh.length < chPresent(camps).length ? " · só " + ACTIVE.dayCh.map(k => CH[k].label).join(" e ") : ACTIVE.live ? "" : " · Meta, Google e TikTok")} />` : null}
+      ${days && days.length > 1 ? html`<${Timeline} days=${days} kind=${kind} sells=${sells} sub=${"Dia a dia, " + (ACTIVE.period ? (ACTIVE.period.custom ? ACTIVE.period.dates : ACTIVE.period.label.toLowerCase() + " (" + ACTIVE.period.dates + ")") : "últimos 30 dias (19/09 a 18/10)") + (ACTIVE.live && ACTIVE.dayCh && ACTIVE.dayCh.length < chPresent(camps).length ? " · só " + ACTIVE.dayCh.map(k => CH[k].label).join(" e ") : ACTIVE.live ? "" : " · " + CH_NAMES)} />` : null}
       <div className="card card-pad"><div className="card-head"><div><div className="card-title">Funil de tráfego</div><div className="card-sub">Quanto passa de uma etapa para a outra</div></div></div>
         <${Funnel} stages=${funnel} kind=${kind} spend=${t.spend} note=${ACTIVE.live && kind !== "compras" ? (kind === "conversas" ? "As campanhas desta conta otimizam para conversas no WhatsApp ou no Messenger, então a última etapa conta conversas iniciadas, não compras." : kind === "leads" ? "As campanhas desta conta otimizam para cadastros, então a última etapa conta leads, não compras." : "A última etapa soma o resultado principal de cada campanha (compras, leads ou conversas).") : null} />
       </div>
@@ -2589,7 +2611,7 @@ function Campaigns({ camps, setCamps, toast, chat, idle, others, coverage, meta,
   const kind = resultKind(camps), sells = camps.some(c => c.revenue > 0);
   const chips = [["pause", "Pausar", "pill-bad", "pause"], ["review", "Revisar", "pill-warn", "alert"], ["scale", "Escalar", "pill-good", "up"], ["reactivate", "Reativar", "pill-info", "play"], ["keep", "Manter", "pill-mute", "check"]];
   return html`<div className="stack">
-    <${PageHead} title="Campanhas" sub="Meta, Google e TikTok numa tabela só. O copilot indica o que pausar, revisar ou escalar." right=${html`<span className="demo-note"><${Icon} n="eye" s=${13} />Alterações são simuladas</span>`} />
+    <${PageHead} title="Campanhas" sub=${dt("Meta, Google e TikTok numa tabela só.", "Todas as campanhas da Meta numa tabela só.") + " O copilot indica o que pausar, revisar ou escalar."} right=${html`<span className="demo-note"><${Icon} n="eye" s=${13} />Alterações são simuladas</span>`} />
     <div className="card rec-card">
       <div className="rec-head"><span className="bot-ico"><${Icon} n="sparkles" s=${14} /></span>
         <div style=${{ minWidth: 0 }}><b>Recomendações do copilot</b><div className="card-sub">${count("pause") ? "Pausar " + count("pause") + (count("pause") === 1 ? " campanha libera " : " campanhas libera ") + brl(freed) + "/dia. " : ""}${count("scale")} ${count("scale") === 1 ? "campanha pode" : "campanhas podem"} receber mais verba. Clique para filtrar.</div></div></div>
@@ -2597,7 +2619,7 @@ function Campaigns({ camps, setCamps, toast, chat, idle, others, coverage, meta,
         ${rf !== "all" ? html`<button type="button" className="link-btn" onClick=${() => setRf("all")}>Ver todas</button>` : null}</div>
     </div>
     <div style=${{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
-      <div className="seg" role="tablist" aria-label="Canal">${[["all", "Todos os canais"], ["meta", "Meta"], ["google", "Google"], ["tiktok", "TikTok"]].filter(([k]) => k === "all" || camps.some(c => c.ch === k)).map(([k, l]) => html`<button key=${k} className=${ch === k ? "on" : ""} onClick=${() => setCh(k)}>${l}</button>`)}</div>
+      ${CHANNELS.length < 2 ? null : html`<div className="seg" role="tablist" aria-label="Canal">${[["all", "Todos os canais"], ["meta", "Meta"], ["google", "Google"], ["tiktok", "TikTok"]].filter(([k]) => k === "all" || (chOn(k) && camps.some(c => c.ch === k))).map(([k, l]) => html`<button key=${k} className=${ch === k ? "on" : ""} onClick=${() => setCh(k)}>${l}</button>`)}</div>`}
       <div style=${{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <select id="f-status" className="input" style=${{ height: 34, width: "auto" }} value=${st} onChange=${e => setSt(e.target.value)} aria-label="Status"><option value="all">Todos os status</option><option value="ativa">Ativas</option><option value="pausada">Pausadas</option></select>
         <select id="f-sort" className="input" style=${{ height: 34, width: "auto" }} value=${sort} onChange=${e => setSort(e.target.value)} aria-label="Ordenar"><option value="rec">Ordenar: prioridade</option><option value="spend">Ordenar: investimento</option><option value="roas">Ordenar: ROAS</option></select>
@@ -2776,7 +2798,7 @@ function LiveCreatives({ cre, meta, period }) {
         <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, flexWrap: "wrap" }}><span style=${{ fontSize: 12.5, color: "var(--muted-2)" }}>${fmtInt(k.results)} ${kl.toLowerCase()}</span><span className=${"pill " + k.st[0]} title=${k.st[2]}>${k.st[1]}</span></div>
         <div className="cre-stats"><div><small>${main(k)[0]}</small><b className="num">${main(k)[1]}</b></div><div><small>CTR</small><b className="num">${pct(k.clicks / k.impr, 1)}</b></div><div><small>${third(k)[0]}</small><b className="num">${third(k)[1]}</b></div></div>
       </div></article>`)}</div>`}
-    <p className="demo-note"><${Icon} n="check" s=${13} />${d.total > ads.length ? "Os " + ads.length + " anúncios com mais investimento, de " + d.total + "," : ads.length + (ads.length === 1 ? " anúncio" : " anúncios")} da Meta com investimento no período. Clique num criativo para ver os números completos e o link da postagem. O Google Ads ainda não entrega criativos.</p>
+    <p className="demo-note"><${Icon} n="check" s=${13} />${d.total > ads.length ? "Os " + ads.length + " anúncios com mais investimento, de " + d.total + "," : ads.length + (ads.length === 1 ? " anúncio" : " anúncios")} da Meta com investimento no período. Clique num criativo para ver os números completos e o link da postagem.${chOn("google") ? " O Google Ads ainda não entrega criativos." : ""}</p>
     ${sel ? html`<${CreativeDrawer} meta=${meta} base=${sel} kind=${kind} period=${period} onClose=${() => setSel(null)} />` : null}
   </div>`;
 }
@@ -2788,7 +2810,7 @@ function Creatives({ camps, cre, meta, period }) {
   const list = CREATIVES.filter(k => ch === "all" || k.ch === ch).sort((a, b) => b.roas - a.roas);
   const st = { ok: ["pill-good", "Saudável"], fadiga: ["pill-warn", "Fadiga"], ruim: ["pill-bad", "Abaixo da meta"], atencao: ["pill-warn", "CTR caindo"] };
   return html`<div className="stack">
-    <${PageHead} title="Criativos" sub="Ranking por ROAS com sinais de fadiga. O ganho dos 3 primeiros segundos aparece em vídeos." right=${html`<div style=${{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}><div className="seg">${[["all", "Todos"], ["meta", "Meta"], ["google", "Google"], ["tiktok", "TikTok"]].map(([k, l]) => html`<button key=${k} className=${ch === k ? "on" : ""} onClick=${() => setCh(k)}>${l}</button>`)}</div>
+    <${PageHead} title="Criativos" sub="Ranking por ROAS com sinais de fadiga. O ganho dos 3 primeiros segundos aparece em vídeos." right=${html`<div style=${{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>${CHANNELS.length < 2 ? null : html`<div className="seg">${[["all", "Todos"], ["meta", "Meta"], ["google", "Google"], ["tiktok", "TikTok"]].filter(([k]) => k === "all" || chOn(k)).map(([k, l]) => html`<button key=${k} className=${ch === k ? "on" : ""} onClick=${() => setCh(k)}>${l}</button>`)}</div>`}
       <div className="seg view-seg" role="group" aria-label="Visualização"><button className=${view === "grid" ? "on" : ""} onClick=${() => setView("grid")} aria-label="Ver em grade" aria-pressed=${view === "grid"} title="Grade"><${Icon} n="grid" s=${15} /></button><button className=${view === "list" ? "on" : ""} onClick=${() => setView("list")} aria-label="Ver em lista" aria-pressed=${view === "list"} title="Lista"><${Icon} n="list" s=${15} /></button></div></div>`} />
     ${view === "list" ? html`<div className="card cre-list">
       <div className="cre-row cre-row-head"><span></span><span>Criativo</span><span>Status</span><span className="r">ROAS</span><span className="r">CTR</span><span className="r">Retenção 3s</span><span className="r">Investido</span></div>
@@ -2837,7 +2859,7 @@ function Portfolio({ chat, openClient, toast, agency, rows }) {
   const isReal = rows.length > 0 && rows[0].live;
   const chIcon = ch => html`<span className="ch-dot" style=${{ background: CH[ch].color }}></span>`;
   return html`<div className="stack">
-    <${PageHead} title="Carteira de clientes" sub=${isReal ? agency + " · " + rows.length + (rows.length === 1 ? " conta de anúncio da Meta, lida" : " contas de anúncio da Meta, lidas") + " pelo token conectado. Cada conta aparece como um cliente." : agency + " · " + rows.length + " clientes e " + nAcc + " contas de anúncio conectadas pelos Business Managers, pela conta MCC do Google e pelo Business Center do TikTok."}
+    <${PageHead} title="Carteira de clientes" sub=${isReal ? agency + " · " + rows.length + (rows.length === 1 ? " conta de anúncio da Meta, lida" : " contas de anúncio da Meta, lidas") + " pelo token conectado. Cada conta aparece como um cliente." : agency + " · " + rows.length + " clientes e " + nAcc + " contas de anúncio conectadas pelos Business Managers" + dt(", pela conta MCC do Google e pelo Business Center do TikTok.", " da Meta.")}
       right=${html`<button className="btn btn-primary" onClick=${() => toast(rows.length + " relatórios agendados com a marca da " + agency + " (simulação)")}><${Icon} n="send" s=${14} />Enviar relatórios da carteira</button>`} />
     <div className="ops">${tiles.map(x => { const I = ISSUE[x.t]; const on = f === x.t; return html`<button key=${x.t} type="button" className=${"op" + (on ? " on" : "")} style=${{ "--sev": I.c }} onClick=${() => setF(on ? "all" : x.t)} aria-pressed=${on}>
       <span className="op-top"><span className="op-ico"><${Icon} n=${I.icon} s=${15} /></span>${I.short}</span>
@@ -2875,7 +2897,7 @@ function Portfolio({ chat, openClient, toast, agency, rows }) {
         ${exp[r.id] ? html`<tr className="confirm-row"><td colSpan="8"><div className="acc-list">${r.accounts.map(a => html`<div key=${a.ch} className="acc-item">${chIcon(a.ch)}<b>${CH[a.ch].label}</b><span className="mono" style=${{ color: "var(--muted)" }}>${a.id}</span><span style=${{ color: "var(--muted)", fontSize: 12 }}>via ${a.parent}</span>
           ${a.issue ? html`<span className=${"pill " + ISSUE[a.issue.t].pill}>${a.issue.text}</span>` : html`<span className="pill pill-good"><span className="dot"></span>Entregando</span>`}</div>`)}</div></td></tr>` : null}
       <//>`)}</tbody></table></div></div>
-    <p className="demo-note"><${Icon} n="eye" s=${13} />${isReal ? "Contas lidas pelo token da Meta. O ritmo do mês aparece quando houver orçamento mensal por cliente; Google Ads e TikTok entram na carteira na próxima etapa." : "Carteira de exemplo. Conecte o token da Meta em Integrações da agência para ver as contas reais."}</p>
+    <p className="demo-note"><${Icon} n="eye" s=${13} />${isReal ? "Contas lidas pelo token da Meta. O ritmo do mês aparece quando houver orçamento mensal por cliente." + dt(" Google Ads e TikTok entram na carteira na próxima etapa.", "") : "Carteira de exemplo. Conecte o token da Meta em Integrações da agência para ver as contas reais."}</p>
   </div>`;
 }
 
@@ -2903,7 +2925,7 @@ function Report({ camps, toast, user, account, agency, demo = true, insights = [
   const [chs, setChs] = useState({ email: true, whatsapp: true, slack: false, teams: false });
   const [freq, setFreq] = useState("weekly");
   const [secs, setSecs] = useState({ kpis: true, channels: true, top: true, insights: true });
-  const [note, setNote] = useState(demo ? "Semana forte no Google. Vamos escalar a PMax e pausar o UGC do TikTok." : "");
+  const [note, setNote] = useState(demo ? dt("Semana forte no Google. Vamos escalar a PMax e pausar o UGC do TikTok.", "Semana forte na Meta. Vamos escalar o Advantage+ e renovar os criativos do remarketing.") : "");
   const t = totals(camps); const top = [...camps].sort((a, b) => b.spend - a.spend).slice(0, 3);
   const CHN = demo ? [["email", "E-mail", "camila@lojaaurora.com.br, diretoria@lojaaurora.com.br"], ["whatsapp", "WhatsApp", "+55 11 98765-4321"], ["slack", "Slack", "#marketing-performance"], ["teams", "Microsoft Teams", "Canal Growth"]]
     : [["email", "E-mail", user.email], ["whatsapp", "WhatsApp", "Número definido no envio"], ["slack", "Slack", "Canal definido no envio"], ["teams", "Microsoft Teams", "Canal definido no envio"]];
@@ -2925,11 +2947,11 @@ function Report({ camps, toast, user, account, agency, demo = true, insights = [
       </div>
       <div className="card card-pad stack" style=${{ background: "var(--surface-2)" }}>
         <div className="eyebrow">Pré-visualização</div>
-        <div><b style=${{ fontSize: 17 }}>${account || "Loja Aurora"} · Performance semanal</b><div className="card-sub">${demo || !ACTIVE.period ? "19/09 a 18/10" : ACTIVE.period.dates} · ${demo ? "Meta, Google e TikTok" : chNames}${agency ? " · enviado por " + agency : ""}</div></div>
+        <div><b style=${{ fontSize: 17 }}>${account || "Loja Aurora"} · Performance semanal</b><div className="card-sub">${demo || !ACTIVE.period ? "19/09 a 18/10" : ACTIVE.period.dates} · ${demo ? CH_NAMES : chNames}${agency ? " · enviado por " + agency : ""}</div></div>
         ${secs.kpis ? html`<div className="mini-cards"><div className="mini"><small>Investimento</small><b className="num">${brl(t.spend)}</b></div><div className="mini"><small>Receita</small><b className="num">${brl(t.revenue)}</b></div><div className="mini"><small>ROAS</small><b className="num">${xroas(t.roas)}</b></div><div className="mini"><small>CPA</small><b className="num">${brl2(t.cpa)}</b></div></div>` : null}
         ${secs.channels ? html`<div className="stack" style=${{ gap: 6 }}>${chPresent(camps).map(k => { const v = totals(camps.filter(c => c.ch === k)); return html`<div key=${k} style=${{ display: "flex", justifyContent: "space-between", fontSize: 13 }}><${ChTag} ch=${k} /><span className="num">${brl(v.spend)} · ROAS <b>${xroas(v.roas)}</b></span></div>`; })}</div>` : null}
         ${secs.top ? html`<div><div className="eyebrow" style=${{ marginBottom: 6 }}>3 campanhas com maior investimento</div><ol style=${{ margin: 0, paddingLeft: 18, fontSize: 13, display: "flex", flexDirection: "column", gap: 3 }}>${top.map(c => html`<li key=${c.id}>${c.name} · <span className="num">${brl(c.spend)}</span></li>`)}</ol></div>` : null}
-        ${secs.insights ? html`<div style=${{ fontSize: 13, color: "var(--muted-2)" }}><b style=${{ color: "var(--ink)" }}>Copilot:</b> ${demo ? "PMax Coleção Verão pode escalar; TikTok Topo UGC segue abaixo da meta." : insights.length ? insights.slice(0, 2).map(i => i.title).join("; ") + "." : "Nenhum alerta no período."}</div>` : null}
+        ${secs.insights ? html`<div style=${{ fontSize: 13, color: "var(--muted-2)" }}><b style=${{ color: "var(--ink)" }}>Copilot:</b> ${demo ? dt("PMax Coleção Verão pode escalar; TikTok Topo UGC segue abaixo da meta.", "Advantage+ Coleção Verão pode escalar; Remarketing 30d mostra fadiga criativa.") : insights.length ? insights.slice(0, 2).map(i => i.title).join("; ") + "." : "Nenhum alerta no período."}</div>` : null}
         ${note ? html`<div style=${{ fontSize: 13, borderLeft: "2px solid var(--line-2)", paddingLeft: 10, color: "var(--muted-2)" }}>${note}</div>` : null}
       </div>
     </div>
@@ -2951,9 +2973,9 @@ function Skills({ chat, toast, demo = true, noData, connect }) {
     ${noData ? html`<div className="data-band demo" style=${{ borderRadius: 12 }}><${Icon} n="plug" s=${15} /><span style=${{ flex: 1, minWidth: 200 }}>As habilidades rodam sobre as campanhas das contas conectadas. <b>Conecte uma conta de anúncio</b> para elas começarem a trabalhar.</span><button className="btn btn-sm btn-primary" onClick=${() => connect("meta")}>Conectar conta</button></div>` : null}
     ${adding ? html`<form className="card card-pad stack" onSubmit=${e => { e.preventDefault(); if (!nn.trim()) return; setSkills([{ id: "s" + Date.now(), name: nn, desc: np || "Instrução personalizada", freq: nf, on: true, last: "nunca", ask: np || nn }, ...skills]); setAdding(false); setNn(""); setNp(""); toast("Habilidade criada"); }}>
       <div className="card-title">Nova habilidade</div>
-      <div className="grid g2"><div className="field"><label htmlFor="sk-n">Nome</label><input id="sk-n" className="input" value=${nn} onInput=${e => setNn(e.target.value)} placeholder="Ex.: Alerta de ROAS no TikTok" /></div>
+      <div className="grid g2"><div className="field"><label htmlFor="sk-n">Nome</label><input id="sk-n" className="input" value=${nn} onInput=${e => setNn(e.target.value)} placeholder=${dt("Ex.: Alerta de ROAS no TikTok", "Ex.: Alerta de ROAS no remarketing")} /></div>
         <div className="field"><label htmlFor="sk-f">Frequência</label><select id="sk-f" className="input" value=${nf} onChange=${e => setNf(e.target.value)}><option>Todo dia, 8h</option><option>A cada 2 horas</option><option>Toda segunda, 9h</option><option>Sob demanda</option></select></div></div>
-      <div className="field"><label htmlFor="sk-p">O que o agente deve fazer</label><textarea id="sk-p" className="input" rows="3" value=${np} onInput=${e => setNp(e.target.value)} placeholder="Ex.: Se o ROAS do TikTok ficar abaixo de 2 por 3 dias, me avise e sugira para onde mover a verba."></textarea></div>
+      <div className="field"><label htmlFor="sk-p">O que o agente deve fazer</label><textarea id="sk-p" className="input" rows="3" value=${np} onInput=${e => setNp(e.target.value)} placeholder=${dt("Ex.: Se o ROAS do TikTok ficar abaixo de 2 por 3 dias, me avise e sugira para onde mover a verba.", "Ex.: Se o ROAS do remarketing ficar abaixo de 2 por 3 dias, me avise e sugira para onde mover a verba.")}></textarea></div>
       <div style=${{ display: "flex", gap: 8 }}><button className="btn btn-primary" type="submit">Salvar habilidade</button><button className="btn btn-line" type="button" onClick=${() => setAdding(false)}>Cancelar</button></div>
     </form>` : null}
     <div className="card" style=${{ padding: "4px 18px" }}>${skills.map(s => html`<div key=${s.id} className="mod-row" style=${{ alignItems: "flex-start", padding: "14px 0", flexWrap: "wrap" }}>
@@ -2977,7 +2999,7 @@ function Integrations({ client, onUpdate, toast, isAgency, live, openCh, clearOp
   const others = [
     ["Google Analytics 4", "Sessões, receita e atribuição do site", "Ainda sem conector"],
     ["WhatsApp Business", "Conversas e CRM de vendas", "Disponível em breve"],
-  ];
+  ].filter(([n]) => !DESKTOP_APP || n.indexOf("Google") < 0);
   return html`<div className="stack">
     <${PageHead} title="Integrações" sub="Contas que o painel, o copilot e as inteligências do agente usam. Alterações nas contas sempre pedem sua confirmação." />
     <${AdIntegrations} client=${client} onUpdate=${onUpdate} toast=${toast} isAgency=${isAgency} live=${live} openCh=${openCh} clearOpen=${clearOpen} />
@@ -3100,7 +3122,7 @@ function useLiveData(client, enabled, period) {
   const conn = client.conn || {};
   const [tick, setTick] = useState(0);
   const [st, setSt] = useState({ status: "idle", camps: [], errors: {}, sources: [] });
-  const m = metaOn(conn) ? conn.meta : null, g = googleOn(conn) ? conn.google : null;
+  const m = metaOn(conn) ? conn.meta : null, g = chOn("google") && googleOn(conn) ? conn.google : null;
   const per = period ? { since: period.since, until: period.until } : undefined;
   const key = JSON.stringify([enabled, m && [m.accountId, m.token.slice(-8), m.via || "api"], g && [g.slug, g.customerId, g.refreshToken || ""], tick, per]);
   useEffect(() => {
@@ -3205,7 +3227,7 @@ function DataBand({ live, company, go, isLive, periodR, onJump, onPicker }) {
   if (errs.length) return html`<div className="data-band err"><${Icon} n="alert" s=${15} /><span style=${{ flex: 1, minWidth: 200 }}>${errs.map(([ch, m]) => html`<span key=${ch} style=${{ display: "block" }}><b>${CH[ch].label}:</b> ${m}</span>`)}<span style=${{ display: "block", color: "var(--muted-2)" }}>Enquanto isso, o painel mostra dados de exemplo.</span></span>
     <button className="btn btn-sm btn-line" onClick=${live.reload}>Tentar de novo</button><button className="btn btn-sm btn-primary" onClick=${() => go("integrations")}>Ver integrações</button></div>`;
   if (live.status === "ready") return html`<${NoDataNotice} live=${live} periodR=${periodR} onJump=${onJump} onPicker=${onPicker} onIntegrations=${() => go("integrations")} />`;
-  return html`<div className="data-band demo"><${Icon} n="eye" s=${15} /><span style=${{ flex: 1, minWidth: 200 }}>Você está vendo <b>dados de exemplo</b>. Conecte o Meta Ads ou o Google Ads para ver as campanhas de ${company}.</span><button className="btn btn-sm btn-primary" onClick=${() => go("integrations")}><${Icon} n="plug" s=${14} />Conectar contas</button></div>`;
+  return html`<div className="data-band demo"><${Icon} n="eye" s=${15} /><span style=${{ flex: 1, minWidth: 200 }}>Você está vendo <b>dados de exemplo</b>. Conecte ${dt("o Meta Ads ou o Google Ads", "o Meta Ads")} para ver as campanhas de ${company}.</span><button className="btn btn-sm btn-primary" onClick=${() => go("integrations")}><${Icon} n="plug" s=${14} />Conectar contas</button></div>`;
 }
 
 // combo de conta: botão com a conta escolhida que abre uma lista com busca (teclado: ↑ ↓ Enter Esc)
@@ -3393,13 +3415,13 @@ function AdIntegrations({ client, onUpdate, toast, isAgency, live, openCh, clear
   </article>`;
   return html`<div className="stack" style=${{ gap: 10 }}>
     <div className="eyebrow">Contas de anúncio</div>
-    ${isAgency ? html`<p className="card-sub">Na agência, todas as contas de anúncio que o token da Meta acessa viram clientes da carteira. Google Ads e TikTok ainda não entram na carteira.</p>` : null}
+    ${isAgency ? html`<p className="card-sub">Na agência, todas as contas de anúncio que o token da Meta acessa viram clientes da carteira. ${dt(" Google Ads e TikTok ainda não entram na carteira.", "")}</p>` : null}
     <div className="grid g2">
       ${card("meta", "Meta Ads", "Campanhas, investimento, compras e receita pela Marketing API ou pelo MCP oficial da Meta", metaOn(conn), metaOn(conn) ? (isAgency ? "Token" + (conn.meta.user ? " de " + conn.meta.user : "") + " · carteira com as contas dele" : conn.meta.accountName + " · " + conn.meta.accountId) + (conn.meta.via === "mcp" ? " · via MCP" : " · via API") : "Marketing API ou MCP da Meta", live && live.errors && live.errors.meta)}
-      ${card("google", "Google Ads", "Campanhas, investimento, cliques e conversões pelo MCP do Google Ads", googleOn(conn), googleOn(conn) ? conn.google.customerName : "Login com a conta Google", live && live.errors && live.errors.google)}
-      <article className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
+      ${!chOn("google") ? null : card("google", "Google Ads", "Campanhas, investimento, cliques e conversões pelo MCP do Google Ads", googleOn(conn), googleOn(conn) ? conn.google.customerName : "Login com a conta Google", live && live.errors && live.errors.google)}
+      ${chOn("tiktok") ? html`<article className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
         <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title" style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: CH.tiktok.color }}></span>TikTok Ads</div><div className="card-sub">Campanhas e Spark Ads</div></div><span className="pill pill-violet">Em breve</span></div>
-        <span className="mono" style=${{ color: "var(--muted)" }}>Ainda sem conector</span></article>
+        <span className="mono" style=${{ color: "var(--muted)" }}>Ainda sem conector</span></article>` : null}
       <form className="card card-pad" onSubmit=${saveTarget} style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
         <div><div className="card-title">Meta de ROAS da conta <span style=${{ fontWeight: 500, color: "var(--muted)", fontSize: 13 }}>(opcional)</span></div><div className="card-sub">Quando preenchida, entra nos insights, nas recomendações e no copilot. Deixe em branco para não usar meta.</div></div>
         <div style=${{ display: "flex", gap: 8, alignItems: "center" }}><input id="target-roas" className="input num" style=${{ maxWidth: 110 }} inputMode="decimal" value=${target} onInput=${e => setTarget(e.target.value)} placeholder="Sem meta" aria-label="Meta de ROAS" /><span style=${{ color: "var(--muted)" }}>x</span><button className="btn btn-sm btn-line" type="submit">Salvar</button></div>
@@ -3493,7 +3515,7 @@ const DATA_SCREENS = ["overview", "analytics", "campaigns", "creatives", "report
 const SCREEN_EMPTY = {
   overview: { icon: "chart", what: "a visão geral", desc: "Investimento, impressões, CTR e custo por resultado de todos os canais, comparados com o período anterior.", ghost: "kpis" },
   analytics: { icon: "clock", what: "a performance analítica", desc: "Os horários, dias da semana, regiões, idades e dispositivos que mais trazem resultado.", ghost: "chart" },
-  campaigns: { icon: "megaphone", what: "suas campanhas", desc: "As campanhas da Meta e do Google numa tabela só, com a recomendação do copilot para pausar, revisar ou escalar.", ghost: "table" },
+  campaigns: { icon: "megaphone", what: "suas campanhas", desc: dt("As campanhas da Meta e do Google numa tabela só,", "Todas as campanhas da Meta numa tabela só,") + " com a recomendação do copilot para pausar, revisar ou escalar.", ghost: "table" },
   creatives: { icon: "image", what: "seus criativos", desc: "Os anúncios com mais investimento, com as imagens e os vídeos reais e o desempenho de cada um.", ghost: "cards" },
   report: { icon: "send", what: "os relatórios", desc: "Relatórios com os números das contas conectadas, enviados por e-mail, WhatsApp, Slack ou Teams.", ghost: "kpis" },
   insights: { icon: "bulb", what: "os insights", desc: "O agente lê as campanhas e aponta o que precisa de atenção e onde há espaço para crescer.", ghost: "cards" },
@@ -3539,8 +3561,8 @@ function DataProblem({ st, live, periodR, onJump, onPicker, connect, company, wh
   const errs = Object.entries(live.errors || {});
   if (st === "loading") return html`<div className="empty"><span className="empty-ico"><span className="spin" aria-hidden="true"></span></span><div className="empty-body"><h2>Buscando as campanhas de ${company}</h2><p>Lendo ${periodR.custom ? periodR.dates : periodR.label.toLowerCase()} nas contas conectadas. Leva alguns segundos.</p></div></div>`;
   if (st === "noconn") return html`<${EmptyBlock} icon="plug" title=${"Conecte uma conta de anúncio para ver " + what}
-    acts=${html`<button className="btn btn-primary" onClick=${() => connect("meta")}><${Icon} n="plug" s=${14} />Conectar Meta Ads</button><button className="btn btn-line" onClick=${() => connect("google")}><span className="ch-dot" style=${{ background: CH.google.color }}></span>Conectar Google Ads</button>`}
-    steps=${[{ t: "Conecte o Meta Ads ou o Google Ads em Integrações" }, { t: "Escolha a conta de anúncio de " + company }, { t: "Os números aparecem aqui e em todas as telas" }]}>
+    acts=${html`<button className="btn btn-primary" onClick=${() => connect("meta")}><${Icon} n="plug" s=${14} />Conectar Meta Ads</button>${chOn("google") ? html`<button className="btn btn-line" onClick=${() => connect("google")}><span className="ch-dot" style=${{ background: CH.google.color }}></span>Conectar Google Ads</button>` : null}`}
+    steps=${[{ t: dt("Conecte o Meta Ads ou o Google Ads em Integrações", "Conecte o Meta Ads em Integrações") }, { t: "Escolha a conta de anúncio de " + company }, { t: "Os números aparecem aqui e em todas as telas" }]}>
     <p>${company} ainda não tem nenhuma conta de anúncio conectada. Sem ela, não há campanhas para analisar.</p><//>`;
   if (st === "error") return html`<${EmptyBlock} icon="alert" tone="bad" title=${"Não conseguimos ler as campanhas de " + company}
     acts=${html`<button className="btn btn-primary" onClick=${live.reload}><${Icon} n="refresh" s=${14} />Tentar de novo</button><button className="btn btn-line" onClick=${() => connect(errs.length ? errs[0][0] : "meta")}>Revisar conexão</button>`}>
@@ -3585,7 +3607,7 @@ function SetupHome({ user, company, st, live, periodR, onJump, onPicker, connect
           <p>O copilot, o painel e os insights trabalham com os dados das suas contas de anúncio. ${st === "noconn" ? "Comece conectando uma conta: leva uns 3 minutos." : "Falta pouco."}</p>
         </div>
         <ol className="setup">
-          ${step(1, false, "Conta de anúncio", st === "noconn" ? "Conecte o Meta Ads ou o Google Ads para o copilot ler as campanhas." : st === "loading" ? "Lendo as campanhas da conta conectada." : st === "error" ? "A conexão está com erro. Revise para voltar a ler as campanhas." : "Conectada, mas sem investimento " + perPhrase(periodR) + ".", accPill,
+          ${step(1, false, "Conta de anúncio", st === "noconn" ? dt("Conecte o Meta Ads ou o Google Ads para o copilot ler as campanhas.", "Conecte o Meta Ads para o copilot ler as campanhas.") : st === "loading" ? "Lendo as campanhas da conta conectada." : st === "error" ? "A conexão está com erro. Revise para voltar a ler as campanhas." : "Conectada, mas sem investimento " + perPhrase(periodR) + ".", accPill,
             st === "noconn" ? html`<button className="btn btn-sm btn-primary" onClick=${() => connect("meta")}>Conectar</button>` : st === "error" ? html`<button className="btn btn-sm btn-primary" onClick=${() => connect(Object.keys(live.errors || {})[0] || "meta")}>Revisar</button>` : st === "nodata" ? html`<button className="btn btn-sm btn-line" onClick=${() => go("overview")}>Ver detalhes</button>` : null)}
           ${step(2, !!ai.conn, "IA do copilot", ai.conn ? "Conectada: " + AI_PROVIDERS[ai.conn.provider].name + " · " + ai.conn.model : "Conecte Claude, ChatGPT ou Groq com uma chave de API para conversar com o copilot.", ai.conn ? null : ["pill-mute", "Pendente"],
             html`<button className=${"btn btn-sm " + (ai.conn ? "btn-ghost" : "btn-line")} onClick=${() => aiStore.open()}>${ai.conn ? "Gerenciar" : "Conectar"}</button>`)}
@@ -3813,7 +3835,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
             ${isAgency && inClient ? html`<button className="crumb-link hide-sm" onClick=${toPortfolio}>Carteira</button><span className="hide-sm" style=${{ color: "var(--line-2)" }}>/</span><span className="crumb-client"><span className="c-av sm">${activeRow.name[0]}</span>${activeRow.name}</span><span style=${{ color: "var(--line-2)" }}>/</span>` : null}
             ${info.group !== info.label && !(isAgency && inClient) ? html`<span className="hide-sm">${info.group}</span><span className="hide-sm" style=${{ color: "var(--line-2)" }}>/</span>` : null}<b>${info.label}</b></div>
           <div className="top-actions">${showDock ? html`<button className=${"btn btn-line btn-sm dock-toggle hide-md" + (dockHidden ? "" : " on")} onClick=${() => (dockHidden ? openCopilot() : closeCopilot())} aria-pressed=${!dockHidden}><${Icon} n="sparkles" s=${14} />${dockHidden ? "Abrir copilot" : "Fechar copilot"}</button>` : null}<${PeriodPicker} period=${period} setPeriod=${setPeriod} open=${pickerOpen} setOpen=${setPickerOpen} />${isAgency && noRows ? null : isAgency ? html`<${ClientSwitcher} rows=${pfRows} activeId=${activeRow ? activeRow.id : null} inClient=${inClient} onPick=${id => openClient(id, screen === "portfolio" ? "copilot" : screen)} onPortfolio=${toPortfolio} />` : noData ? html`<button type="button" className=${"chip-sel chip-btn hide-sm" + (dataSt === "error" ? " bad" : "")} onClick=${() => dataSt === "noconn" ? connect("meta") : go("integrations")} title="Abrir Integrações">${dataSt === "noconn" ? html`<span className="ch-dot off"></span>Nenhuma conta conectada` : dataSt === "error" ? html`<span className="ch-dot"></span>Conexão com erro` : dataSt === "loading" ? html`<span className="spin" aria-hidden="true" style=${{ width: 12, height: 12 }}></span>Carregando contas` : html`${live.sources.map(x => html`<span key=${x.ch} className="ch-dot" style=${{ background: CH[x.ch].color }}></span>`)}${live.sources.length + (live.sources.length === 1 ? " conta" : " contas")}`}</button>`
-            : html`<span className="chip-sel hide-sm">${isLive ? live.sources.map(x => html`<span key=${x.ch} className="ch-dot" style=${{ background: CH[x.ch].color }}></span>`) : html`<span className="ch-dot" style=${{ background: "var(--c-meta)" }}></span><span className="ch-dot" style=${{ background: "var(--c-google)" }}></span><span className="ch-dot" style=${{ background: "var(--c-tiktok)" }}></span>`}${isLive ? live.sources.length + (live.sources.length === 1 ? " conta" : " contas") : "3 contas de exemplo"}</span>`}</div>
+            : html`<span className="chip-sel hide-sm">${isLive ? live.sources.map(x => html`<span key=${x.ch} className="ch-dot" style=${{ background: CH[x.ch].color }}></span>`) : html`${CHANNELS.map(k => html`<span key=${k} className="ch-dot" style=${{ background: CH[k].color }}></span>`)}`}${isLive ? live.sources.length + (live.sources.length === 1 ? " conta" : " contas") : CHANNELS.length === 1 ? "1 conta de exemplo" : CHANNELS.length + " contas de exemplo"}</span>`}</div>
         </header>
         ${isAgency && inClient ? html`<div className="client-band"><span className="c-av sm">${activeRow.name[0]}</span><span>Você está no ambiente de <b>${activeRow.name}</b></span>
           <span className="band-accs hide-sm">${activeRow.accounts.map(a => html`<span key=${a.ch} className="acc-chip">${html`<span className="ch-dot" style=${{ background: CH[a.ch].color }}></span>`}<span className="mono">${a.id}</span></span>`)}</span>
@@ -4050,7 +4072,7 @@ function ClientDrawer({ c, upd, api, inviteRes, setInviteRes, onClose, onImperso
           <//>`}
         </section>` : null}
         <section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Contas de anúncio</div>
-          ${[["meta", "Meta Ads", metaOn(c.conn) ? c.conn.meta.accountName + " · " + c.conn.meta.accountId : null], ["google", "Google Ads", googleOn(c.conn) ? c.conn.google.customerName : null]].map(([k, l, d]) => html`<div key=${k} className="mod-row"><div><b style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: CH[k].color }}></span>${l}</b><small>${d || "Não conectado"}</small></div><span className=${"pill " + (d ? "pill-good" : "pill-mute")}>${d ? "Conectado" : "Pendente"}</span></div>`)}
+          ${[["meta", "Meta Ads", metaOn(c.conn) ? c.conn.meta.accountName + " · " + c.conn.meta.accountId : null], ["google", "Google Ads", googleOn(c.conn) ? c.conn.google.customerName : null]].filter(([k]) => chOn(k)).map(([k, l, d]) => html`<div key=${k} className="mod-row"><div><b style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: CH[k].color }}></span>${l}</b><small>${d || "Não conectado"}</small></div><span className=${"pill " + (d ? "pill-good" : "pill-mute")}>${d ? "Conectado" : "Pendente"}</span></div>`)}
           <div className="mod-row"><div><b>Meta de ROAS</b><small>Usada nos insights e no copilot</small></div><span className="num" style=${{ fontWeight: 700 }}>${c.targetRoas ? xroas(c.targetRoas) : "Não definida"}</span></div>
           <div><button className="btn btn-line btn-sm" disabled=${c.status === "suspenso"} onClick=${() => onImpersonate(c.id, "integrations")}><${Icon} n="plug" s=${14} />Conectar contas deste cliente</button></div>
           <div className="card-sub">Abre a plataforma como ${c.company}, direto em Integrações. ${api.server ? "As conexões ficam no cadastro do cliente e aparecem para ele em qualquer computador." : "As conexões ficam salvas neste navegador."}</div></section>
@@ -4111,31 +4133,34 @@ function NewClient({ onClose, onCreate, server }) {
 }
 
 function LoginStage() {
-  const vals = useMemo(() => series(362580, 7, .18, .22), []);
+  const vals = useMemo(() => series(DESKTOP_APP ? 225400 : 362580, 7, .18, .22), []);
   const W = 420, H = 92, mx = Math.max(...vals) * 1.05, mn = Math.min(...vals) * .8;
   const pts = vals.map((v, i) => [W * i / (vals.length - 1), H - (H - 6) * (v - mn) / (mx - mn)]);
   const line = pts.map(p => p.join(",")).join(" ");
-  const rows = [["meta", 4.61], ["google", 4.32], ["tiktok", 2.37]];
+  // no app desktop as barras mostram campanhas da Meta, não canais
+  const rows = DESKTOP_APP
+    ? [["Advantage+", "var(--c-meta)", 5.19], ["Remarketing", "var(--c-meta)", 5.51], ["Lookalike", "var(--c-meta)", 3.5]]
+    : ["meta", "google", "tiktok"].map((k, i) => [CH[k].label, CH[k].color, [4.61, 4.32, 2.37][i]]);
   return html`<div className="stage" aria-hidden="true">
     <div className="card st-main">
       <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-        <div><div className="eyebrow">Receita · últimos 30 dias</div><div className="num" style=${{ fontSize: 28, fontWeight: 700, letterSpacing: "-.02em", lineHeight: 1.15 }}>R$ 362.580</div></div>
+        <div><div className="eyebrow">Receita · últimos 30 dias</div><div className="num" style=${{ fontSize: 28, fontWeight: 700, letterSpacing: "-.02em", lineHeight: 1.15 }}>${DESKTOP_APP ? "R$ 225.400" : "R$ 362.580"}</div></div>
         <span className="pill pill-good"><${Icon} n="up" s=${12} />13,9%</span></div>
       <svg viewBox=${`0 0 ${W} ${H}`} width="100%" style=${{ display: "block", maxWidth: "100%" }}>
         <polygon points=${`0,${H} ${line} ${W},${H}`} fill="var(--accent)" opacity="0.12" />
         <polyline points=${line} fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinejoin="round" />
         <circle cx=${pts[pts.length - 1][0] - 4} cy=${pts[pts.length - 1][1]} r="4" fill="var(--accent)" />
       </svg>
-      <div className="stack" style=${{ gap: 8 }}>${rows.map(([k, r]) => html`<div key=${k} className="bar-row" style=${{ gridTemplateColumns: "92px minmax(0,1fr) 50px", fontSize: 12.5 }}>
-        <span style=${{ color: "var(--muted-2)" }}>${CH[k].label}</span><div className="bar-track" style=${{ height: 8 }}><div className="bar-fill" style=${{ width: (r / 5.2 * 100) + "%", background: CH[k].color }}></div></div>
+      <div className="stack" style=${{ gap: 8 }}>${rows.map(([lbl, color, r]) => html`<div key=${lbl} className="bar-row" style=${{ gridTemplateColumns: "92px minmax(0,1fr) 50px", fontSize: 12.5 }}>
+        <span style=${{ color: "var(--muted-2)" }}>${lbl}</span><div className="bar-track" style=${{ height: 8 }}><div className="bar-fill" style=${{ width: (r / 5.6 * 100) + "%", background: color }}></div></div>
         <b className="num" style=${{ textAlign: "right", color: r >= ACTIVE.target ? "var(--good)" : "var(--bad)" }}>${xroas(r)}</b></div>`)}</div>
     </div>
-    <div className="st-float st-alert"><span className="pill pill-bad"><${Icon} n="alert" s=${12} />Atenção</span><span>TikTok Topo UGC · ROAS <b>1,10x</b></span></div>
+    <div className="st-float st-alert"><span className="pill pill-bad"><${Icon} n="alert" s=${12} />Atenção</span>${DESKTOP_APP ? html`<span>Remarketing 30d · frequência <b>4,8</b></span>` : html`<span>TikTok Topo UGC · ROAS <b>1,10x</b></span>`}</div>
     <div className="st-float st-report"><span className="ok"><${Icon} n="check" s=${15} /></span>
       <div><b>Relatório semanal enviado</b><small>Seg, 08:00 · 4 pessoas</small>
         <div className="chs"><span>E-mail</span><span>WhatsApp</span><span>Slack</span></div></div></div>
     <div className="st-float st-chat"><div className="bot-ico"><${Icon} n="sparkles" s=${14} /></div>
-      <div className="stack" style=${{ gap: 8 }}><span>A PMax Coleção Verão pode render <b>+R$ 20.250</b> com R$ 150/dia a mais. Quer que eu aplique?</span>
+      <div className="stack" style=${{ gap: 8 }}><span>${DESKTOP_APP ? "O Advantage+ Coleção Verão" : "A PMax Coleção Verão"} pode render <b>+R$ 20.250</b> com R$ 150/dia a mais. Quer que eu aplique?</span>
         <div style=${{ display: "flex", gap: 6 }}><span className="btn btn-sm btn-primary" style=${{ cursor: "default" }}>Confirmar</span><span className="btn btn-sm btn-line" style=${{ cursor: "default" }}>Ver dados</span></div></div></div>
   </div>`;
 }
@@ -4146,8 +4171,8 @@ function LoginSide() {
       <div className="login-inner">
       <div className="brand" style=${{ padding: 0 }}><${Logo} s=${34} /><span style=${{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", fontSize: 17 }}><${Wordmark} /><span style=${{ color: "var(--line-2)" }}>|</span><span style=${{ fontWeight: 500, color: "var(--muted-2)" }}>Copilot de Marketing</span></span></div>
       <div><h1>Seu copilot de marketing para <em>todas as campanhas</em>.</h1>
-        <p className="lead"><b style=${{ color: "var(--ink)", fontWeight: 600 }}>Sua gestão de mídia multicanal em uma única plataforma.</b> Um agente acompanha todos os canais lado a lado, aponta o que fazer e só mexe nas contas quando você confirma.</p>
-        <div className="ch-chips">${[["Meta Ads", "var(--c-meta)"], ["Google Ads", "var(--c-google)"], ["TikTok Ads", "var(--c-tiktok)"]].map(([l, c]) => html`<span key=${l}><span className="ch-dot" style=${{ background: c }}></span>${l}</span>`)}</div></div>
+        <p className="lead"><b style=${{ color: "var(--ink)", fontWeight: 600 }}>${dt("Sua gestão de mídia multicanal em uma única plataforma.", "Sua gestão de Meta Ads em uma única plataforma.")}</b> ${dt("Um agente acompanha todos os canais lado a lado,", "Um agente acompanha todas as campanhas,")} aponta o que fazer e só mexe nas contas quando você confirma.</p>
+        <div className="ch-chips">${CHANNELS.map(k => [CH[k].label, CH[k].color]).map(([l, c]) => html`<span key=${l}><span className="ch-dot" style=${{ background: c }}></span>${l}</span>`)}</div></div>
       <${LoginStage} />
       <div className="trust"><span><${Icon} n="shield" s=${14} />Mudanças só com sua confirmação</span><span><${Icon} n="lock" s=${14} />Acesso por senha</span><span><${Icon} n="clock" s=${14} />Insights diários</span></div>
       </div>
@@ -4277,7 +4302,7 @@ function InviteAccept({ token, onAccepted, onLeave }) {
         <div className="field"><label htmlFor="iv-p2">Confirme a senha</label><input id="iv-p2" className="input" type=${show ? "text" : "password"} autoComplete="new-password" value=${p2} onInput=${e => setP2(e.target.value)} /></div>
         ${ferr ? html`<div className="err" role="alert">${ferr}</div>` : null}
         <button className="btn btn-primary" style=${{ height: 42 }} type="submit" disabled=${busy}>${busy ? "Criando acesso…" : "Aceitar convite e entrar"}</button>
-        <p className="card-sub">Depois de entrar, conecte o Meta Ads e o Google Ads em Integrações para ver suas campanhas.</p>
+        <p className="card-sub">Depois de entrar, conecte ${dt("o Meta Ads e o Google Ads", "o Meta Ads")} em Integrações para ver suas campanhas.</p>
       </form>`}
     </section>
   </div>`;

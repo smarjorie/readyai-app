@@ -105,6 +105,16 @@ O painel, a carteira da agência e o copilot funcionam igual nos dois caminhos. 
 
 Use um token de usuário do sistema do Business Manager da agência, com acesso a todas as contas dos clientes.
 
+## App desktop (Windows e Mac): só Meta Ads
+
+O app desktop abre `https://www.metrikabr.com/app` e se identifica com `metrikabrDesktop/<versão>` no user agent. Quando a página detecta essa marca (`DESKTOP_APP` em `public/app/index.html`), ela mostra só a Meta:
+
+- Dados de exemplo, criativos, insights e carteira da agência ficam só com campanhas e contas da Meta.
+- Integrações não mostram Google Ads, TikTok Ads nem Google Analytics 4. Uma conexão do Google Ads já salva é ignorada no app.
+- Textos, sugestões e o prompt do copilot falam só de Meta Ads. O planejamento de mídia não oferece Google nem TikTok.
+
+No navegador, nada muda. Para ver o modo desktop no navegador, troque o user agent no DevTools para algo terminado em `metrikabrDesktop/1.0.1`.
+
 ## Copilot (Claude, ChatGPT ou Groq)
 
 Em Integrações (ou no próprio chat), clique em **Conectar Claude**, **Conectar ChatGPT** ou **Conectar Groq** e cole a chave de API.
