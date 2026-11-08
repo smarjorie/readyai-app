@@ -110,10 +110,15 @@ Use um token de usuário do sistema do Business Manager da agência, com acesso 
 O app desktop abre `https://www.metrikabr.com/app` e se identifica com `metrikabrDesktop/<versão>` no user agent. Quando a página detecta essa marca (`DESKTOP_APP` em `public/app/index.html`), ela mostra só a Meta:
 
 - Dados de exemplo, criativos, insights e carteira da agência ficam só com campanhas e contas da Meta.
-- Integrações não mostram Google Ads, TikTok Ads nem Google Analytics 4. Uma conexão do Google Ads já salva é ignorada no app.
+- Em Integrações, Google Ads e TikTok Ads aparecem como "Em breve", sem botão de conectar. Uma conexão do Google Ads já salva é ignorada no app. "Outras fontes" (Google Analytics 4 e WhatsApp Business) não aparece.
 - Textos, sugestões e o prompt do copilot falam só de Meta Ads. O planejamento de mídia não oferece Google nem TikTok.
+- A tela de login não oferece cadastro: contas novas são criadas no site.
 
 No navegador, nada muda. Para ver o modo desktop no navegador, troque o user agent no DevTools para algo terminado em `metrikabrDesktop/1.0.1`.
+
+## Criar conta pelo app
+
+A tela de login do site tem "Criar conta grátis", que abre o cadastro com teste grátis (o mesmo `POST /api/signup` da LP, com `source: "app"`). O link `/app/?cadastro` abre direto no cadastro. Precisa do banco configurado: sem ele, o app roda em modo de demonstração e não oferece cadastro.
 
 ## Copilot (Claude, ChatGPT ou Groq)
 

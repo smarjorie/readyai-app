@@ -264,6 +264,13 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .ins-acts{display:flex;gap:6px;flex-wrap:wrap}
 .link-btn{font-size:12.5px;font-weight:600;color:var(--accent-ink);display:inline-flex;align-items:center;gap:4px;padding:4px 0}
 .link-btn:hover{text-decoration:underline}
+.plan-pick{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.plan-pick button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);text-align:left;color:var(--ink);font-size:13px;font-weight:600}
+.plan-pick button small{font-size:11.5px;font-weight:500;color:var(--muted)}
+.plan-pick button.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;background:var(--accent-soft, var(--surface-2))}
+.field-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.hp{position:absolute!important;left:-9999px;width:1px;height:1px;overflow:hidden}
+.login-alt{text-align:center;font-size:13px;color:var(--muted)}
 .mini-kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .mini-kpis div{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .mini-kpis small{font-size:11.5px;color:var(--muted);display:block}
@@ -2999,16 +3006,16 @@ function Integrations({ client, onUpdate, toast, isAgency, live, openCh, clearOp
   const others = [
     ["Google Analytics 4", "Sessões, receita e atribuição do site", "Ainda sem conector"],
     ["WhatsApp Business", "Conversas e CRM de vendas", "Disponível em breve"],
-  ].filter(([n]) => !DESKTOP_APP || n.indexOf("Google") < 0);
+  ].filter(() => !DESKTOP_APP); // no app desktop: sem Google Analytics e sem WhatsApp
   return html`<div className="stack">
     <${PageHead} title="Integrações" sub="Contas que o painel, o copilot e as inteligências do agente usam. Alterações nas contas sempre pedem sua confirmação." />
     <${AdIntegrations} client=${client} onUpdate=${onUpdate} toast=${toast} isAgency=${isAgency} live=${live} openCh=${openCh} clearOpen=${clearOpen} />
     <${AIIntegrations} />
-    <div className="eyebrow" style=${{ marginTop: 6 }}>Outras fontes</div>
+    ${others.length ? html`<div className="eyebrow" style=${{ marginTop: 6 }}>Outras fontes</div>
     <div className="grid g2">${others.map(([n, d, a]) => html`<article key=${n} className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title">${n}</div><div className="card-sub">${d}</div></div><span className="pill pill-violet">Em breve</span></div>
       <span className="mono" style=${{ color: "var(--muted)" }}>${a}</span>
-    </article>`)}</div>
+    </article>`)}</div>` : null}
   </div>`;
 }
 function DataNote({ partial, home }) {
@@ -3413,22 +3420,24 @@ function AdIntegrations({ client, onUpdate, toast, isAgency, live, openCh, clear
     <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}><span className="mono" style=${{ color: "var(--muted)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>${detail}</span>
       <button className=${"btn btn-sm " + (on ? "btn-line" : "btn-primary")} onClick=${() => setOpen(key)}>${on ? "Gerenciar" : "Conectar"}</button></div>
   </article>`;
+  // canal que ainda não conecta: cartão sem botão, com "Em breve" (Google no app desktop, TikTok em todo lugar)
+  const soon = (key, title, sub) => html`<article key=${key} className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title" style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: CH[key].color }}></span>${title}</div><div className="card-sub">${sub}</div></div><span className="pill pill-violet">Em breve</span></div>
+    <span className="mono" style=${{ color: "var(--muted)" }}>Ainda sem conector</span></article>`;
   return html`<div className="stack" style=${{ gap: 10 }}>
     <div className="eyebrow">Contas de anúncio</div>
     ${isAgency ? html`<p className="card-sub">Na agência, todas as contas de anúncio que o token da Meta acessa viram clientes da carteira. ${dt(" Google Ads e TikTok ainda não entram na carteira.", "")}</p>` : null}
     <div className="grid g2">
       ${card("meta", "Meta Ads", "Campanhas, investimento, compras e receita pela Marketing API ou pelo MCP oficial da Meta", metaOn(conn), metaOn(conn) ? (isAgency ? "Token" + (conn.meta.user ? " de " + conn.meta.user : "") + " · carteira com as contas dele" : conn.meta.accountName + " · " + conn.meta.accountId) + (conn.meta.via === "mcp" ? " · via MCP" : " · via API") : "Marketing API ou MCP da Meta", live && live.errors && live.errors.meta)}
-      ${!chOn("google") ? null : card("google", "Google Ads", "Campanhas, investimento, cliques e conversões pelo MCP do Google Ads", googleOn(conn), googleOn(conn) ? conn.google.customerName : "Login com a conta Google", live && live.errors && live.errors.google)}
-      ${chOn("tiktok") ? html`<article className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title" style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: CH.tiktok.color }}></span>TikTok Ads</div><div className="card-sub">Campanhas e Spark Ads</div></div><span className="pill pill-violet">Em breve</span></div>
-        <span className="mono" style=${{ color: "var(--muted)" }}>Ainda sem conector</span></article>` : null}
+      ${!chOn("google") ? soon("google", "Google Ads", "Campanhas, investimento, cliques e conversões") : card("google", "Google Ads", "Campanhas, investimento, cliques e conversões pelo MCP do Google Ads", googleOn(conn), googleOn(conn) ? conn.google.customerName : "Login com a conta Google", live && live.errors && live.errors.google)}
+      ${soon("tiktok", "TikTok Ads", "Campanhas e Spark Ads")}
       <form className="card card-pad" onSubmit=${saveTarget} style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
         <div><div className="card-title">Meta de ROAS da conta <span style=${{ fontWeight: 500, color: "var(--muted)", fontSize: 13 }}>(opcional)</span></div><div className="card-sub">Quando preenchida, entra nos insights, nas recomendações e no copilot. Deixe em branco para não usar meta.</div></div>
         <div style=${{ display: "flex", gap: 8, alignItems: "center" }}><input id="target-roas" className="input num" style=${{ maxWidth: 110 }} inputMode="decimal" value=${target} onInput=${e => setTarget(e.target.value)} placeholder="Sem meta" aria-label="Meta de ROAS" /><span style=${{ color: "var(--muted)" }}>x</span><button className="btn btn-sm btn-line" type="submit">Salvar</button></div>
       </form>
     </div>
     ${open === "meta" ? html`<${MetaConnectDrawer} client=${client} onUpdate=${onUpdate} onClose=${() => setOpen(null)} toast=${toast} agency=${isAgency} />` : null}
-    ${open === "google" ? html`<${GoogleConnectDrawer} client=${client} onUpdate=${onUpdate} onClose=${() => setOpen(null)} toast=${toast} />` : null}
+    ${open === "google" && chOn("google") ? html`<${GoogleConnectDrawer} client=${client} onUpdate=${onUpdate} onClose=${() => setOpen(null)} toast=${toast} />` : null}
   </div>`;
 }
 
@@ -4179,12 +4188,32 @@ function LoginSide() {
     </section>`;
 }
 // auth(email, senha) faz o login (no servidor ou neste navegador) e lança um erro com a mensagem para a pessoa
-function Login({ auth, showDemo, notice }) {
+// onSignup(resposta do /api/signup) abre a conta recém-criada; sem ele, a tela não oferece cadastro
+function Login({ auth, showDemo, notice, onSignup }) {
   const [email, setEmail] = useState(""); const [pass, setPass] = useState(""); const [err, setErr] = useState(""); const [showPass, setShowPass] = useState(false); const [busy, setBusy] = useState(false);
-  const [mode, setMode] = useState("login"); // login | forgot | sent
+  // login | forgot | sent | signup  ("/app/?cadastro" abre direto no cadastro)
+  const [mode, setMode] = useState(() => { try { return onSignup && new URLSearchParams(location.search).has("cadastro") ? "signup" : "login"; } catch (e) { return "login"; } });
   const [fEmail, setFEmail] = useState("");
   const toForgot = () => { setFEmail(email.trim()); setErr(""); setBusy(false); setMode("forgot"); };
   const toLogin = () => { setErr(""); setBusy(false); setMode("login"); };
+  const toSignup = () => { setSu(f => ({ ...f, email: f.email || email.trim() })); setErr(""); setErrCode(""); setBusy(false); setMode("signup"); };
+  const [su, setSu] = useState({ plan: "pro", name: "", company: "", email: "", phone: "", password: "", website: "" });
+  const [errCode, setErrCode] = useState("");
+  const suSet = k => e => setSu(f => ({ ...f, [k]: e.target.value }));
+  const signup = async e => {
+    e.preventDefault(); if (busy) return; setErr(""); setErrCode("");
+    const d = { ...su, name: su.name.trim(), company: su.company.trim(), email: su.email.trim().toLowerCase(), phone: su.phone.trim(), source: "app" };
+    if (!d.name || !d.company) return setErr("Preencha seu nome e o nome da empresa.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) return setErr("Digite um e-mail válido, como voce@empresa.com.br.");
+    if (d.password.length < 8) return setErr("A senha precisa ter pelo menos 8 caracteres.");
+    setBusy(true);
+    try {
+      const j = await srv("/api/signup", d);
+      if (!j.token) throw new Error("Não foi possível criar a conta agora. Tente de novo em instantes.");
+      try { history.replaceState(null, "", location.pathname); } catch (x) {}
+      onSignup(j);
+    } catch (x) { setErr(x.message); setErrCode(x.code || ""); setBusy(false); }
+  };
   const forgot = async e => {
     e.preventDefault(); if (busy) return; setErr("");
     const v = fEmail.trim().toLowerCase();
@@ -4214,6 +4243,27 @@ function Login({ auth, showDemo, notice }) {
       <button type="button" className="btn btn-ghost" style=${{ height: 40 }} onClick=${() => { setErr(""); setMode("forgot"); }}>Enviar de novo</button>
     </div></section>
   </div>`;
+  if (mode === "signup") return html`<div className="login">
+    <${LoginSide} />
+    <section className="login-main" style=${{ position: "relative" }}>${side}<form className="login-box" onSubmit=${signup} noValidate>
+      <div><h2>Criar sua conta</h2><p style=${{ color: "var(--muted)", marginTop: 4 }}>7 dias grátis do plano ${PLANS[su.plan].name}. Sem cartão de crédito.</p></div>
+      <div className="field"><label id="su-plan">Plano</label><div className="plan-pick" role="radiogroup" aria-labelledby="su-plan">${["starter", "pro", "scale"].map(k => html`<button key=${k} type="button" role="radio" aria-checked=${su.plan === k} className=${su.plan === k ? "on" : ""} onClick=${() => setSu(f => ({ ...f, plan: k }))}>${PLANS[k].name}<small className="num">${brl(PLANS[k].price)}/mês</small></button>`)}</div></div>
+      <div className="field-row">
+        <div className="field"><label htmlFor="su-n">Seu nome</label><input id="su-n" className="input" autoComplete="name" value=${su.name} onInput=${suSet("name")} autoFocus /></div>
+        <div className="field"><label htmlFor="su-c">Empresa</label><input id="su-c" className="input" autoComplete="organization" value=${su.company} onInput=${suSet("company")} /></div>
+      </div>
+      <div className="field"><label htmlFor="su-e">E-mail</label><input id="su-e" className="input" type="email" inputMode="email" autoComplete="email" value=${su.email} onInput=${suSet("email")} placeholder="voce@empresa.com.br" /></div>
+      <div className="field-row">
+        <div className="field"><label htmlFor="su-w">WhatsApp <span style=${{ color: "var(--muted)", fontWeight: 400 }}>(opcional)</span></label><input id="su-w" className="input" type="tel" inputMode="tel" autoComplete="tel" value=${su.phone} onInput=${suSet("phone")} placeholder="(11) 90000-0000" /></div>
+        <div className="field"><label htmlFor="su-p">Senha</label><div className="pass-wrap"><input id="su-p" className="input" type=${showPass ? "text" : "password"} autoComplete="new-password" value=${su.password} onInput=${suSet("password")} placeholder="Mín. 8 caracteres" />
+          <button type="button" className="pass-eye" onClick=${() => setShowPass(v => !v)} aria-label=${showPass ? "Ocultar senha" : "Mostrar senha"} aria-pressed=${showPass}><${Icon} n=${showPass ? "eyeOff" : "eye"} s=${17} /></button></div></div>
+      </div>
+      <label className="hp" aria-hidden="true">Site<input tabIndex="-1" autoComplete="off" value=${su.website} onInput=${suSet("website")} /></label>
+      ${err ? html`<div className="err" role="alert">${err}${errCode === "email_taken" ? html` <button type="button" className="link-btn" onClick=${() => { setEmail(su.email.trim()); toLogin(); }}>Entrar com este e-mail</button>` : null}</div>` : null}
+      <button className="btn btn-primary" style=${{ height: 42 }} type="submit" disabled=${busy}>${busy ? "Criando sua conta…" : "Criar conta e começar o teste"}</button>
+      <p className="login-alt">Já tem conta? <button type="button" className="link-btn" onClick=${toLogin}>Entrar</button></p>
+    </form></section>
+  </div>`;
   const submit = async e => {
     e.preventDefault(); if (busy) return; setErr(""); setBusy(true);
     try { await auth(email.trim().toLowerCase(), pass); } catch (x) { setErr(x.message); setBusy(false); }
@@ -4229,6 +4279,7 @@ function Login({ auth, showDemo, notice }) {
         <button type="button" className="pass-eye" onClick=${() => setShowPass(v => !v)} aria-label=${showPass ? "Ocultar senha" : "Mostrar senha"} aria-pressed=${showPass} title=${showPass ? "Ocultar senha" : "Mostrar senha"}><${Icon} n=${showPass ? "eyeOff" : "eye"} s=${17} /></button></div></div>
       ${err ? html`<div className="err" role="alert">${err}</div>` : null}
       <button className="btn btn-primary" style=${{ height: 42 }} type="submit" disabled=${busy}>${busy ? "Entrando…" : "Entrar"}</button>
+      ${onSignup ? html`<p className="login-alt">Ainda não tem conta? <button type="button" className="link-btn" onClick=${toSignup}>Criar conta grátis</button></p>` : null}
       ${showDemo ? html`<div className="demo-creds"><div className="eyebrow">Acessos da demonstração</div>
         ${[["camila@lojaaurora.com.br", "demo123", "Loja Aurora", "Plano Pro"], ["rafael@nortex.com.br", "demo123", "Grupo Nortex", "Plano Scale, com todos os módulos"], ["marina@studiovitta.com.br", "demo123", "Studio Vitta", "Plano Starter, com módulos bloqueados"]].map(([e, p, l, d]) => html`<button key=${e} type="button" className="cred" onClick=${() => fill(e, p)}><span><b style=${{ fontSize: 13 }}>${l}</b><small>${d}</small></span><span className="mono" style=${{ color: "var(--muted)" }}>${p}</span></button>`)}
       </div>` : null}
@@ -4354,6 +4405,7 @@ function ServerApp({ welcome }) {
     if (j.role === "admin") { setAdmin(j.admin); setPhase("loading"); try { await loadList(); } finally { setPhase("ready"); } }
     else setClients([j.client]);
   };
+  const signup = j => { setSess({ token: j.token, role: "client", clientId: j.client.id }); setNotice(null); setClients([j.client]); };
   const replace = c => setClients(cs => cs.some(x => x.id === c.id) ? cs.map(x => x.id === c.id ? c : x) : [c, ...cs]);
   const legacy = useMemo(() => { const s = store.get(KEY, null); return s && Array.isArray(s.clients) ? s.clients : []; }, []);
   const api = {
@@ -4376,11 +4428,11 @@ function ServerApp({ welcome }) {
   };
   const logout = () => { setSess(null); setClients([]); setAdmin(null); };
   if (phase === "loading") return html`<div className="boot">Carregando metrikabr…</div>`;
-  if (!sess) return html`<${Login} auth=${auth} showDemo=${false} notice=${notice} />`;
+  if (!sess) return html`<${Login} auth=${auth} showDemo=${false} notice=${notice} onSignup=${DESKTOP_APP ? null : signup} />`;
   const asGone = sess.as && !clients.some(c => c.id === sess.as); // cliente excluído enquanto estava aberto
   if (sess.role === "admin" && (!sess.as || asGone)) return html`<${AdminConsole} clients=${clients} api=${api} adminName=${admin ? admin.name : "Gestora"} onLogout=${logout} onImpersonate=${(id, to) => setSess({ ...sess, as: id, to })} />`;
   const cid = sess.as || sess.clientId; const client = clients.find(c => c.id === cid);
-  if (!client) return html`<${Login} auth=${auth} showDemo=${false} notice=${notice} />`;
+  if (!client) return html`<${Login} auth=${auth} showDemo=${false} notice=${notice} onSignup=${DESKTOP_APP ? null : signup} />`;
   const onUpdate = patch => {
     setClients(cs => cs.map(c => c.id === client.id ? { ...c, ...patch } : c));
     const p = sess.role === "admin" ? call("/api/clients", { action: "update", id: client.id, patch }) : call("/api/clients", { action: "self_update", patch });
