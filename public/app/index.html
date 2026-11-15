@@ -680,6 +680,15 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .ai-tab small{color:var(--muted);font-size:12px}
 .ai-note{font-size:12.5px;color:var(--muted-2);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start;line-height:1.5}
 .ai-note svg{margin-top:2px;color:var(--good)}
+.goal-opt{display:flex;gap:10px;align-items:flex-start;text-align:left;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.goal-opt:hover{border-color:var(--line-2)}
+.goal-opt.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.goal-opt .radio{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--line-2);flex:none;margin-top:2px;display:grid;place-items:center}
+.goal-opt.on .radio{border-color:var(--accent)}
+.goal-opt.on .radio::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.goal-opt b{display:block;font-size:13.5px;margin-bottom:2px}
+.goal-opt small{color:var(--muted);font-size:12.5px;line-height:1.45}
+.goal-card .card-title label{cursor:pointer}
 
 /* quando a conta converte: períodos do dia + mapa dia da semana x hora */
 .tod-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
@@ -933,6 +942,47 @@ const xroas = n => fin(n) ? dec(n, 2) + "x" : "n/d";
 // a meta de ROAS é opcional: sem meta, nada é comparado com ela
 const hasTarget = () => fin(ACTIVE.target) && ACTIVE.target > 0;
 const roasColor = r => !fin(r) ? "var(--muted)" : hasTarget() ? (r >= ACTIVE.target ? "var(--good)" : "var(--bad)") : r < 1 ? "var(--bad)" : "var(--ink)";
+// Metas da conta (Configurações › Metas), todas opcionais. ROAS e CTR são mínimos; CPA e CPC são máximos.
+// ROAS e CPA medem resultado e decidem pausar ou escalar; CTR e CPC medem eficiência e só pedem revisão.
+// mode "all": a campanha precisa bater todas as metas definidas; "any": basta bater uma, mas se ela tem meta de
+// resultado (ROAS ou CPA) mensurável, precisa bater uma dessas: CTR e CPC sozinhos não compensam resultado ruim.
+const GOAL_DEFS = [
+  { k: "roas", label: "ROAS", dir: "min", result: true, fmt: n => xroas(n) },
+  { k: "cpa", label: "CPA", dir: "max", result: true, fmt: n => brl2(n) },
+  { k: "ctr", label: "CTR", dir: "min", fmt: n => pct(n, 2) },
+  { k: "cpc", label: "CPC", dir: "max", fmt: n => brl2(n) },
+];
+const NO_GOALS = { roas: null, cpa: null, ctr: null, cpc: null, mode: "all" };
+const posOr = v => fin(v) && v > 0 ? v : null;
+// lê as metas do cadastro. A meta de ROAS fica em targetRoas (clientes antigos só têm ela; salvar as metas grava as duas)
+function goalsOf(c) { const g = (c && c.goals) || {}; return { roas: c && c.targetRoas !== undefined ? posOr(c.targetRoas) : posOr(g.roas), cpa: posOr(g.cpa), ctr: posOr(g.ctr), cpc: posOr(g.cpc), mode: g.mode === "any" ? "any" : "all" }; }
+// metas da conta aberta (a meta de ROAS continua em ACTIVE.target)
+const goalsNow = () => ({ ...(ACTIVE.goals || NO_GOALS), roas: hasTarget() ? ACTIVE.target : null });
+const anyGoal = g => GOAL_DEFS.some(d => g[d.k]);
+const hasGoals = () => anyGoal(goalsNow());
+// valor da métrica numa campanha (ou nos totais); null quando não dá para medir
+function metricOf(c, k) {
+  if (k === "roas") return c.noRev || !(c.spend > 0) ? null : c.revenue / c.spend;
+  if (k === "cpa") return !(c.spend > 0) ? null : c.purchases > 0 ? c.spend / c.purchases : Infinity;
+  if (k === "ctr") return c.impr > 0 ? c.clicks / c.impr : null;
+  if (k === "cpc") return c.clicks > 0 ? c.spend / c.clicks : null;
+  return null;
+}
+// confere a campanha contra as metas que dá para medir nela
+function goalCheck(c) {
+  const g = goalsNow();
+  const checks = GOAL_DEFS.filter(d => g[d.k]).map(d => { const v = metricOf(c, d.k); return { ...d, goal: g[d.k], v, ok: v == null ? null : d.dir === "min" ? v >= g[d.k] : v <= g[d.k] }; }).filter(x => x.ok !== null);
+  const okN = checks.filter(x => x.ok).length, res = checks.filter(x => x.result);
+  return { checks, has: checks.length > 0, ok: !checks.length ? null : g.mode === "any" ? (res.length ? res.some(x => x.ok) : okN > 0) : okN === checks.length, miss: checks.filter(x => !x.ok), hit: checks.filter(x => x.ok), mode: g.mode };
+}
+const missTxt = x => x.v === Infinity ? "Sem conversões (meta de CPA de " + x.fmt(x.goal) + ")" : x.label + " de " + x.fmt(x.v) + (x.dir === "min" ? ", abaixo" : ", acima") + " da meta de " + x.fmt(x.goal);
+function goalsSummary(g) {
+  const t = d => d.label + (d.dir === "min" ? " ≥ " : " ≤ ") + d.fmt(g[d.k]), on = GOAL_DEFS.filter(d => g[d.k]);
+  if (g.mode !== "any") return on.map(t).join(" e ");
+  const res = on.filter(d => d.result), eff = on.filter(d => !d.result);
+  if (!res.length || !eff.length) return on.map(t).join(" ou ");
+  return res.map(t).join(" ou ") + " (" + eff.map(t).join(" e ") + " como aviso)";
+}
 // tipo de resultado das campanhas: compras, leads ou conversas (WhatsApp/Messenger)
 const resKind = c => c.result || (c.ch === "google" ? "conversões" : "compras");
 function resultKind(camps) { const ks = [...new Set(camps.filter(c => c.spend > 0).map(resKind))]; return ks.length === 1 ? ks[0] : "conversões"; }
@@ -1039,7 +1089,9 @@ const NAV = [
   { id: "gerenciador", label: "Gerenciador de campanhas", icon: "megaphone", children: [{ key: "campaigns", label: "Campanhas" }, { key: "creatives", label: "Criativos" }, { key: "report", label: "Enviar relatório" }] },
   { id: "inteligencias", label: "Inteligências do agente", icon: "zap", children: [{ key: "media", label: "Planejamento de mídia" }, { key: "skills", label: "Habilidades" }, { key: "insights", label: "Insights" }] },
 ];
-const FOOT_NAV = [{ id: "integracoes", label: "Integrações", icon: "plug", key: "integrations" }];
+// Configurações: conexões (canais e IA) e as metas que o agente usa para avaliar as campanhas
+const FOOT_NAV = [{ id: "config", label: "Configurações", icon: "sliders", children: [{ key: "integrations", label: "Integrações" }, { key: "goals", label: "Metas" }] }];
+const CONFIG_SCREENS = ["integrations", "goals"];
 function routeInfo(key) {
   for (const g of [...NAV, ...FOOT_NAV]) {
     if (g.key === key) return { group: g.label, label: g.label };
@@ -1135,8 +1187,20 @@ function buildInsights(camps) {
   if (c5) list.push({ id: "i3", sev: "good", tag: "Melhoria de ROAS", icon: "up", title: `${c5 && c5.name} está limitada por orçamento`, body: `ROAS de ${xroas(c5.revenue / c5.spend)} e 38% das impressões perdidas por orçamento. Somar R$ 150/dia pode trazer cerca de ${brl(est)} a mais em 30 dias.`, metric: "+" + brl(est), ask: "Quanto posso escalar a PMax Coleção Verão?", goto: "campaigns" });
   if (c7) list.push({ id: "i4", sev: "warn", tag: "Custo subindo", icon: "wallet", title: `CPC de ${c7 && c7.name} subiu 22%`, body: `ROAS de ${xroas(c7.revenue / c7.spend)}, abaixo da meta. Termos amplos concentram 41% do gasto sem nenhuma compra.`, metric: xroas(c7.revenue / c7.spend), ask: "Por que o Search de Vestidos está caro?", goto: "campaigns" });
   if (c10) list.push({ id: "i5", sev: "info", tag: "Oportunidade", icon: "bulb", title: "Spark Ads de influenciadoras supera o resto do TikTok", body: `ROAS de ${xroas(c10.revenue / c10.spend)} com só ${brl(c10.spend)} investidos. Vale mover verba do Topo UGC para cá.`, metric: xroas(c10.revenue / c10.spend), ask: "Vale mover verba do TikTok UGC para Spark Ads?", goto: "creatives" });
+  const gi = goalsInsight(camps, [c9]); if (gi) list.splice(1, 0, gi);
   list.push({ id: "i6", sev: "good", tag: "Tendência", icon: "target", title: "CPA geral caiu no período", body: `CPA de ${brl2(t.cpa)} contra ${brl2(ACTIVE.prev.spend / ACTIVE.prev.purchases)} nos 30 dias anteriores, puxado por ${c5 ? "Advantage+ e PMax" : "Advantage+ e Lookalike"}.`, metric: pct(delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases), 0), ask: "O que fez meu CPA cair?", goto: "overview" });
   return list;
+}
+// insight das metas além do ROAS (CPA, CTR e CPC): a campanha de maior gasto que não bate o critério da conta
+function goalsInsight(camps, skip) {
+  const g = goalsNow();
+  if (!g.cpa && !g.ctr && !g.cpc) return null;
+  const off = camps.filter(c => c.status === "ativa" && c.spend > 0 && !skip.includes(c)).map(c => ({ c, gc: goalCheck(c) })).filter(x => x.gc.has && !x.gc.ok && x.gc.miss.some(m => m.k !== "roas")).sort((a, b) => b.c.spend - a.c.spend);
+  if (!off.length) return null;
+  const { c, gc } = off[0], m = gc.miss.find(x => x.k !== "roas");
+  return { id: "g1", sev: gc.miss.some(x => x.result) ? "bad" : "warn", tag: "Fora das metas", icon: "target", title: off.length === 1 ? `“${c.name}” está fora das metas` : `${off.length} campanhas fora das metas`,
+    body: `${off.length > 1 ? "A de maior investimento é “" + c.name + "” (" + CH[c.ch].label + ", " + brl(c.spend) + ")" : CH[c.ch].label}: ${gc.miss.map(missTxt).join("; ")}. Critério da conta: ${goalsSummary(g)}.`,
+    metric: m.v === Infinity ? "sem conv." : m.fmt(m.v), ask: `Por que a campanha “${c.name}” está fora das metas?`, goto: "campaigns" };
 }
 const SEV = { bad: { c: "var(--bad)", pill: "pill-bad" }, warn: { c: "var(--warn)", pill: "pill-warn" }, good: { c: "var(--good)", pill: "pill-good" }, info: { c: "var(--accent)", pill: "pill-info" } };
 
@@ -1268,6 +1332,7 @@ function aiContext({ camps, screen, account, isAgency, rows, insights, budget, d
     periodo: live ? (ACTIVE.period ? ACTIVE.period.label + " (" + ACTIVE.period.since + " a " + ACTIVE.period.until + ", " + ACTIVE.period.days + " dias)" : "últimos 30 dias") : "últimos 30 dias (19/09 a 18/10/2026)",
     moeda: "BRL",
     meta_roas: hasTarget() ? ACTIVE.target : null,
+    metas: hasGoals() ? (g => ({ roas_minimo: g.roas, cpa_maximo: g.cpa, ctr_minimo_pct: g.ctr ? r2(g.ctr * 100) : null, cpc_maximo: g.cpc, criterio: g.mode === "any" ? "basta bater uma das metas; se a campanha tem meta de ROAS ou CPA mensurável, precisa bater uma dessas (CTR e CPC sozinhos não bastam)" : "precisa bater todas as metas definidas" }))(goalsNow()) : null,
     tipo_de_resultado: kindLabel(resultKind(camps)),
     saude_da_conta: ACTIVE.health,
     totais: { investimento: Math.round(t.spend), receita: Math.round(t.revenue), compras: t.purchases, roas: r2(t.roas), cpa: r2(t.cpa), ctr_pct: r2(t.ctr * 100), ticket_medio: r2(t.ticket) },
@@ -1276,7 +1341,7 @@ function aiContext({ camps, screen, account, isAgency, rows, insights, budget, d
     campanhas: camps.map(c => ({
       id: c.id, nome: c.name, canal: CH[c.ch].label, status: c.status, orcamento_diario: c.budget,
       investimento: c.spend, receita: c.revenue, compras: c.purchases, roas: r2(roasOf(c)), cpa: r2(c.spend / c.purchases),
-      ctr_pct: r2(c.clicks / c.impr * 100), frequencia: c.freq || null, variacao_receita_7d_pct: Math.round(c.d7 * 100), limitada_por_orcamento: !!c.limited,
+      ctr_pct: r2(c.clicks / c.impr * 100), cpc: c.clicks > 0 ? r2(c.spend / c.clicks) : null, dentro_das_metas: (g => g.has ? g.ok : null)(goalCheck(c)), frequencia: c.freq || null, variacao_receita_7d_pct: Math.round(c.d7 * 100), limitada_por_orcamento: !!c.limited,
     })),
     insights_do_dia: insights.map(i => ({ tipo: i.tag, titulo: i.title, detalhe: i.body })),
   };
@@ -1303,7 +1368,7 @@ function aiSystem(data, screens, isAgency) {
     "Use SOMENTE os números em DADOS. Não invente métricas; se algo não estiver nos dados, diga que essa informação não está disponível.",
     chOn("google") ? "Campanhas com roas null (Google Ads) não informam receita: avalie essas pelo CPA e pelas conversões." : "Fale só da Meta Ads. Não sugira nem compare com Google Ads ou TikTok Ads.",
     data.plano_de_midia ? "A pessoa montou um plano de mídia nesta conversa: ele está em plano_de_midia e o critério é ROI (lucro bruto / verba). Para simular 'e se', use a fórmula e a curva de cada canal em plano_de_midia; diga que é estimativa e mostre verba, resultados, lucro e ROI antes e depois. Canais com fonte 'custo de referência' não têm histórico. Não use confirm nesta tela." : "",
-    "Valores em reais. ROAS = receita / investimento. A meta de ROAS da conta está em meta_roas; se meta_roas for null, a conta não tem meta: não compare com meta nenhuma. Formate no padrão brasileiro (R$ 12.300, 3,45x, 12%).",
+    "Valores em reais. ROAS = receita / investimento; CPA = investimento / resultados; CPC = investimento / cliques. As metas da conta estão em metas: ROAS e CTR são mínimos, CPA e CPC são máximos, e criterio diz se a campanha precisa bater todas ou basta uma. Uma meta null não foi definida; se metas for null, a conta não tem meta: não compare com meta nenhuma. dentro_das_metas já aplica esse critério em cada campanha. Use ROAS e CPA para decidir pausar ou escalar; CTR e CPC servem para explicar onde está o problema. Formate no padrão brasileiro (R$ 12.300, 3,45x, 12%).",
     "",
     "FORMATO: devolva APENAS um objeto JSON válido, sem markdown e sem texto fora dele, com os campos:",
     '{"text": "resposta principal em 1 a 4 frases",',
@@ -1460,6 +1525,7 @@ const SUGGESTIONS = {
   skills: ["Crie um alerta de CPA alto", "Quais rotinas você recomenda?"],
   insights: ["Onde estou perdendo dinheiro?", dt("Quanto posso escalar no Google?", "Quanto posso escalar na Meta?")],
   integrations: ["Resuma minhas campanhas"],
+  goals: ["Quais campanhas estão fora das metas?", "Que meta de CPA faz sentido para mim?"],
 };
 
 /* ================= charts ================= */
@@ -2381,24 +2447,33 @@ function Analytics({ camps, brk }) {
 }
 
 function recFor(c) {
-  if (c.noRev) return c.status !== "ativa" ? { k: "keep", label: "Manter pausada", pill: "pill-mute", icon: "pause", why: "Sem valor de conversão" } : { k: "keep", label: "Acompanhar", pill: "pill-mute", icon: "eye", why: c.ch === "google" ? "Sem valor de conversão: avalie pelo CPA" : "Campanha sem venda: avalie pelo custo por " + (c.result === "leads" ? "lead" : c.result === "conversas" ? "conversa" : "resultado") };
-  const roas = roasOf(c);
-  if (!hasTarget()) {
+  const roas = roasOf(c), gc = goalCheck(c);
+  if (!gc.has) {
+    if (c.noRev) return c.status !== "ativa" ? { k: "keep", label: "Manter pausada", pill: "pill-mute", icon: "pause", why: "Sem valor de conversão" } : { k: "keep", label: "Acompanhar", pill: "pill-mute", icon: "eye", why: c.ch === "google" ? "Sem valor de conversão: avalie pelo CPA" : "Campanha sem venda: avalie pelo custo por " + (c.result === "leads" ? "lead" : c.result === "conversas" ? "conversa" : "resultado") };
     // sem meta: só o que é objetivo (ROAS abaixo de 1 = gasta mais do que traz) e a tendência da semana
-    if (c.status !== "ativa") return { k: "keep", label: "Manter pausada", pill: "pill-mute", icon: "pause", why: "Sem meta de ROAS para comparar" };
+    if (c.status !== "ativa") return { k: "keep", label: "Manter pausada", pill: "pill-mute", icon: "pause", why: "Sem metas para comparar" };
     if (roas < 1) return { k: "review", label: "Revisar", pill: "pill-warn", icon: "alert", why: "ROAS de " + xroas(roas) + ": traz menos do que gasta" };
     if (c.d7 <= -0.15) return { k: "review", label: "Revisar", pill: "pill-warn", icon: "alert", why: "Receita caiu " + pct(-c.d7, 0) + " em 7 dias" };
     if (c.limited) return { k: "scale", label: "Escalar", pill: "pill-good", icon: "up", why: "Perde impressões por falta de orçamento" };
-    return { k: "keep", label: "Acompanhar", pill: "pill-mute", icon: "eye", why: "Defina uma meta de ROAS em Integrações para receber recomendações" };
+    return { k: "keep", label: "Acompanhar", pill: "pill-mute", icon: "eye", why: "Defina metas em Configurações › Metas para receber recomendações" };
   }
-  if (c.status !== "ativa") return roas >= ACTIVE.target
-    ? { k: "reactivate", label: "Reativar", pill: "pill-info", icon: "play", why: "ROAS de " + xroas(roas) + " quando estava ativa" }
-    : { k: "keep", label: "Manter pausada", pill: "pill-mute", icon: "pause", why: "Estava abaixo da meta" };
-  if (roas < 1.5) return { k: "pause", label: "Pausar", pill: "pill-bad", icon: "pause", why: "ROAS de " + xroas(roas) + ", menos da metade da meta" };
-  if (roas < ACTIVE.target) return { k: "review", label: "Revisar", pill: "pill-warn", icon: "alert", why: "ROAS abaixo da meta de " + xroas(ACTIVE.target) };
-  if (c.d7 <= -0.15) return { k: "review", label: "Revisar", pill: "pill-warn", icon: "alert", why: "Receita caiu " + pct(-c.d7, 0) + " em 7 dias" };
-  if (c.limited || (roas >= 1.5 * ACTIVE.target && c.d7 >= 0.05)) return { k: "scale", label: "Escalar", pill: "pill-good", icon: "up", why: c.limited ? "Perde impressões por falta de orçamento" : "ROAS alto e crescendo" };
-  return { k: "keep", label: "Manter", pill: "pill-mute", icon: "check", why: "Dentro da meta" };
+  // métrica de resultado: ROAS quando a campanha tem receita e meta de ROAS; senão, CPA
+  const res = gc.checks.find(x => x.k === "roas") || gc.checks.find(x => x.k === "cpa");
+  const missWhy = () => gc.miss.map(missTxt).join(" · ");
+  if (c.status !== "ativa") return gc.ok
+    ? { k: "reactivate", label: "Reativar", pill: "pill-info", icon: "play", why: res && res.k === "roas" ? "ROAS de " + xroas(roas) + " quando estava ativa" : "Batia as metas quando estava ativa" }
+    : { k: "keep", label: "Manter pausada", pill: "pill-mute", icon: "pause", why: "Estava fora da meta" };
+  // pausar só pela métrica de resultado muito longe da meta (CTR e CPC sozinhos nunca pausam)
+  if (res && res.k === "roas" && roas < 1.5) return { k: "pause", label: "Pausar", pill: "pill-bad", icon: "pause", why: "ROAS de " + xroas(roas) + ", muito abaixo da meta de " + xroas(res.goal) };
+  if (res && res.k === "cpa" && (res.v === Infinity ? c.spend >= 2 * res.goal : res.v > 2 * res.goal)) return { k: "pause", label: "Pausar", pill: "pill-bad", icon: "pause", why: res.v === Infinity ? "Gastou " + brl(c.spend) + " sem conversões (mais de 2x a meta de CPA)" : "CPA de " + brl2(res.v) + ", mais que o dobro da meta de " + brl2(res.goal) };
+  if (!gc.ok) return { k: "review", label: "Revisar", pill: "pill-warn", icon: "alert", why: missWhy() };
+  if (!res && roas < 1) return { k: "review", label: "Revisar", pill: "pill-warn", icon: "alert", why: "ROAS de " + xroas(roas) + ": traz menos do que gasta" };
+  if (c.d7 <= -0.15) return { k: "review", label: "Revisar", pill: "pill-warn", icon: "alert", why: (c.noRev ? "Investimento" : "Receita") + " caiu " + pct(-c.d7, 0) + " em 7 dias" };
+  const far = res && res.ok && (res.dir === "min" ? res.v >= 1.5 * res.goal : res.v <= res.goal / 1.5);
+  if (c.limited || (far && c.d7 >= 0.05)) return { k: "scale", label: "Escalar", pill: "pill-good", icon: "up", why: c.limited ? "Perde impressões por falta de orçamento" : res.label + " bem melhor que a meta e crescendo" };
+  // modo "qualquer uma": está dentro, mas avisa o que ficou de fora
+  if (gc.miss.length) return { k: "keep", label: "Manter", pill: "pill-mute", icon: "check", why: "Bate " + gc.hit.map(x => x.label).join(" e ") + " · " + missWhy() };
+  return { k: "keep", label: "Manter", pill: "pill-mute", icon: "check", why: gc.checks.length > 1 ? "Dentro das metas" : "Dentro da meta" };
 }
 const REC_ORDER = { pause: 0, review: 1, scale: 2, reactivate: 3, keep: 4 };
 function RoasBar({ roas, target = ACTIVE.target }) {
@@ -2629,7 +2704,7 @@ function Campaigns({ camps, setCamps, toast, chat, idle, others, coverage, meta,
     <${PageHead} title="Campanhas" sub=${dt("Meta, Google e TikTok numa tabela só.", "Todas as campanhas da Meta numa tabela só.") + " O copilot indica o que pausar, revisar ou escalar."} right=${html`<span className="demo-note"><${Icon} n="eye" s=${13} />Alterações são simuladas</span>`} />
     <div className="card rec-card">
       <div className="rec-head"><span className="bot-ico"><${Icon} n="sparkles" s=${14} /></span>
-        <div style=${{ minWidth: 0 }}><b>Recomendações do copilot</b><div className="card-sub">${count("pause") ? "Pausar " + count("pause") + (count("pause") === 1 ? " campanha libera " : " campanhas libera ") + brl(freed) + "/dia. " : ""}${count("scale")} ${count("scale") === 1 ? "campanha pode" : "campanhas podem"} receber mais verba. Clique para filtrar.</div></div></div>
+        <div style=${{ minWidth: 0 }}><b>Recomendações do copilot</b><div className="card-sub">${count("pause") ? "Pausar " + count("pause") + (count("pause") === 1 ? " campanha libera " : " campanhas libera ") + brl(freed) + "/dia. " : ""}${count("scale")} ${count("scale") === 1 ? "campanha pode" : "campanhas podem"} receber mais verba. ${hasGoals() ? "Metas: " + goalsSummary(goalsNow()) + ". " : ""}Clique para filtrar.</div></div></div>
       <div className="rec-chips">${chips.filter(([k]) => count(k) > 0).map(([k, l, cl, ic]) => html`<button key=${k} type="button" className=${"pill " + cl + (rf === k ? " sel" : "")} aria-pressed=${rf === k} onClick=${() => setRf(rf === k ? "all" : k)}><${Icon} n=${ic} s=${12} />${l}<span className="cnt">${count(k)}</span></button>`)}
         ${rf !== "all" ? html`<button type="button" className="link-btn" onClick=${() => setRf("all")}>Ver todas</button>` : null}</div>
     </div>
@@ -2641,8 +2716,8 @@ function Campaigns({ camps, setCamps, toast, chat, idle, others, coverage, meta,
       </div>
     </div>
     <div className="grid g4">
-      <${Kpi} label="Investido" value=${brl(t.spend)} /><${Kpi} label=${kindLabel(kind)} value=${fmtInt(t.purchases)} /><${Kpi} label=${kindCost(kind)} value=${brl2(t.cpa)} />
-      ${sells ? html`<${Kpi} label="ROAS" value=${xroas(t.roas)} hint=${hasTarget() ? "Meta da conta: " + xroas(ACTIVE.target) : "Sem meta de ROAS definida"} />` : html`<${Kpi} label="CTR" value=${pct(t.ctr, 2)} hint=${kfmt(t.impr) + " impressões"} />`}
+      <${Kpi} label="Investido" value=${brl(t.spend)} /><${Kpi} label=${kindLabel(kind)} value=${fmtInt(t.purchases)} /><${Kpi} label=${kindCost(kind)} value=${brl2(t.cpa)} hint=${goalsNow().cpa ? "Meta: até " + brl2(goalsNow().cpa) : undefined} />
+      ${sells ? html`<${Kpi} label="ROAS" value=${xroas(t.roas)} hint=${hasTarget() ? "Meta da conta: " + xroas(ACTIVE.target) : "Sem meta de ROAS definida"} />` : html`<${Kpi} label="CTR" value=${pct(t.ctr, 2)} hint=${goalsNow().ctr ? "Meta: a partir de " + pct(goalsNow().ctr, 2) : kfmt(t.impr) + " impressões"} />`}
     </div>
     ${ACTIVE.live && coverage ? html`<${Coverage} cov=${coverage} />` : null}
     <div className="card card-pad"><div className="tbl-wrap" style=${{ marginTop: -18 }}><table className="tbl camp-tbl">
@@ -2743,6 +2818,8 @@ function creStatus(k, sells) {
   if (k.freq >= 4) return ["pill-warn", "Fadiga", "Frequência de " + dec(k.freq, 1) + ": o mesmo público já viu muitas vezes"];
   if (k.ctrTrend != null && k.ctrTrend <= -0.25) return ["pill-warn", "CTR caindo", "CTR caiu " + pct(-k.ctrTrend, 0) + " na última semana"];
   if (sells && hasTarget() && k.spend > 0 && k.revenue / k.spend < ACTIVE.target) return ["pill-bad", "Abaixo da meta", "ROAS abaixo da meta de " + xroas(ACTIVE.target)];
+  const kctr = fin(k.ctr) ? k.ctr : k.impr > 0 ? k.clicks / k.impr : null, gCtr = goalsNow().ctr;
+  if (gCtr && kctr != null && kctr < gCtr) return ["pill-warn", "CTR abaixo da meta", "CTR de " + pct(kctr, 2) + ", abaixo da meta de " + pct(gCtr, 2)];
   return ["pill-good", "Saudável", "Sem sinal de fadiga"];
 }
 function LiveCreatives({ cre, meta, period }) {
@@ -3025,6 +3102,71 @@ function Integrations({ client, onUpdate, toast, isAgency, live, openCh, clearOp
     </article>`)}</div>` : null}
   </div>`;
 }
+/* ================= Configurações › Metas ================= */
+// ROAS, CPA, CTR e CPC (todas opcionais) e o critério: precisa bater todas ou basta uma
+const GOAL_FORM = {
+  roas: { title: "ROAS mínimo", sub: "Receita dividida pelo investimento. Abaixo disso, a campanha não traz o retorno que você espera.", suf: "x", ph: "Ex.: 3", max: 100 },
+  cpa: { title: "CPA máximo", sub: "Quanto aceita pagar por resultado (compra, lead ou conversa, conforme a campanha). É a meta para campanhas sem receita, como as de leads.", pre: "R$", ph: "Ex.: 45", max: 1e6 },
+  ctr: { title: "CTR mínimo", sub: "Cliques divididos por impressões. Mostra se o anúncio chama atenção de quem vê.", suf: "%", ph: "Ex.: 1,2", max: 100 },
+  cpc: { title: "CPC máximo", sub: "Quanto aceita pagar por clique.", pre: "R$", ph: "Ex.: 2,50", max: 1e4 },
+};
+const goalIn = (v, k) => !v ? "" : String(k === "ctr" ? Math.round(v * 10000) / 100 : v).replace(".", ",");
+// "2,50" e "2.5" viram 2,5; "1.200,00" vira 1200
+const parseGoal = t => { t = String(t).trim(); if (!t) return null; const v = parseFloat(t.includes(",") ? t.replace(/\./g, "").replace(",", ".") : t); return fin(v) ? v : NaN; };
+function Goals({ client, goals, onUpdate, toast, isAgency }) {
+  const fromGoals = () => ({ roas: goalIn(goals.roas, "roas"), cpa: goalIn(goals.cpa, "cpa"), ctr: goalIn(goals.ctr, "ctr"), cpc: goalIn(goals.cpc, "cpc"), mode: goals.mode });
+  const [f, setF] = useState(fromGoals);
+  const [err, setErr] = useState("");
+  useEffect(() => { setF(fromGoals()); setErr(""); }, [JSON.stringify(goals)]);
+  // metas do formulário: null = em branco, NaN = inválida
+  const draft = { mode: f.mode };
+  Object.entries(GOAL_FORM).forEach(([k, d]) => { const v = parseGoal(f[k]); draft[k] = v === null ? null : !(v > 0 && v < d.max) ? NaN : k === "ctr" ? Math.round(v * 100) / 10000 : Math.round(v * 100) / 100; });
+  const valid = { ...draft }; Object.keys(GOAL_FORM).forEach(k => { if (!fin(valid[k])) valid[k] = null; });
+  const n = Object.keys(GOAL_FORM).filter(k => valid[k]).length;
+  const dirty = JSON.stringify(valid) !== JSON.stringify({ mode: goals.mode, roas: goals.roas, cpa: goals.cpa, ctr: goals.ctr, cpc: goals.cpc });
+  const save = e => {
+    e.preventDefault();
+    const bad = Object.keys(GOAL_FORM).filter(k => Number.isNaN(draft[k]));
+    if (bad.length) return setErr("Confira " + bad.map(k => GOAL_FORM[k].title).join(", ") + ": use um número maior que zero" + (bad.includes("ctr") || bad.includes("roas") ? " (CTR até 99% e ROAS até 99x)" : "") + ", ou deixe em branco.");
+    setErr("");
+    onUpdate({ goals: valid, targetRoas: valid.roas });
+    toast(n ? "Metas salvas" : "Conta sem metas");
+  };
+  const set = k => e => setF({ ...f, [k]: e.target.value });
+  const card = k => { const d = GOAL_FORM[k], badV = Number.isNaN(draft[k]); return html`<div key=${k} className="card card-pad goal-card" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div><div className="card-title"><label htmlFor=${"goal-" + k}>${d.title}</label></div><div className="card-sub">${d.sub}</div></div>
+    <div className="m-in" style=${{ maxWidth: 190, ...(badV ? { borderColor: "var(--bad)" } : {}) }}>${d.pre ? html`<span>${d.pre}</span>` : null}<input id=${"goal-" + k} className="input num" inputMode="decimal" autoComplete="off" placeholder=${d.ph} value=${f[k]} onInput=${set(k)} aria-invalid=${badV} />${d.suf ? html`<span>${d.suf}</span>` : null}</div>
+  </div>`; };
+  const opt = (m, title, desc) => html`<button type="button" role="radio" aria-checked=${f.mode === m} className=${"goal-opt" + (f.mode === m ? " on" : "")} onClick=${() => setF({ ...f, mode: m })}><span className="radio"></span><span><b>${title}</b><small>${desc}</small></span></button>`;
+  return html`<div className="stack">
+    <${PageHead} title="Metas" sub=${"Os números que o copilot, os insights e as recomendações usam para dizer se uma campanha vai bem. Todas são opcionais." + (isAgency ? " Na agência, valem para todas as contas da carteira." : "")} />
+    <form className="stack" style=${{ gap: 22 }} onSubmit=${save} noValidate>
+      <section className="stack" style=${{ gap: 10 }}>
+        <div><div className="eyebrow">Resultado</div><p className="card-sub" style=${{ marginTop: 4 }}>Decidem quando pausar ou escalar uma campanha.</p></div>
+        <div className="grid g2">${card("roas")}${card("cpa")}</div>
+      </section>
+      <section className="stack" style=${{ gap: 10 }}>
+        <div><div className="eyebrow">Eficiência</div><p className="card-sub" style=${{ marginTop: 4 }}>Servem de alerta: a campanha fora delas vai para revisão, mas nunca é pausada só por isso.</p></div>
+        <div className="grid g2">${card("ctr")}${card("cpc")}</div>
+      </section>
+      <section className="stack" style=${{ gap: 10 }}>
+        <div><div className="eyebrow">Como avaliar</div><p className="card-sub" style=${{ marginTop: 4 }}>Vale quando há mais de uma meta. Métricas que a campanha não tem (como ROAS em campanha sem receita) ficam fora da conta.</p></div>
+        <div className="card card-pad stack" style=${{ gap: 14 }}>
+          <div className="grid g2" role="radiogroup" aria-label="Critério das metas">
+            ${opt("all", "Bater todas as metas", "A campanha só está dentro da meta se bater todas as metas definidas. Mais rigoroso.")}
+            ${opt("any", "Bater qualquer uma", "Basta bater uma das metas. Se houver meta de ROAS ou CPA, uma delas precisa ser batida: CTR e CPC sozinhos não bastam.")}
+          </div>
+          <div className="ai-note"><${Icon} n="target" s=${15} /><div>${n === 0 ? "Sem metas: o copilot aponta só o que é objetivo, como campanha que gasta mais do que traz ou que caiu na semana." : n === 1 ? "Uma campanha está dentro da meta quando " + goalsSummary(valid) + "." : html`Uma campanha está dentro da meta quando <b>${goalsSummary(valid)}</b>.`}</div></div>
+        </div>
+      </section>
+      ${err ? html`<div className="err" role="alert">${err}</div>` : null}
+      <div style=${{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+        ${n ? html`<button type="button" className="btn btn-line" onClick=${() => setF({ roas: "", cpa: "", ctr: "", cpc: "", mode: f.mode })}>Limpar metas</button>` : null}
+        <button type="submit" className="btn btn-primary" disabled=${!dirty}>Salvar metas</button>
+      </div>
+    </form>
+  </div>`;
+}
 function DataNote({ partial, home }) {
   if (!ACTIVE.live) return html`<span className="demo-note"><${Icon} n="eye" s=${13} />${home ? "Dados de exemplo · últimos 30 dias (19/09 a 18/10)" : "Dados de exemplo"}</span>`;
   return html`<span className="demo-note"><${Icon} n="check" s=${13} />${partial || "Dados reais · " + (ACTIVE.period ? (ACTIVE.period.custom ? ACTIVE.period.dates : ACTIVE.period.label.toLowerCase()) : "últimos 30 dias")}</span>`;
@@ -3193,6 +3335,7 @@ function buildLiveInsights(camps) {
   const rev = act.filter(c => !c.noRev);
   const bad = rev.filter(c => roasOf(c) < (T || 1)).sort((a, b) => b.spend - a.spend)[0];
   if (bad) list.push({ id: "l1", sev: roasOf(bad) < 1.5 ? "bad" : "warn", tag: "Atenção", icon: "alert", title: T ? `“${bad.name}” está abaixo da meta de ROAS` : `“${bad.name}” traz menos do que gasta`, body: `${CH[bad.ch].label}: investiu ${brl(bad.spend)} em 30 dias e trouxe ${brl(bad.revenue)}, ROAS de ${xroas(roasOf(bad))}. ${T ? "A meta da conta é " + xroas(T) + "." : "A conta não tem meta de ROAS definida."}`, metric: xroas(roasOf(bad)), ask: `O que faço com a campanha “${bad.name}”?`, goto: "campaigns" });
+  const gi = goalsInsight(camps, bad ? [bad] : []); if (gi) list.push(gi);
   const zero = act.filter(c => !c.noRev && c.purchases === 0 && c.spend >= Math.max(200, t.spend * 0.03)).sort((a, b) => b.spend - a.spend)[0];
   if (zero) list.push({ id: "l2", sev: "bad", tag: "Sem conversões", icon: "wallet", title: `“${zero.name}” gastou sem converter`, body: `${CH[zero.ch].label}: ${brl(zero.spend)} investidos em 30 dias sem nenhuma compra ou conversão registrada. Vale conferir a otimização e o rastreamento.`, metric: brl(zero.spend), ask: `Por que a campanha “${zero.name}” não converte?`, goto: "campaigns" });
   const fat = act.filter(c => c.ch === "meta" && c.freq >= 3.5).sort((a, b) => b.freq - a.freq)[0];
@@ -3449,8 +3592,6 @@ function AdIntegrations({ client, onUpdate, toast, isAgency, live, openCh, clear
   const [open, setOpen] = useState(openCh || null);
   useEffect(() => { if (openCh) { setOpen(openCh); clearOpen && clearOpen(); } }, [openCh]);
   const conn = client.conn || {};
-  const [target, setTarget] = useState(client.targetRoas ? String(client.targetRoas).replace(".", ",") : "");
-  const saveTarget = e => { e.preventDefault(); if (!target.trim()) { onUpdate({ targetRoas: null }); return toast("Conta sem meta de ROAS"); } const v = parseFloat(target.replace(",", ".")); if (!(v > 0 && v < 100)) return toast("Informe uma meta de ROAS entre 0,1 e 99, ou deixe em branco"); onUpdate({ targetRoas: Math.round(v * 100) / 100 }); toast("Meta de ROAS salva: " + xroas(v)); };
   const card = (key, title, sub, on, detail, err) => html`<article key=${key} className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
     <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title" style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: CH[key].color }}></span>${title}</div><div className="card-sub">${sub}</div></div>
       <span className=${"pill " + (err ? "pill-bad" : on ? "pill-good" : "pill-mute")}>${err ? "Com erro" : on ? html`<span className="dot"></span>Conectado` : "Não conectado"}</span></div>
@@ -3471,11 +3612,6 @@ function AdIntegrations({ client, onUpdate, toast, isAgency, live, openCh, clear
       ${soon("tiktok", "TikTok Ads", "Campanhas e Spark Ads")}
       ${soon("openai", "OpenAI Ads", "Anúncios no ChatGPT: campanhas, investimento e conversões", "var(--c-openai)")}
     </div>
-    <div className="eyebrow" style=${{ marginTop: 6 }}>Metas da conta</div>
-    <form className="card card-pad" onSubmit=${saveTarget} style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-      <div style=${{ flex: "1 1 320px", minWidth: 0 }}><div className="card-title">Meta de ROAS <span style=${{ fontWeight: 500, color: "var(--muted)", fontSize: 13 }}>(opcional)</span></div><div className="card-sub">Vale para todos os canais. Quando preenchida, entra nos insights, nas recomendações e no copilot. Deixe em branco para não usar meta.</div></div>
-      <div style=${{ display: "flex", gap: 8, alignItems: "center" }}><input id="target-roas" className="input num" style=${{ maxWidth: 110 }} inputMode="decimal" value=${target} onInput=${e => setTarget(e.target.value)} placeholder="Sem meta" aria-label="Meta de ROAS" /><span style=${{ color: "var(--muted)" }}>x</span><button className="btn btn-sm btn-line" type="submit">Salvar</button></div>
-    </form>
     ${open === "meta" ? html`<${MetaConnectDrawer} client=${client} onUpdate=${onUpdate} onClose=${() => setOpen(null)} toast=${toast} agency=${isAgency} />` : null}
     ${open === "google" && chOn("google") ? html`<${GoogleConnectDrawer} client=${client} onUpdate=${onUpdate} onClose=${() => setOpen(null)} toast=${toast} />` : null}
   </div>`;
@@ -3660,8 +3796,8 @@ function SetupHome({ user, company, st, live, periodR, onJump, onPicker, connect
             st === "noconn" ? html`<button className="btn btn-sm btn-primary" onClick=${() => connect("meta")}>Conectar</button>` : st === "error" ? html`<button className="btn btn-sm btn-primary" onClick=${() => connect(Object.keys(live.errors || {})[0] || "meta")}>Revisar</button>` : st === "nodata" ? html`<button className="btn btn-sm btn-line" onClick=${() => go("overview")}>Ver detalhes</button>` : null)}
           ${step(2, !!ai.conn, "IA do copilot", ai.conn ? "Conectada: " + AI_PROVIDERS[ai.conn.provider].name + " · " + ai.conn.model : "Conecte Claude, ChatGPT ou Groq com uma chave de API para conversar com o copilot.", ai.conn ? null : ["pill-mute", "Pendente"],
             html`<button className=${"btn btn-sm " + (ai.conn ? "btn-ghost" : "btn-line")} onClick=${() => aiStore.open()}>${ai.conn ? "Gerenciar" : "Conectar"}</button>`)}
-          ${step(3, !!target, "Meta de ROAS", target ? "Definida em " + xroas(target) + ". Entra nos insights e nas recomendações." : "Opcional. Com ela, o copilot compara cada campanha com o retorno que você espera.", target ? null : ["pill-mute", "Opcional"],
-            html`<button className="btn btn-sm btn-ghost" onClick=${() => go("integrations")}>${target ? "Alterar" : "Definir"}</button>`)}
+          ${step(3, hasGoals(), "Metas", hasGoals() ? goalsSummary(goalsNow()) + ". Entram nos insights e nas recomendações." : "Opcional. Com metas de ROAS, CPA, CTR ou CPC, o copilot compara cada campanha com o que você espera.", hasGoals() ? null : ["pill-mute", "Opcional"],
+            html`<button className="btn btn-sm btn-ghost" onClick=${() => go("goals")}>${hasGoals() ? "Alterar" : "Definir"}</button>`)}
         </ol>
         ${st === "error" || st === "nodata" || st === "loading" ? html`<div style=${{ marginTop: 16 }}><${DataProblem} st=${st} live=${live} periodR=${periodR} onJump=${onJump} onPicker=${onPicker} connect=${connect} company=${company} what="o copilot em ação" /></div>` : null}
       </div>
@@ -3705,29 +3841,31 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   if (boundTo.current !== client.id) { aiStore.bind(client.id, client.ai, conn => updRef.current({ ai: conn })); boundTo.current = client.id; }
   useEffect(() => () => aiStore.reset(), []);
   // planejamento de mídia vem junto com o copilot (clientes antigos não têm o módulo salvo)
-  const allowed = new Set([...client.modules, "integrations", ...(client.modules.includes("copilot") ? ["media"] : [])]);
+  const allowed = new Set([...client.modules, ...CONFIG_SCREENS, ...(client.modules.includes("copilot") ? ["media"] : [])]);
   const isAgency = allowed.has("portfolio");
   const [screenS, setScreen] = useState(startScreen && allowed.has(startScreen) ? startScreen : isAgency ? "portfolio" : allowed.has("copilot") ? "copilot" : "overview");
   // só as contas de demonstração usam dados de exemplo
   const demo = isDemoClient(client);
   const [activeId, setActiveId] = useState(null);
-  const target = fin(client.targetRoas) && client.targetRoas > 0 ? client.targetRoas : null;
+  // metas da conta; na demonstração sem metas salvas, vale a meta de ROAS de exemplo
+  const goals = useMemo(() => demo && !client.goals && !posOr(client.targetRoas) ? { ...NO_GOALS, roas: TARGET_ROAS } : goalsOf(client), [demo, JSON.stringify(client.goals || null), client.targetRoas]);
+  const target = goals.roas;
   const agencyMeta = isAgency && metaOn(client.conn);
   const pf = usePortfolio(client, agencyMeta);
   const livePf = agencyMeta && pf.status === "ready" && pf.accounts.length > 0;
   const pfRows = useMemo(() => !isAgency ? [] : livePf ? livePortfolioRows(pf.accounts, target) : demo ? portfolioRows() : [], [isAgency, livePf, pf.at, target, demo]);
   // agência sem contas: fica na carteira (ou em Integrações) até conectar
   const noRows = isAgency && !pfRows.length;
-  const screen = noRows && screenS !== "integrations" ? "portfolio" : screenS;
+  const screen = noRows && !CONFIG_SCREENS.includes(screenS) ? "portfolio" : screenS;
   const activeRow = isAgency ? (pfRows.find(r => r.id === activeId) || pfRows.find(r => r.id === "aurora") || pfRows[0]) : null;
   const activeAcc = livePf ? activeRow : isAgency && activeRow ? (PORTFOLIO.find(p => p.id === activeRow.id) || PORTFOLIO[0]) : null;
   const accountName = isAgency ? (activeRow ? activeRow.name : client.company) : client.company;
-  const EMPTY_ACTIVE = { prev: { spend: NaN, revenue: NaN, purchases: NaN, clicks: NaN, impr: NaN }, target, health: 0, live: true, empty: true };
+  const EMPTY_ACTIVE = { prev: { spend: NaN, revenue: NaN, purchases: NaN, clicks: NaN, impr: NaN }, target, goals, health: 0, live: true, empty: true };
   if (isAgency && !livePf && !demo) ACTIVE = EMPTY_ACTIVE;
   if (isAgency && !livePf && demo) {
     const row = activeRow;
     const f = 1 - activeAcc.d7;
-    ACTIVE = { target: activeAcc.target, health: row.health, prev: { spend: PREV.spend * activeAcc.k, revenue: PREV.revenue * activeAcc.k * activeAcc.rm * f, purchases: PREV.purchases * activeAcc.k * activeAcc.rm * f, clicks: PREV.clicks * activeAcc.k, impr: PREV.impr * activeAcc.k } };
+    ACTIVE = { target: activeAcc.target, goals: { ...goals, roas: activeAcc.target }, health: row.health, prev: { spend: PREV.spend * activeAcc.k, revenue: PREV.revenue * activeAcc.k * activeAcc.rm * f, purchases: PREV.purchases * activeAcc.k * activeAcc.rm * f, clicks: PREV.clicks * activeAcc.k, impr: PREV.impr * activeAcc.k } };
   }
   // dados reais: a conta do cliente (Starter/Pro) ou a conta aberta na carteira da agência
   const liveSrc = isAgency ? (livePf && activeRow ? { conn: { meta: { token: client.conn.meta.token, accountId: activeRow.id, accountName: activeRow.name, via: client.conn.meta.via } } } : { conn: {} }) : client;
@@ -3740,15 +3878,15 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   const jumpTo = last => { const u = pDate(last); setPeriod({ id: "custom", since: pYmd(pAdd(u, -29)), until: last }); };
   const live = useLiveData(liveSrc, isAgency ? !!(livePf && activeId && screen !== "portfolio") : true, periodR);
   const isLive = live.status === "ready" && live.camps.length > 0 && (!isAgency || !!(livePf && activeId && screen !== "portfolio"));
-  if (!isAgency || livePf) ACTIVE = isLive ? { prev: live.prev, target, health: liveHealth(live.camps, target), live: true, period: periodR, dayCh: live.dayCh }
-    : isAgency ? { prev: { spend: NaN, revenue: NaN, purchases: NaN, clicks: NaN, impr: NaN }, target, health: activeRow ? activeRow.health : 70, live: true }
-    : demo ? { prev: PREV, target: TARGET_ROAS, health: 78 } : EMPTY_ACTIVE;
+  if (!isAgency || livePf) ACTIVE = isLive ? { prev: live.prev, target, goals, health: liveHealth(live.camps, target), live: true, period: periodR, dayCh: live.dayCh }
+    : isAgency ? { prev: { spend: NaN, revenue: NaN, purchases: NaN, clicks: NaN, impr: NaN }, target, goals, health: activeRow ? activeRow.health : 70, live: true }
+    : demo ? { prev: PREV, target, goals, health: 78 } : EMPTY_ACTIVE;
   const dataSt = dataStateOf(demo, live, isLive);
   // conta sem dados (fora da demonstração): as telas de dados mostram o que fazer
   const noData = !demo && !isLive && !isAgency;
   const [intOpen, setIntOpen] = useState(null);
-  const waiting = isAgency && livePf && screen !== "portfolio" && screen !== "integrations" && !isLive;
-  const [open, setOpen] = useState(() => ({ painel: true, gerenciador: true, inteligencias: true }));
+  const waiting = isAgency && livePf && screen !== "portfolio" && !CONFIG_SCREENS.includes(screen) && !isLive;
+  const [open, setOpen] = useState(() => ({ painel: true, gerenciador: true, inteligencias: true, config: true }));
   const [sideOpen, setSideOpen] = useState(false); const [dockOpen, setDockOpen] = useState(false);
   const [dockHidden, setDockHiddenS] = useState(() => store.get("readyai_dock_hidden", false));
   const setDockHidden = v => { setDockHiddenS(v); store.set("readyai_dock_hidden", v); };
@@ -3782,8 +3920,8 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   const mediaPlan = useMemo(() => buildMediaPlan(campsPlan, mediaIn), [campsPlan, mediaSaved, isLive]);
   const [toastMsg, setToastMsg] = useState(null);
   const toast = m => { setToastMsg(m); clearTimeout(toast.t); toast.t = setTimeout(() => setToastMsg(null), 2600); };
-  const insights = useMemo(() => isLive ? buildLiveInsights(camps) : demo ? buildInsights(camps) : [], [camps, isLive, client.targetRoas]);
-  const go = key => { setScreen(key); setSideOpen(false); setDockOpen(false); const g = NAV.find(n => (n.children || []).some(c => c.key === key)); if (g) setOpen(o => ({ ...o, [g.id]: true })); };
+  const insights = useMemo(() => isLive ? buildLiveInsights(camps) : demo ? buildInsights(camps) : [], [camps, isLive, goals]);
+  const go = key => { setScreen(key); setSideOpen(false); setDockOpen(false); const g = [...NAV, ...FOOT_NAV].find(n => (n.children || []).some(c => c.key === key)); if (g) setOpen(o => ({ ...o, [g.id]: true })); };
   const ai = useAI();
   // leva para Integrações já com a conexão do canal aberta
   const connect = ch => { setIntOpen(ch || "meta"); go("integrations"); };
@@ -3824,8 +3962,8 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   const chat = { msgs, typing, send, onConfirm, ai: !!ai.conn, startPlanner, onAction: a => { if (a.connect) aiStore.open(); else if (a.open) openClient(a.open, a.go); else if (a.goto) go(a.goto); } };
   const info = routeInfo(screen);
   const isHome = screen === "copilot";
-  // na agência, Integrações sem conta aberta é a tela da agência (fica no nível da carteira)
-  const inClient = !isAgency || (screen !== "portfolio" && !(screen === "integrations" && !activeId));
+  // na agência, Configurações sem conta aberta são as da agência (ficam no nível da carteira)
+  const inClient = !isAgency || (screen !== "portfolio" && !(CONFIG_SCREENS.includes(screen) && !activeId));
   const can = allowed.has(screen);
   const navGroup = g => {
     const active = (g.children || []).some(c => c.key === screen);
@@ -3850,6 +3988,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
   else if (screen === "media") body = html`<${MediaPlanScreen} camps=${campsPlan} inp=${mediaIn} setInp=${setMediaIn} stale=${staleTxt} />`;
   else if (screen === "skills") body = html`<${Skills} chat=${chat} toast=${toast} demo=${demo} noData=${noData || (isAgency && noRows)} connect=${connect} />`;
   else if (screen === "insights") body = html`<${Insights} insights=${insights} chat=${chat} go=${go} />`;
+  else if (screen === "goals") body = html`<${Goals} client=${client} goals=${goals} onUpdate=${onUpdate} toast=${toast} isAgency=${isAgency} />`;
   else if (screen === "integrations") body = html`<${Integrations} client=${client} onUpdate=${onUpdate} toast=${toast} isAgency=${isAgency} live=${live} openCh=${intOpen} clearOpen=${() => setIntOpen(null)} />`;
   const trial = trialInfo(client);
   const showDock = !isHome && allowed.has("copilot") && !noData && !noRows;
@@ -3864,7 +4003,9 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
           <div className="nav-label">Clientes</div>
           ${[...pfRows].sort((a, b) => a.name.localeCompare(b.name)).map(r => html`<button key=${r.id} className="nav-item" onClick=${() => openClient(r.id)}><span className="c-av sm">${r.name[0]}</span><span style=${{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>${r.name}</span><span className=${"hdot " + healthCls(r.health)} title=${"Saúde " + r.health}></span></button>`)}
           <div className="nav-sep"></div>
-          ${FOOT_NAV.map(g => html`<button key=${g.id} className=${"nav-item" + (screen === g.key ? " on" : "")} onClick=${() => go(g.key)}><span className="ico-wrap"><${Icon} n=${g.icon} s=${16} /></span>Integrações da agência</button>`)}
+          <div className="nav-label">Configurações</div>
+          <button className=${"nav-item" + (screen === "integrations" ? " on" : "")} onClick=${() => go("integrations")}><span className="ico-wrap"><${Icon} n="plug" s=${16} /></span>Integrações da agência</button>
+          <button className=${"nav-item" + (screen === "goals" ? " on" : "")} onClick=${() => go("goals")}><span className="ico-wrap"><${Icon} n="target" s=${16} /></span>Metas da carteira</button>
         </nav>` : html`
         ${isAgency ? html`<div className="client-card"><button className="back-link" onClick=${toPortfolio}><${Icon} n="chevR" s=${13} />Voltar para a carteira</button>
           <div style=${{ display: "flex", gap: 10, alignItems: "center" }}><span className="c-av">${activeRow.name[0]}</span><div style=${{ minWidth: 0 }}><div className="eyebrow" style=${{ fontSize: 10 }}>Ambiente do cliente</div><b style=${{ fontSize: 14, display: "block", lineHeight: 1.25 }}>${activeRow.name}</b></div></div></div>` : null}
@@ -3872,7 +4013,7 @@ function ClientApp({ client, onLogout, impersonating, onBackToConsole, onUpdate,
           ${NAV.filter(g => !g.hidden && g.key !== "portfolio").map(g => g.children ? navGroup(g) : html`<button key=${g.id} className=${"nav-item" + (g.accent ? " accent" : "") + (screen === g.key ? " on" : "")} onClick=${() => go(g.key)}>
             <span className="ico-wrap"><${Icon} n=${g.icon} s=${14} /></span><span style=${{ flex: 1 }}>${g.label}</span>${allowed.has(g.key) ? null : html`<${Icon} n="lock" s=${12} />`}</button>`)}
           <div className="nav-sep"></div>
-          ${FOOT_NAV.map(g => html`<button key=${g.id} className=${"nav-item" + (screen === g.key ? " on" : "")} onClick=${() => go(g.key)}><span className="ico-wrap"><${Icon} n=${g.icon} s=${16} /></span>${g.label}</button>`)}
+          ${FOOT_NAV.map(navGroup)}
         </nav>`}
         <div className="side-foot"><div className="who"><span className="avatar">${client.name.split(" ").map(x => x[0]).slice(0, 2).join("")}</span><div style=${{ minWidth: 0, flex: 1 }}><b>${client.name}</b><small>${client.company} · ${PLANS[client.plan] ? PLANS[client.plan].name : ""}</small></div>
           <${ThemeToggle} /><button className="btn btn-ghost btn-sm" onClick=${onLogout} aria-label="Sair" title="Sair"><${Icon} n="logout" s=${15} /></button></div></div>
@@ -4158,7 +4299,7 @@ function ClientDrawer({ c, upd, api, decide, decBusy, inviteRes, setInviteRes, o
         </section>` : null}
         <section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Contas de anúncio</div>
           ${[["meta", "Meta Ads", metaOn(c.conn) ? c.conn.meta.accountName + " · " + c.conn.meta.accountId : null], ["google", "Google Ads", googleOn(c.conn) ? c.conn.google.customerName : null]].filter(([k]) => chOn(k)).map(([k, l, d]) => html`<div key=${k} className="mod-row"><div><b style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: CH[k].color }}></span>${l}</b><small>${d || "Não conectado"}</small></div><span className=${"pill " + (d ? "pill-good" : "pill-mute")}>${d ? "Conectado" : "Pendente"}</span></div>`)}
-          <div className="mod-row"><div><b>Meta de ROAS</b><small>Usada nos insights e no copilot</small></div><span className="num" style=${{ fontWeight: 700 }}>${c.targetRoas ? xroas(c.targetRoas) : "Não definida"}</span></div>
+          <div className="mod-row"><div><b>Metas</b><small>Usadas nos insights e no copilot</small></div><span className="num" style=${{ fontWeight: 700, textAlign: "right" }}>${anyGoal(goalsOf(c)) ? goalsSummary(goalsOf(c)) : "Não definidas"}</span></div>
           <div><button className="btn btn-line btn-sm" disabled=${c.status === "suspenso"} onClick=${() => onImpersonate(c.id, "integrations")}><${Icon} n="plug" s=${14} />Conectar contas deste cliente</button></div>
           <div className="card-sub">Abre a plataforma como ${c.company}, direto em Integrações. ${api.server ? "As conexões ficam no cadastro do cliente e aparecem para ele em qualquer computador." : "As conexões ficam salvas neste navegador."}</div></section>
         <section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Plano</div>
@@ -4209,7 +4350,7 @@ function NewClient({ onClose, onCreate, server }) {
         <div className="field"><label htmlFor="nc-co">Empresa</label><input id="nc-co" className="input" value=${f.company} onInput=${set("company")} placeholder="Ex.: Ótica Lumière" /></div>
         <div className="field"><label htmlFor="nc-n">Gestor de marketing</label><input id="nc-n" className="input" value=${f.name} onInput=${set("name")} placeholder="Nome completo" /></div>
         <div className="field"><label htmlFor="nc-e">E-mail de login</label><input id="nc-e" type="email" className="input" value=${f.email} onInput=${set("email")} placeholder="nome@empresa.com.br" />${server ? html`<span className="card-sub">O convite vai para este e-mail.</span>` : null}</div>
-        <div className="field"><label htmlFor="nc-roas">Meta de ROAS <span style=${{ fontWeight: 500, color: "var(--muted)" }}>(opcional)</span></label><input id="nc-roas" className="input num" inputMode="decimal" style=${{ maxWidth: 140 }} value=${f.targetRoas} onInput=${set("targetRoas")} placeholder="Ex.: 3" /><span className="card-sub">Pode ficar em branco e ser definida depois em Integrações.</span></div>
+        <div className="field"><label htmlFor="nc-roas">Meta de ROAS <span style=${{ fontWeight: 500, color: "var(--muted)" }}>(opcional)</span></label><input id="nc-roas" className="input num" inputMode="decimal" style=${{ maxWidth: 140 }} value=${f.targetRoas} onInput=${set("targetRoas")} placeholder="Ex.: 3" /><span className="card-sub">Pode ficar em branco e ser definida depois em Configurações › Metas, junto com CPA, CTR e CPC.</span></div>
         <div className="field"><label htmlFor="nc-p">Plano</label><select id="nc-p" className="input" value=${f.plan} onChange=${set("plan")}>${Object.entries(PLANS).map(([k, p]) => html`<option key=${k} value=${k}>${p.name} · ${brl(p.price)}/mês</option>`)}</select></div>
         ${err ? html`<div className="err" role="alert">${err}</div>` : null}
       </div>
