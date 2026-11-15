@@ -16,7 +16,7 @@ import {
   signSession, readSession, publicClient, sendEmail,
   newReset, resetTarget, dropReset, overLimit, resetEmail, appUrl, sha256,
 } from "./_store.js";
-import { trialEnded, trialEndedMsg, SALES_EMAIL } from "./_plans.js";
+import { trialEnded, trialEndedMsg, SALES_EMAIL, blockedMsg } from "./_plans.js";
 
 const BAD_LOGIN = "E-mail ou senha incorretos. Confira os dados e tente de novo.";
 const PLAN_NAMES = { starter: "Starter", pro: "Pro", scale: "Scale" };
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
         if (who && !who.passHash) throw new HttpError(401, "Você ainda não criou sua senha. Use o link do convite que chegou no seu e-mail.");
         throw new HttpError(401, BAD_LOGIN);
       }
-      if (c.status === "suspenso") throw new HttpError(403, "Seu acesso está suspenso. Fale com comercial@metrikabr.com para reativar.");
+      if (blockedMsg(c)) throw new HttpError(403, blockedMsg(c), c.status === "pendente" ? "pending" : "blocked");
       if (trialEnded(c)) throw new HttpError(403, trialEndedMsg(), "trial_ended");
       const now = new Date().toISOString();
       who.lastAccess = now;
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
       if (s.role === "admin") return send(res, 200, { role: "admin", admin: { name: ADMIN_NAME(), email: adminEmail() } });
       const c = await getClient(s.sub);
       if (!c) throw new HttpError(401, "Seu acesso foi removido. Fale com o seu gestor de conta.", "no_session");
-      if (c.status === "suspenso") throw new HttpError(403, "Seu acesso está suspenso. Fale com comercial@metrikabr.com para reativar.", "no_session");
+      if (blockedMsg(c)) throw new HttpError(403, blockedMsg(c), "no_session");
       if (trialEnded(c)) throw new HttpError(403, trialEndedMsg(), "no_session");
       if (s.uid && !(c.users || []).some(u => u.id === s.uid)) throw new HttpError(401, "Seu acesso foi removido. Fale com o responsável pela conta.", "no_session");
       return send(res, 200, { role: "client", client: publicClient(c) });
@@ -105,7 +105,7 @@ export default async function handler(req, res) {
       // até 3 e-mails por conta por hora; acima disso responde igual, sem enviar
       const quiet = await overLimit("forgot-mail:" + sha256(email).slice(0, 24), 3, 3600);
       const hit = !quiet && email !== adminEmail() ? await findLogin(email) : null;
-      if (hit && hit.c.status !== "suspenso") {
+      if (hit && !["suspenso", "recusado"].includes(hit.c.status)) {
         const who = hit.u || hit.c;
         const token = await newReset(hit.c, hit.u);
         const mail = resetEmail(who, appUrl(req) + "/app/?redefinir=" + token);
@@ -136,7 +136,7 @@ export default async function handler(req, res) {
       if (who.invite && !who.invite.acceptedAt) { await dropInvite(who); who.invite = { ...who.invite, tokenHash: null, acceptedAt: now }; }
       if (t.u) c.lastAccess = now; else if (c.status === "convite") c.status = "ativo";
       await saveClient(c);
-      if (c.status === "suspenso") throw new HttpError(403, `Senha alterada. Mas seu acesso está suspenso: fale com ${SALES_EMAIL()} para reativar.`);
+      if (blockedMsg(c)) throw new HttpError(403, "Senha alterada. " + blockedMsg(c));
       if (trialEnded(c)) throw new HttpError(403, "Senha alterada. " + trialEndedMsg());
       return send(res, 200, { token: signSession({ role: "client", sub: c.id, uid: t.u ? t.u.id : undefined }), role: "client", client: publicClient(c) });
     }

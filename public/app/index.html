@@ -1,4 +1,7 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>metrikabr · Copilot de Marketing</title><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Entrar · metrikabr</title><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Entre na metrikabr para acompanhar Meta Ads e Google Ads num painel só, com o copilot de marketing.">
+<meta name="robots" content="noindex, follow">
+<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#1e6bff"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
@@ -622,6 +625,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .notice>svg{margin-top:2px;flex:none}
 .notice.warn{background:var(--warn-soft);border-color:transparent}
 .notice.warn>svg{color:var(--warn)}
+.approve-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.approve-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 12px;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+.approve-row b{display:block;color:var(--ink);font-size:13.5px;margin:0}
+.approve-row small{display:block;color:var(--muted);font-size:12px;line-height:1.45;overflow-wrap:anywhere}
 .notice.info{background:var(--accent-soft);border-color:transparent}
 .notice.info>svg{color:var(--accent-ink)}
 .notice .msg-actions{align-self:center}
@@ -905,7 +912,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 @media (max-width:640px){.m-alloc{grid-template-columns:44px minmax(0,1fr) 70px;gap:8px}}
 </style>
 
-<div id="root"><div class="boot">Carregando metrikabr…</div></div>
+<div id="root"><div class="boot">Carregando metrikabr…</div></div><noscript><p style="padding:24px;font-family:sans-serif">A metrikabr precisa do JavaScript ativado. Conheça a plataforma em <a href="/">metrikabr.com</a>.</p></noscript>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
@@ -1018,6 +1025,7 @@ const PLANS = {
 };
 // teste grátis (contas criadas pela LP): dias que faltam, 0 no último dia
 const SALES_EMAIL = "comercial@metrikabr.com";
+const TRIAL_DAYS_LABEL = "7 dias";
 function trialInfo(c) {
   if (!c || !c.trialEndsAt) return null;
   const end = new Date(c.trialEndsAt), left = Math.ceil((end - Date.now()) / 86400e3);
@@ -3897,7 +3905,10 @@ function copyText(txt, toast, ok) {
 
 /* ================= console de gestão (admin) ================= */
 function AdminConsole({ clients, api, onLogout, onImpersonate, adminName }) {
-  const [tab, setTab] = useState("clients"); const [sel, setSel] = useState(null); const [adding, setAdding] = useState(false);
+  const [tab, setTab] = useState("clients"); const [adding, setAdding] = useState(false);
+  // o link do e-mail de alerta abre o console direto na ficha do cadastro (/app/?cliente=id)
+  const [sel, setSel] = useState(() => { try { const id = new URLSearchParams(location.search).get("cliente"); if (id) history.replaceState(null, "", location.pathname); return id; } catch (e) { return null; } });
+  const [decBusy, setDecBusy] = useState(null);
   const [q, setQ] = useState(""); const [toastMsg, setToastMsg] = useState(null);
   const [delId, setDelId] = useState(null); const [busy, setBusy] = useState(false);
   const [inviteRes, setInviteRes] = useState({});
@@ -3909,7 +3920,9 @@ function AdminConsole({ clients, api, onLogout, onImpersonate, adminName }) {
     const was = prev.current; prev.current = Object.fromEntries(clients.map(c => [c.id, c.status]));
     if (!was) return;
     const acc = clients.filter(c => was[c.id] === "convite" && c.status === "ativo");
-    if (acc.length) toast(acc.length === 1 ? acc[0].company + " aceitou o convite e já pode entrar" : acc.length + " clientes aceitaram o convite");
+    const fresh = clients.filter(c => !was[c.id] && c.status === "pendente");
+    if (fresh.length) toast(fresh.length === 1 ? "Novo cadastro aguardando aprovação: " + fresh[0].company : fresh.length + " novos cadastros aguardando aprovação");
+    else if (acc.length) toast(acc.length === 1 ? acc[0].company + " aceitou o convite e já pode entrar" : acc.length + " clientes aceitaram o convite");
   }, [clients]);
   useEffect(() => {
     if (!api.refresh) return;
@@ -3919,12 +3932,21 @@ function AdminConsole({ clients, api, onLogout, onImpersonate, adminName }) {
   }, []);
   const active = clients.filter(c => c.status === "ativo");
   const pending = clients.filter(c => c.status === "convite");
-  const mrr = clients.filter(c => c.status !== "suspenso" && !c.trialEndsAt).reduce((a, c) => a + PLANS[c.plan].price, 0);
+  const awaiting = clients.filter(c => c.status === "pendente");
+  const mrr = clients.filter(c => ["ativo", "convite"].includes(c.status) && !c.trialEndsAt).reduce((a, c) => a + PLANS[c.plan].price, 0);
+  // aprovar libera o teste grátis (começa a contar agora); recusar mantém a conta bloqueada, sem e-mail
+  const decide = async (c, ok) => {
+    setDecBusy(c.id);
+    try {
+      if (ok) { const r = await api.approve(c.id); toast(r.email && r.email.sent ? c.company + " aprovado. Avisamos " + c.email + " por e-mail" : c.company + " aprovado, mas o e-mail não saiu. Avise " + c.email + " que já pode entrar"); }
+      else { await api.reject(c.id); toast("Cadastro de " + c.company + " recusado"); }
+    } catch (e) { toast(e.message); } finally { setDecBusy(null); }
+  };
   const list = clients.filter(c => (c.name + c.company + c.email).toLowerCase().includes(q.toLowerCase()));
   const upd = (id, patch) => api.update(id, patch).catch(e => toast(e.message));
   const cur = sel ? clients.find(c => c.id === sel) : null;
-  const statusPill = s => ({ ativo: html`<span className="pill pill-good"><span className="dot"></span>Ativo</span>`, suspenso: html`<span className="pill pill-bad">Suspenso</span>`, convite: html`<span className="pill pill-warn">Convite enviado</span>` })[s];
-  const trialPill = c => { const t = trialInfo(c); return t ? html` <span className=${"pill " + (t.over ? "pill-bad" : "pill-info")}>${t.over ? "Teste vencido" : "Teste até " + t.day}</span>` : null; };
+  const statusPill = s => ({ ativo: html`<span className="pill pill-good"><span className="dot"></span>Ativo</span>`, suspenso: html`<span className="pill pill-bad">Suspenso</span>`, convite: html`<span className="pill pill-warn">Convite enviado</span>`, pendente: html`<span className="pill pill-warn">Aguardando aprovação</span>`, recusado: html`<span className="pill pill-bad">Recusado</span>` })[s];
+  const trialPill = c => { if (c.status === "pendente" || c.status === "recusado") return null; const t = trialInfo(c); return t ? html` <span className=${"pill " + (t.over ? "pill-bad" : "pill-info")}>${t.over ? "Teste vencido" : "Teste até " + t.day}</span>` : null; };
   const inviteNote = c => {
     const inv = c.invite;
     if (!inv) return null;
@@ -3953,10 +3975,14 @@ function AdminConsole({ clients, api, onLogout, onImpersonate, adminName }) {
         : !api.email ? html`<div className="notice warn"><${Icon} n="mail" s=${16} /><div style=${{ flex: 1, minWidth: 220 }}><b>E-mail não configurado</b><span>Os convites são criados, mas não saem por e-mail. Copie o link do convite na ficha do cliente e envie você mesma, ou configure RESEND_API_KEY na Vercel.</span></div></div>` : null}
       ${legacy.length ? html`<div className="notice info"><${Icon} n="users" s=${16} /><div style=${{ flex: 1, minWidth: 220 }}><b>${legacy.length} ${legacy.length === 1 ? "cliente está salvo" : "clientes estão salvos"} só neste navegador</b><span>São cadastros de antes do banco (${legacy.slice(0, 3).map(l => l.company).join(", ")}${legacy.length > 3 ? "…" : ""}). Importar leva senhas e contas conectadas, sem enviar e-mail.</span></div>
         <div className="msg-actions"><button className="btn btn-sm btn-primary" disabled=${busy} onClick=${doImport}>Importar para o banco</button><button className="btn btn-sm btn-line" onClick=${() => { store.set("readyai_import_done", true); setLegacyOff(true); }}>Agora não</button></div></div>` : null}
+      ${awaiting.length ? html`<div className="notice warn approve-box"><${Icon} n="alert" s=${16} /><div style=${{ flex: 1, minWidth: 220 }}><b>${awaiting.length === 1 ? "1 cadastro aguardando sua aprovação" : awaiting.length + " cadastros aguardando sua aprovação"}</b><span>Testes criados pela LP só entram depois que você aprovar. O teste de ${TRIAL_DAYS_LABEL} começa a contar na aprovação.</span>
+        <div className="approve-list">${awaiting.map(c => html`<div key=${c.id} className="approve-row"><div style=${{ minWidth: 0 }}><b>${c.company}</b><small>${c.name} · ${c.email}${c.phone ? " · " + c.phone : ""} · ${fmtWhen(c.createdAt)}</small>
+          ${c.approval && c.approval.flags && c.approval.flags.length ? html`<small style=${{ color: "var(--bad)", fontWeight: 600 }}>${c.approval.flags.join(" · ")}</small>` : null}</div>
+          <div className="msg-actions"><button className="btn btn-sm btn-primary" disabled=${decBusy === c.id} onClick=${() => decide(c, true)}><${Icon} n="check" s=${14} />Aprovar</button><button className="btn btn-sm btn-line" disabled=${decBusy === c.id} onClick=${() => decide(c, false)}>Recusar</button><button className="btn btn-sm btn-ghost" onClick=${() => setSel(c.id)}>Ver ficha</button></div></div>`)}</div></div></div>` : null}
       <div className="grid g4">
         <${Kpi} label="Clientes ativos" value=${active.length} hint=${clients.length + " cadastrados"} />
         <${Kpi} label="MRR" value=${brl(mrr)} hint="Ativos + convites" />
-        <${Kpi} label="Convites pendentes" value=${pending.length} hint=${pending.length ? "Aguardando a pessoa criar a senha" : "Nenhum aguardando"} />
+        <${Kpi} label=${awaiting.length ? "Aguardando aprovação" : "Convites pendentes"} value=${awaiting.length || pending.length} hint=${awaiting.length ? "Cadastros pela LP para você aprovar" : pending.length ? "Aguardando a pessoa criar a senha" : "Nenhum aguardando"} />
         <${Kpi} label="Acessos suspensos" value=${clients.filter(c => c.status === "suspenso").length} hint="Pagamento pendente" />
       </div>
       <div className="tabs" role="tablist">${[["clients", "Clientes"], ["plans", "Planos e módulos"]].map(([k, l]) => html`<button key=${k} role="tab" aria-selected=${tab === k} className=${tab === k ? "on" : ""} onClick=${() => setTab(k)}>${l}</button>`)}</div>
@@ -3989,7 +4015,7 @@ function AdminConsole({ clients, api, onLogout, onImpersonate, adminName }) {
             ${m.hidden ? html`<span className="pill pill-violet">Oculto · em breve</span>` : m.core ? html`<span className="pill pill-mute">Base de todos os planos</span>` : html`<span className="mono" style=${{ color: "var(--muted)" }}>${m.key}</span>`}</div>`)}</div></div>
       </div>`}
     </div>
-    ${cur ? html`<${ClientDrawer} c=${cur} upd=${upd} api=${api} inviteRes=${inviteRes[cur.id]} setInviteRes=${r => setInviteRes(x => ({ ...x, [cur.id]: r }))} onClose=${() => setSel(null)} onImpersonate=${onImpersonate} onDelete=${() => remove(cur)} busy=${busy} toast=${toast} visibleMods=${visibleMods} />` : null}
+    ${cur ? html`<${ClientDrawer} c=${cur} upd=${upd} api=${api} decide=${decide} decBusy=${decBusy === cur.id} inviteRes=${inviteRes[cur.id]} setInviteRes=${r => setInviteRes(x => ({ ...x, [cur.id]: r }))} onClose=${() => setSel(null)} onImpersonate=${onImpersonate} onDelete=${() => remove(cur)} busy=${busy} toast=${toast} visibleMods=${visibleMods} />` : null}
     ${adding ? html`<${NewClient} server=${api.server} onClose=${() => setAdding(false)} onCreate=${async f => {
       const r = await api.create(f);
       setAdding(false); setSel(r.client.id);
@@ -4050,7 +4076,24 @@ function PeopleSection({ c, api, toast }) {
     ${err && !edit ? html`<div className="err" role="alert">${err}</div>` : null}
   </section>`;
 }
-function ClientDrawer({ c, upd, api, inviteRes, setInviteRes, onClose, onImpersonate, onDelete, busy, toast, visibleMods }) {
+// cadastro pela LP: dados para decidir e os botões de aprovar ou recusar
+function ApprovalSection({ c, decide, busy }) {
+  const a = c.approval || {};
+  const where = [a.city, a.region, a.country].filter(Boolean).join(", ");
+  const src = { lp: "Landing page", "lp-agencias": "LP de agências", app: "Tela de login do app" }[c.source] || c.source || "Console";
+  return html`<section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Aprovação do teste grátis</div>
+    ${c.status === "pendente" ? html`<div className="inv-box bad" style=${{ background: "var(--warn-soft)", borderColor: "transparent" }}><${Icon} n="alert" s=${16} /><div><b>Aguardando sua aprovação</b><span>Enquanto você não aprovar, ${c.name} não consegue entrar. O teste de ${TRIAL_DAYS_LABEL} começa a contar na aprovação.</span></div></div>`
+      : c.status === "recusado" ? html`<div className="inv-box bad"><${Icon} n="x" s=${16} /><div><b>Cadastro recusado ${a.rejectedAt ? fmtWhen(a.rejectedAt) : ""}</b><span>A pessoa não consegue entrar. Você pode aprovar mesmo assim ou excluir o cadastro.</span></div></div>`
+      : html`<div className="inv-box good"><${Icon} n="check" s=${16} /><div><b>Aprovado ${fmtWhen(a.approvedAt)}</b><span>${a.welcome && !a.welcome.sent ? "O e-mail de boas-vindas não saiu: " + a.welcome.error : "Avisamos " + c.email + " por e-mail."}</span></div></div>`}
+    <div className="mod-row"><div><b>Cadastro</b><small>${fmtWhen(a.requestedAt || c.createdAt)} · ${src}</small></div></div>
+    <div className="mod-row"><div><b>Contato</b><small>${c.email}${c.phone ? " · " + c.phone : " · sem WhatsApp"}</small></div></div>
+    <div className="mod-row"><div><b>Local aproximado</b><small>${where || "Não identificado"}</small></div></div>
+    ${a.flags && a.flags.length ? html`<div className="mod-row"><div><b style=${{ color: "var(--bad)" }}>Atenção</b><small>${a.flags.join(" · ")}</small></div></div>` : null}
+    ${a.alert && !a.alert.sent && c.status === "pendente" ? html`<div className="card-sub" style=${{ color: "var(--bad)" }}>O alerta por e-mail deste cadastro não saiu: ${a.alert.error}</div>` : null}
+    ${c.status !== "ativo" && c.status !== "convite" && c.status !== "suspenso" ? html`<div className="msg-actions"><button className="btn btn-sm btn-primary" disabled=${busy} onClick=${() => decide(c, true)}><${Icon} n="check" s=${14} />${busy ? "Salvando…" : "Aprovar e liberar o teste"}</button>${c.status === "pendente" ? html`<button className="btn btn-sm btn-line" disabled=${busy} onClick=${() => decide(c, false)}>Recusar</button>` : null}</div>` : null}
+  </section>`;
+}
+function ClientDrawer({ c, upd, api, decide, decBusy, inviteRes, setInviteRes, onClose, onImpersonate, onDelete, busy, toast, visibleMods }) {
   const [secret, setSecret] = useState(c.newPass || null);
   const [confirmDel, setConfirmDel] = useState(false); const [sending, setSending] = useState(false);
   useEffect(() => { setSecret(c.newPass || null); setConfirmDel(false); }, [c.id]);
@@ -4068,6 +4111,7 @@ function ClientDrawer({ c, upd, api, inviteRes, setInviteRes, onClose, onImperso
       <div className="drawer-head"><div><div className="eyebrow">Cliente</div><h2 style=${{ fontSize: 20, fontWeight: 700 }}>${c.company}</h2><div className="card-sub">${c.name} · ${c.email} · cliente desde ${c.since.split("-").reverse().join("/")}</div></div>
         <button className="btn btn-ghost btn-sm" onClick=${onClose} aria-label="Fechar"><${Icon} n="x" /></button></div>
       <div className="drawer-body">
+        ${c.status === "pendente" || c.status === "recusado" || (c.approval && c.approval.approvedAt) ? html`<${ApprovalSection} c=${c} decide=${decide} busy=${decBusy} />` : null}
         <${PeopleSection} c=${c} api=${api} toast=${toast} />
         ${api.server && (c.status === "convite" || inv) ? html`<section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Convite por e-mail</div>
           ${inv && inv.acceptedAt ? html`<div className="inv-box good"><${Icon} n="check" s=${16} /><div><b>Convite aceito</b><span>${c.name} criou a senha em ${fmtDay(inv.acceptedAt)} às ${new Date(inv.acceptedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}.</span></div></div>`
@@ -4097,8 +4141,8 @@ function ClientDrawer({ c, upd, api, inviteRes, setInviteRes, onClose, onImperso
           <div className="mod-row"><div><b>Dados de exemplo</b><small>${isDemoClient(c) ? "Sem conta conectada, as telas mostram campanhas de exemplo. Use só em contas de demonstração." : "Sem conta conectada, as telas mostram o que falta para os dados aparecerem."}</small></div>
             <${Toggle} on=${isDemoClient(c)} onChange=${v => { upd(c.id, { demo: v }); toast(v ? "Conta marcada como demonstração" : "Conta sem dados de exemplo"); }} label="Dados de exemplo" /></div></section>
         <section className="stack" style=${{ gap: 10 }}><div className="eyebrow">Acesso</div>
-          <div className="mod-row"><div><b>Acesso à plataforma</b><small>${c.status === "suspenso" ? "Bloqueado: o cliente não consegue entrar" : "Liberado"}</small></div>
-            <${Toggle} on=${c.status !== "suspenso"} onChange=${v => { upd(c.id, { status: v ? (c.status === "suspenso" && api.server && !c.hasPassword ? "convite" : "ativo") : "suspenso" }); toast(v ? "Acesso liberado" : "Acesso suspenso"); }} label="Acesso à plataforma" /></div>
+          ${c.status === "pendente" || c.status === "recusado" ? null : html`<div className="mod-row"><div><b>Acesso à plataforma</b><small>${c.status === "suspenso" ? "Bloqueado: o cliente não consegue entrar" : "Liberado"}</small></div>
+            <${Toggle} on=${c.status !== "suspenso"} onChange=${v => { upd(c.id, { status: v ? (c.status === "suspenso" && api.server && !c.hasPassword ? "convite" : "ativo") : "suspenso" }); toast(v ? "Acesso liberado" : "Acesso suspenso"); }} label="Acesso à plataforma" /></div>`}
           ${c.trialEndsAt ? html`<div className="mod-row"><div><b>Teste grátis</b><small>${trialInfo(c).over ? "Venceu em " + trialInfo(c).day + ": o cliente não consegue entrar" : "Vai até " + trialInfo(c).day + " (cadastro pela LP)"}</small></div>
             <div style=${{ display: "flex", gap: 6, flexWrap: "wrap" }}><button className="btn btn-line btn-sm" onClick=${() => { upd(c.id, { trialEndsAt: new Date(Math.max(Date.now(), new Date(c.trialEndsAt).getTime()) + 7 * 86400e3).toISOString() }); toast("Teste estendido por 7 dias"); }}>+7 dias</button><button className="btn btn-line btn-sm" onClick=${() => { upd(c.id, { trialEndsAt: null }); toast("Teste encerrado: agora é cliente"); }}>Virou cliente</button></div></div>` : null}
           <div style=${{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="btn btn-line btn-sm" onClick=${newPass}><${Icon} n="key" s=${14} />Gerar senha temporária</button></div>
@@ -4209,9 +4253,10 @@ function Login({ auth, showDemo, notice, onSignup }) {
     setBusy(true);
     try {
       const j = await srv("/api/signup", d);
-      if (!j.token) throw new Error("Não foi possível criar a conta agora. Tente de novo em instantes.");
       try { history.replaceState(null, "", location.pathname); } catch (x) {}
-      onSignup(j);
+      if (j.token) return onSignup(j);
+      if (!j.pending) throw new Error("Não foi possível criar a conta agora. Tente de novo em instantes.");
+      setSu(f => ({ ...f, password: "" })); setBusy(false); setMode("pending");
     } catch (x) { setErr(x.message); setErrCode(x.code || ""); setBusy(false); }
   };
   const forgot = async e => {
@@ -4241,6 +4286,14 @@ function Login({ auth, showDemo, notice, onSignup }) {
       <div className="notice info" style=${{ padding: "10px 12px" }}><${Icon} n="mail" s=${15} /><span>Não chegou em alguns minutos? Confira a caixa de spam ou peça de novo.</span></div>
       <button className="btn btn-primary" style=${{ height: 42 }} onClick=${toLogin}>Voltar para o login</button>
       <button type="button" className="btn btn-ghost" style=${{ height: 40 }} onClick=${() => { setErr(""); setMode("forgot"); }}>Enviar de novo</button>
+    </div></section>
+  </div>`;
+  if (mode === "pending") return html`<div className="login">
+    <${LoginSide} />
+    <section className="login-main" style=${{ position: "relative" }}>${side}<div className="login-box">
+      <div><h2>Cadastro recebido</h2><p style=${{ color: "var(--muted)", marginTop: 4 }}>Nossa equipe confere cada cadastro antes de liberar o acesso. Assim que a conta de <b style=${{ color: "var(--ink)" }}>${su.company}</b> for liberada, avisamos em <b style=${{ color: "var(--ink)" }}>${su.email}</b>.</p></div>
+      <div className="notice info" style=${{ padding: "10px 12px" }}><${Icon} n="mail" s=${15} /><span>Normalmente liberamos no mesmo dia útil. O teste de ${TRIAL_DAYS_LABEL} começa a contar a partir da liberação.</span></div>
+      <button className="btn btn-primary" style=${{ height: 42 }} onClick=${() => { setEmail(su.email); toLogin(); }}>Voltar para o login</button>
     </div></section>
   </div>`;
   if (mode === "signup") return html`<div className="login">
@@ -4424,6 +4477,8 @@ function ServerApp({ welcome }) {
     resendUser: async (id, userId) => { const j = await call("/api/clients", { action: "resend_user", id, userId }); replace(j.client); return j; },
     resetUserPassword: async (id, userId) => { const j = await call("/api/clients", { action: "reset_user_password", id, userId }); replace(j.client); return j.password; },
     removeUser: async (id, userId) => { const j = await call("/api/clients", { action: "remove_user", id, userId }); replace(j.client); return j; },
+    approve: async id => { const j = await call("/api/clients", { action: "approve", id }); replace(j.client); return j; },
+    reject: async id => { const j = await call("/api/clients", { action: "reject", id }); replace(j.client); return j; },
     importLegacy: async list => { const j = await call("/api/clients", { action: "import", clients: list }); setClients(j.clients); return j; },
   };
   const logout = () => { setSess(null); setClients([]); setAdmin(null); };

@@ -14,6 +14,8 @@
 //   { action: "resend_user", id, userId }                 -> { client, invite }
 //   { action: "reset_user_password", id, userId }         -> { client, password }
 //   { action: "remove_user", id, userId }                 -> { client }
+//   { action: "approve", id }                             -> { client, email: { sent, error? } }  libera o teste (começa a contar agora)
+//   { action: "reject", id }                              -> { client }   cadastro recusado: não entra e não recebe e-mail
 // Cliente (sessão do próprio cliente):
 //   { action: "self_update", patch: { conn?, ai?, targetRoas? } } -> { client }
 
@@ -21,11 +23,11 @@ import crypto from "node:crypto";
 import {
   HttpError, send, readBody, fail, readSession,
   listClients, getClient, getClientByEmail, saveClient, deleteClient,
-  newInvite, dropInvite, hashPassword, tempPassword, sendEmail, inviteEmail, appUrl, publicClient,
+  newInvite, dropInvite, hashPassword, tempPassword, sendEmail, inviteEmail, appUrl, publicClient, approvedEmail,
 } from "./_store.js";
 
-import { PLANS, PLAN_MODULES, MODULES } from "./_plans.js";
-const STATUS = ["convite", "ativo", "suspenso"];
+import { PLANS, PLAN_MODULES, MODULES, TRIAL_DAYS } from "./_plans.js";
+const STATUS = ["convite", "ativo", "suspenso", "pendente", "recusado"];
 const isEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 const txt = (v, max = 120) => String(v == null ? "" : v).trim().slice(0, max);
 
@@ -195,6 +197,28 @@ export default async function handler(req, res) {
       await dropInvite(u);
       c.users = (c.users || []).filter(x => x.id !== u.id);
       await saveClient(c, u.email);
+      return send(res, 200, { client: publicClient(c) });
+    }
+
+    if (body.action === "approve") {
+      const c = await mustGet(body.id);
+      if (c.status !== "pendente" && c.status !== "recusado") throw new HttpError(409, "Esse cadastro já foi aprovado.");
+      const now = new Date();
+      c.status = c.passHash ? "ativo" : "convite";
+      c.trialEndsAt = new Date(now.getTime() + TRIAL_DAYS * 86400e3).toISOString();
+      c.approval = { ...(c.approval || {}), approvedAt: now.toISOString(), rejectedAt: null };
+      const r = await sendEmail({ to: c.email, key: "approved-" + c.id + "-" + now.getTime(), ...approvedEmail(c, appUrl(req) + "/app/", TRIAL_DAYS) });
+      c.approval.welcome = r.sent ? { sent: true, at: now.toISOString() } : { sent: false, error: r.error };
+      await saveClient(c);
+      return send(res, 200, { client: publicClient(c), email: { sent: r.sent, error: r.error || null } });
+    }
+
+    if (body.action === "reject") {
+      const c = await mustGet(body.id);
+      if (c.status !== "pendente") throw new HttpError(409, "Só dá para recusar cadastros que ainda aguardam aprovação. Para bloquear uma conta ativa, suspenda o acesso.");
+      c.status = "recusado";
+      c.approval = { ...(c.approval || {}), rejectedAt: new Date().toISOString() };
+      await saveClient(c);
       return send(res, 200, { client: publicClient(c) });
     }
 

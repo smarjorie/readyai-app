@@ -19,6 +19,24 @@
           "value": "strict-origin-when-cross-origin"
         }
       ]
+    },
+    {
+      "source": "/(favicon.ico|favicon.svg|apple-touch-icon.png|icon-192.png|icon-512.png|icon-maskable-512.png|og-image.png|og-agencias.png)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800"
+        }
+      ]
+    },
+    {
+      "source": "/app/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
     }
   ],
   "redirects": [
@@ -48,6 +66,16 @@
       "source": "/login",
       "destination": "/app/",
       "permanent": false
+    },
+    {
+      "source": "/agencias/",
+      "destination": "/agencias",
+      "permanent": true
+    },
+    {
+      "source": "/calculadora-roas/",
+      "destination": "/calculadora-roas",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -58,6 +86,10 @@
     {
       "source": "/agencias",
       "destination": "/agencias/index.html"
+    },
+    {
+      "source": "/calculadora-roas",
+      "destination": "/calculadora-roas/index.html"
     }
   ]
 }

@@ -331,6 +331,11 @@ dialog::backdrop{background:rgba(5,10,25,.6);backdrop-filter:blur(3px)}
 .dlg .btn{width:100%;margin-top:20px}
 .dlg .btn[disabled]{opacity:.7;cursor:progress}
 .legal{margin:12px 0 0;text-align:center;color:var(--muted);font-size:14px}
+.su-done{padding:34px 30px 30px}
+.su-done h2{font-size:28px;margin:0 0 10px}
+.su-done p{margin:0;color:var(--ink-2);font-size:16px;line-height:1.6}
+.su-done b{color:var(--ink)}
+.su-done .btn{width:100%;margin-top:22px}
 
 /* seletor de visual (só no preview, para escolher entre os dois) */
 .theme-pick{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:4px;padding:5px 5px 5px 14px;border-radius:999px;background:#0e1a33;color:#fff;box-shadow:0 12px 40px -8px rgba(0,0,0,.5);font-size:13px;font-weight:700}

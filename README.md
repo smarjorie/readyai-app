@@ -179,7 +179,17 @@ Com o banco ativo, só a gestora entra de cara (com a mesma senha, ou a de `ADMI
 ## Landing page e teste grátis
 
 - A LP fica em `/` (`public/index.html`) e o app em `/app` (`public/app/index.html`). `/login` e links de convite antigos (`/?convite=...`) redirecionam para `/app/`.
-- O cadastro da LP chama `POST /api/signup`: cria o cliente já ativo, com o plano escolhido, teste grátis (`trialEndsAt`) e loga direto no painel. Sem cartão.
-- Quando o teste vence, o login e a sessão são bloqueados com uma mensagem para falar com o comercial. No console, a ficha do cliente tem **+7 dias** e **Virou cliente** (remove o teste). Contas em teste não entram no MRR.
+- O cadastro da LP chama `POST /api/signup`: cria o cliente com o plano escolhido e status **pendente** (sem cartão). A pessoa vê "Cadastro recebido" e **não entra** até a gestora aprovar.
+- **Aprovação:** o console mostra no topo os cadastros aguardando aprovação, com **Aprovar** e **Recusar** (também na ficha do cliente). Aprovar libera o acesso, começa a contar o teste (`trialEndsAt`) e envia um e-mail de boas-vindas. Recusar mantém a conta bloqueada, sem e-mail; depois dá para excluir.
+- **Alerta por e-mail:** cada cadastro novo envia um alerta para `NOTIFY_EMAIL` (aceita vários, separados por vírgula; sem ela, vai para `ADMIN_EMAIL`, se configurado), com um link que abre a ficha no console. O alerta marca e-mail descartável, e-mail pessoal e cadastro de fora do Brasil. Se o alerta não sair, o motivo aparece na ficha do cliente.
+- A pessoa recebe um e-mail de "cadastro recebido" e outro quando for liberada. Os dois precisam do Resend com domínio verificado (`RESEND_FROM`); com `onboarding@resend.dev`, o Resend só entrega para o e-mail da própria conta do Resend.
+- Quando o teste vence, o login e a sessão são bloqueados com uma mensagem para falar com o comercial. No console, a ficha do cliente tem **+7 dias** e **Virou cliente** (remove o teste). Contas em teste ou pendentes não entram no MRR.
 - Limite de 5 cadastros por IP por hora, e um campo escondido contra robôs.
-- Variáveis opcionais na Vercel: `TRIAL_DAYS` (padrão 7), `SALES_EMAIL` (contato mostrado quando o teste vence) e `NOTIFY_EMAIL` (recebe um aviso a cada cadastro novo, precisa do Resend).
+- Variáveis opcionais na Vercel: `TRIAL_DAYS` (padrão 7), `SALES_EMAIL` (contato mostrado quando o teste vence) e `NOTIFY_EMAIL` (recebe o alerta de cada cadastro novo, precisa do Resend).
+
+## SEO e ícones
+
+- Ícones em `public/`: `favicon.ico`, `favicon.svg`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` e `site.webmanifest`. Imagens de compartilhamento: `og-image.png` (LP) e `og-agencias.png`.
+- Páginas indexáveis: `/`, `/agencias` e `/calculadora-roas` (calculadora grátis, feita para buscas como "calculadora de ROAS" e "o que é ROAS"). Todas com título, descrição, canonical, Open Graph e dados estruturados (schema.org).
+- `/app` fica fora do Google (`noindex`). `robots.txt` e `sitemap.xml` estão em `public/`.
+- Depois de publicar: cadastre `https://www.metrikabr.com` no Google Search Console e no Bing Webmaster Tools e envie o `sitemap.xml`.
