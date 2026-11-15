@@ -107,10 +107,11 @@ async function ads(cid, path, { method = "GET", body, login } = {}) {
 }
 function adsError(status, j) {
   const err = Array.isArray(j) ? j[0] && j[0].error : j && j.error;
+  console.error("google ads api:", status, JSON.stringify(err || j).slice(0, 800));
   const details = JSON.stringify((err && err.details) || []);
   const msg = (err && err.message) || "";
   if (status === 401) return new HttpError(401, "A autorização do Google Ads expirou. Clique em Autorizar no Google de novo.", "needs_auth");
-  if (/DEVELOPER_TOKEN_NOT_APPROVED|only approved for use with test accounts|TEST_ACCOUNT/i.test(details + msg))
+  if (/NOT_APPROVED|only approved for use with test accounts|TEST_ACCOUNT|test accounts only|access level/i.test(details + msg))
     return new HttpError(403, "O projeto do Google Cloud da metrikabr ainda só tem acesso de teste à API do Google Ads. Peça o acesso Explorer em Google Ads API → Níveis de acesso, no Google Cloud.", "test_access");
   if (/USER_PERMISSION_DENIED|CUSTOMER_NOT_ENABLED|NOT_ADS_USER/i.test(details))
     return new HttpError(403, "O login do Google usado não tem acesso a essa conta do Google Ads (ou a conta está desativada).", "no_permission");
@@ -130,14 +131,15 @@ const fmtId = id => String(id).replace(/(\d{3})(\d{3})(\d{4})/, "$1-$2-$3");
 export async function listAccounts(cid) {
   const j = await ads(cid, "customers:listAccessibleCustomers");
   const ids = ((j && j.resourceNames) || []).map(r => r.split("/")[1]).filter(Boolean).slice(0, 20);
-  const out = [];
+  if (!ids.length) throw new HttpError(404, "Esse login do Google não tem acesso a nenhuma conta do Google Ads. Autorize com o e-mail que entra no Google Ads (ads.google.com) dessa conta.", "no_accounts");
+  const out = [], errors = [], inactive = [];
   await Promise.all(ids.map(async id => {
     let me;
     try { me = (await query(cid, id, "SELECT customer.id, customer.descriptive_name, customer.manager, customer.status, customer.currency_code FROM customer LIMIT 1", id))[0]; }
-    catch (e) { if (e.code === "test_access" || e.code === "needs_auth") throw e; return; } // conta sem permissão ou desativada: fica de fora
+    catch (e) { console.error("google accounts:", id, e.code, e.message); errors.push(e); return; } // conta sem permissão: fica de fora, mas o motivo é guardado
     if (!me) return;
     const c = me.customer;
-    if (c.status && c.status !== "ENABLED") return;
+    if (c.status && c.status !== "ENABLED") { inactive.push(c.status); return; }
     out.push({ id, label: fmtId(id), name: c.descriptiveName || "", manager: !!c.manager, currency: c.currencyCode || null });
     if (!c.manager) return;
     // gerenciadora (MCC): as campanhas ficam nas subcontas
@@ -148,6 +150,12 @@ export async function listAccounts(cid) {
       out.push({ id: kid, label: fmtId(kid), name: cc.descriptiveName || "", manager: false, via: id, viaLabel: fmtId(id), currency: cc.currencyCode || null });
     }
   }));
+  if (!out.length) {
+    // nenhuma conta deu certo: mostra o motivo em vez de "nenhuma conta"
+    const first = errors.find(e => e.code === "needs_auth") || errors.find(e => e.code === "test_access") || errors[0];
+    if (first) throw first;
+    if (inactive.length) throw new HttpError(404, `As ${ids.length === 1 ? "conta" : ids.length + " contas"} que esse login acessa ${ids.length === 1 ? "está" : "estão"} ${inactive.includes("CANCELED") ? "cancelada(s)" : "suspensa(s) ou fechada(s)"} no Google Ads.`, "no_accounts");
+  }
   // a mesma conta pode aparecer direta e via MCC: fica a direta
   const seen = new Map();
   for (const a of out) if (!seen.has(a.id) || (seen.get(a.id).via && !a.via)) seen.set(a.id, a);
