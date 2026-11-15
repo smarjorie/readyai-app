@@ -17,7 +17,7 @@
 //   { action: "approve", id }                             -> { client, email: { sent, error? } }  libera o teste (começa a contar agora)
 //   { action: "reject", id }                              -> { client }   cadastro recusado: não entra e não recebe e-mail
 // Cliente (sessão do próprio cliente):
-//   { action: "self_update", patch: { conn?, ai?, targetRoas? } } -> { client }
+//   { action: "self_update", patch: { conn?, ai?, targetRoas?, goals? } } -> { client }
 
 import crypto from "node:crypto";
 import {
@@ -44,6 +44,12 @@ function cleanAi(ai) {
   if (!["anthropic", "openai", "groq"].includes(ai.provider)) return null;
   return { provider: ai.provider, key: txt(ai.key, 300), model: txt(ai.model, 100) };
 }
+// metas da conta (Configurações › Metas): ROAS e CTR mínimos, CPA e CPC máximos; CTR em fração (0,012 = 1,2%)
+function cleanGoals(g) {
+  if (!g || typeof g !== "object") return null;
+  const num = (v, max, d = 2) => { if (v === null || v === undefined || String(v).trim() === "") return null; const n = parseFloat(String(v).replace(",", ".")); const k = 10 ** d; return n > 0 && n < max ? Math.round(n * k) / k : null; };
+  return { roas: num(g.roas, 100), cpa: num(g.cpa, 1e6), ctr: num(g.ctr, 1, 4), cpc: num(g.cpc, 1e4), mode: g.mode === "any" ? "any" : "all" };
+}
 function cleanRoas(v) { if (v === null || v === undefined || String(v).trim() === "") return null; const n = parseFloat(String(v).replace(",", ".")); return n > 0 && n < 100 ? Math.round(n * 100) / 100 : null; }
 
 // campos que a gestora pode alterar
@@ -55,6 +61,7 @@ function applyAdminPatch(c, p) {
   else if (p.plan !== undefined && PLANS[p.plan] && !c.modules.length) c.modules = [...PLAN_MODULES[p.plan]];
   if (p.status !== undefined && STATUS.includes(p.status)) c.status = p.status;
   if (p.targetRoas !== undefined) c.targetRoas = cleanRoas(p.targetRoas); // meta é opcional: vazio ou null apaga
+  if (p.goals !== undefined) { c.goals = cleanGoals(p.goals); if (c.goals) c.targetRoas = c.goals.roas; } // targetRoas acompanha a meta de ROAS
   if (p.conn !== undefined) c.conn = cleanConn(p.conn);
   if (p.ai !== undefined) c.ai = cleanAi(p.ai);
   if (p.trialEndsAt !== undefined) { const t = p.trialEndsAt === null ? null : Date.parse(p.trialEndsAt); c.trialEndsAt = t ? new Date(t).toISOString() : null; } // null encerra o teste (cliente virou pagante)
@@ -107,6 +114,7 @@ export default async function handler(req, res) {
       if (p.conn !== undefined) c.conn = cleanConn(p.conn);
       if (p.ai !== undefined) c.ai = cleanAi(p.ai);
       if (p.targetRoas !== undefined) c.targetRoas = cleanRoas(p.targetRoas); // meta é opcional: vazio ou null apaga
+      if (p.goals !== undefined) { c.goals = cleanGoals(p.goals); if (c.goals) c.targetRoas = c.goals.roas; }
       await saveClient(c);
       return send(res, 200, { client: publicClient(c) });
     }
