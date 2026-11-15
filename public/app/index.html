@@ -3626,7 +3626,7 @@ function DataProblem({ st, live, periodR, onJump, onPicker, connect, company, wh
       <button className="btn btn-line" onClick=${onPicker}>Escolher período</button>
       ${!last ? html`<button className="btn btn-line" onClick=${() => connect(src ? src.ch : "meta")}>Trocar a conta</button>` : null}`}>
     <p>${note ? note + " " : ""}${last && !inside ? "A última veiculação de " + company + " foi em " + lastTxt + ". Escolha um período com investimento para ver " + what + "."
-      : last ? "As campanhas ainda não registraram resultados neste período." : (src ? src.label + " não veiculou nada no último ano. Confira se esta é a conta certa ou ative campanhas no gerenciador de anúncios." : "As contas conectadas não veicularam no último ano.")}</p><//>`;
+      : last ? "As campanhas ainda não registraram resultados neste período." : note ? "" : (src ? src.label + " não veiculou nada no último ano. Confira se esta é a conta certa ou ative campanhas no gerenciador de anúncios." : "As contas conectadas não veicularam no último ano.")}</p><//>`;
 }
 function EmptyState({ screen, st, live, periodR, onJump, onPicker, connect, company }) {
   const S = SCREEN_EMPTY[screen] || SCREEN_EMPTY.overview, info = routeInfo(screen);

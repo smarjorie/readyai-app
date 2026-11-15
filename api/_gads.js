@@ -173,12 +173,32 @@ const r2 = v => Math.round(v * 100) / 100;
 const during = r => `segments.date BETWEEN '${r.since}' AND '${r.until}'`;
 const CAMP_FIELDS = "campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type, campaign_budget.amount_micros, metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.conversions, metrics.conversions_value";
 
+// sem campanhas com investimento: diz o motivo certo (conta gerenciadora, conta sem campanhas ou só sem gasto no período)
+async function emptyNote(cid, customerId, login, lastSpend) {
+  const [me, camps] = await Promise.all([
+    query(cid, customerId, "SELECT customer.manager FROM customer LIMIT 1", login).then(r => r[0] && r[0].customer).catch(() => null),
+    query(cid, customerId, "SELECT campaign.id, campaign.status FROM campaign WHERE campaign.status != 'REMOVED'", login).catch(() => null),
+  ]);
+  if (me && me.manager) return "Essa é uma conta gerenciadora (MCC): ela não tem campanhas próprias. Clique em Trocar a conta e escolha uma das contas que ela gerencia.";
+  if (camps && !camps.length) return "Essa conta do Google Ads ainda não tem nenhuma campanha criada. Quando houver campanhas veiculando, os números aparecem aqui.";
+  if (camps) {
+    const on = camps.filter(r => r.campaign.status === "ENABLED").length;
+    const n = `Essa conta tem ${camps.length} ${camps.length === 1 ? "campanha" : "campanhas"}${on ? ` (${on} ${on === 1 ? "ativa" : "ativas"})` : ", todas pausadas"}, mas nenhuma teve investimento nesse período.`;
+    // campanha ativa sem gasto: costuma ser campanha recém-publicada (revisão do anúncio, aprendizado, atraso dos números)
+    return on && !lastSpend ? n + " Campanhas novas podem levar algumas horas para começar a veicular, e o Google Ads atualiza os números com até 3 horas de atraso. Se ela começou hoje, escolha um período que inclua hoje para ver o investimento do dia." : n;
+  }
+  return lastSpend ? "Nenhuma campanha teve investimento nesse período." : "Nenhuma campanha teve investimento nesse período nem no último ano.";
+}
+
 export async function campaignData(cid, customerId, login, P) {
   const q = range => query(cid, customerId, `SELECT ${CAMP_FIELDS} FROM campaign WHERE ${during(range)} AND campaign.status != 'REMOVED'`, login);
-  const [cur, prev, w1, w0, daily] = await Promise.all([
+  const [cur, prev, w1, w0, daily, lastRow] = await Promise.all([
     q(P), q(P.prev), q(P.w1), q(P.w0),
     query(cid, customerId, `SELECT segments.date, metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.conversions, metrics.conversions_value FROM customer WHERE ${during(P.last14)}`, login),
+    // último dia com investimento no último ano (o painel usa para sugerir um período com dados)
+    query(cid, customerId, `SELECT segments.date, metrics.cost_micros FROM customer WHERE ${during(P.year)} AND metrics.cost_micros > 0 ORDER BY segments.date DESC LIMIT 1`, login).catch(() => []),
   ]);
+  const lastSpend = (lastRow[0] && lastRow[0].segments && lastRow[0].segments.date) || null;
   const byId = rows => Object.fromEntries(rows.map(r => [String(r.campaign.id), r]));
   const W1 = byId(w1), W0 = byId(w0);
   const campaigns = cur.map(r => {
@@ -206,8 +226,8 @@ export async function campaignData(cid, customerId, login, P) {
   const others = cur.filter(r => micros(r.metrics && r.metrics.costMicros) <= 0).slice(0, 50).map(r => ({ id: "g" + r.campaign.id, name: r.campaign.name, on: r.campaign.status === "ENABLED", metaStatus: r.campaign.status, statusLabel: r.campaign.status === "ENABLED" ? "Ativa" : "Pausada" }));
   return {
     account: { id: customerId, label: fmtId(customerId) },
-    campaigns, prev: { ...pv, spend: r2(pv.spend), revenue: r2(pv.revenue) }, days, others,
+    campaigns, prev: { ...pv, spend: r2(pv.spend), revenue: r2(pv.revenue) }, days, others, lastSpend,
     period: { since: P.since, until: P.until },
-    note: campaigns.length ? undefined : "Nenhuma campanha com investimento nesse período. Se for uma conta gerenciadora (MCC), escolha a subconta onde as campanhas estão.",
+    note: campaigns.length ? undefined : await emptyNote(cid, customerId, login, lastSpend),
   };
 }
