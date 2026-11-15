@@ -13,11 +13,14 @@ const K = {
 };
 export const SCOPE = "https://www.googleapis.com/auth/adwords";
 const VERSION = () => process.env.GOOGLE_ADS_API_VERSION || "v26";
-export const googleReady = () => !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+// valores colados na Vercel às vezes vêm com espaço, quebra de linha ou aspas
+const env = k => String(process.env[k] || "").trim().replace(/^["']|["']$/g, "").trim();
+const CLIENT_ID = () => env("GOOGLE_CLIENT_ID"), CLIENT_SECRET = () => env("GOOGLE_CLIENT_SECRET");
+export const googleReady = () => !!(CLIENT_ID() && CLIENT_SECRET());
 
 // o endereço de retorno precisa ser idêntico ao cadastrado no Google Cloud
 export function redirectUri(req) {
-  if (process.env.GOOGLE_REDIRECT_URI) return process.env.GOOGLE_REDIRECT_URI;
+  if (env("GOOGLE_REDIRECT_URI")) return env("GOOGLE_REDIRECT_URI");
   const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:3000";
   const proto = req.headers["x-forwarded-proto"] || (String(host).startsWith("localhost") ? "http" : "https");
   return proto + "://" + host + "/api/google-callback";
@@ -26,10 +29,11 @@ export function redirectUri(req) {
 // ---------- autorização ----------
 export async function authUrl(req, cid) {
   if (!googleReady()) throw new HttpError(503, "A conexão com o Google Ads ainda não está configurada. Faltam GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET na Vercel.", "no_google");
+  if (!/^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/.test(CLIENT_ID())) throw new HttpError(503, "O GOOGLE_CLIENT_ID na Vercel não parece um ID de cliente OAuth. Ele tem o formato 123456789012-abc123.apps.googleusercontent.com (Google Cloud → Google Auth Platform → Clientes).", "bad_client");
   const state = crypto.randomBytes(24).toString("base64url");
   await cmd("SET", K.state(state), JSON.stringify({ cid, at: Date.now() }), "EX", "600");
   const q = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID, redirect_uri: redirectUri(req), response_type: "code",
+    client_id: CLIENT_ID(), redirect_uri: redirectUri(req), response_type: "code",
     scope: SCOPE + " openid email", access_type: "offline", prompt: "consent", include_granted_scopes: "true", state,
   });
   return "https://accounts.google.com/o/oauth2/v2/auth?" + q;
@@ -56,7 +60,7 @@ async function tokenCall(params) {
   let r;
   try {
     r = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ client_id: process.env.GOOGLE_CLIENT_ID, client_secret: process.env.GOOGLE_CLIENT_SECRET, ...params }) });
+      body: new URLSearchParams({ client_id: CLIENT_ID(), client_secret: CLIENT_SECRET(), ...params }) });
   } catch (e) { throw new HttpError(502, "Não consegui falar com o Google agora. Tente de novo."); }
   const j = await r.json().catch(() => ({}));
   if (!r.ok) {
