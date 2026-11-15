@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Calculadora de CPA, CAC e custo por lead: como calcular | metrikabr</title>
+<meta name="description" content="Calcule grátis o CPA (custo por aquisição), o CAC e o custo por lead das suas campanhas, e descubra o CPA máximo para não ter prejuízo. Com fórmulas e exemplos.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://www.metrikabr.com/calculadora-cpa">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="metrikabr">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:url" content="https://www.metrikabr.com/calculadora-cpa">
+<meta property="og:title" content="Calculadora de CPA, CAC e custo por lead">
+<meta property="og:description" content="Quanto custa cada venda, cada cliente e cada lead, e o CPA máximo que o seu produto aguenta.">
+<meta property="og:image" content="https://www.metrikabr.com/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#070d1f">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "WebApplication", "name": "Calculadora de CPA, CAC e CPL", "url": "https://www.metrikabr.com/calculadora-cpa", "applicationCategory": "BusinessApplication", "operatingSystem": "Web", "inLanguage": "pt-BR", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "BRL"}, "publisher": {"@type": "Organization", "name": "metrikabr", "url": "https://www.metrikabr.com/"}}, {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "metrikabr", "item": "https://www.metrikabr.com/"}, {"@type": "ListItem", "position": 2, "name": "Calculadoras", "item": "https://www.metrikabr.com/calculadoras"}, {"@type": "ListItem", "position": 3, "name": "Calculadora de CPA, CAC e CPL", "item": "https://www.metrikabr.com/calculadora-cpa"}]}, {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Como calcular o CPA?", "acceptedAnswer": {"@type": "Answer", "text": "Divida o valor investido em anúncios pelo número de conversões. Se você investiu R$ 3.000 e fez 60 vendas, o CPA é R$ 50: cada venda custou R$ 50 em mídia."}}, {"@type": "Question", "name": "O que é um bom CPA?", "acceptedAnswer": {"@type": "Answer", "text": "É um CPA abaixo do seu CPA máximo, que é o ticket médio multiplicado pela margem. Com ticket de R$ 200 e margem de 40%, cada venda deixa R$ 80 antes da mídia: um CPA de R$ 50 dá lucro, um de R$ 90 dá prejuízo."}}, {"@type": "Question", "name": "Qual a diferença entre CPA e CAC?", "acceptedAnswer": {"@type": "Answer", "text": "O CPA considera só o investimento em anúncios por conversão. O CAC soma todos os custos para conquistar um cliente novo, como equipe comercial, ferramentas, agência e comissões, e divide pelo número de clientes novos. O CAC é sempre igual ou maior que o CPA."}}, {"@type": "Question", "name": "Qual a diferença entre CPA e CPL?", "acceptedAnswer": {"@type": "Answer", "text": "O CPL é o custo por lead, ou seja, por contato capturado. O CPA é o custo por venda ou pela conversão final. Se 1 em cada 4 leads compra, o CPA é quatro vezes o CPL."}}, {"@type": "Question", "name": "O que é CPA desejado no Google Ads?", "acceptedAnswer": {"@type": "Answer", "text": "É uma estratégia de lance automático em que você informa quanto quer pagar, em média, por conversão, e o Google ajusta os lances para chegar perto desse valor. Use como referência um CPA abaixo do seu CPA máximo."}}, {"@type": "Question", "name": "CPA alto é sempre ruim?", "acceptedAnswer": {"@type": "Answer", "text": "Não. Um CPA de R$ 150 é ótimo para um produto de ticket R$ 800 com boa margem, e ruim para um de R$ 90. Em negócios com recompra ou assinatura, compare o CAC com o quanto o cliente gasta ao longo do tempo (LTV)."}}]}]}</script>
+<script>
+  (function () { var q = (location.search.match(/[?&]tema=(\w+)/) || [])[1], t = q === "claro" ? "light" : q === "escuro" ? "dark" : null;
+    try { t = t || localStorage.getItem("mk_lp_theme"); } catch (e) {}
+    if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="/lp/lp.css">
+<link rel="stylesheet" href="/lp/tools.css">
+</head>
+<body data-lp="lp">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 7l2-3h12M16 14h2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-logo" viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="#1e6bff"/><rect x="7.5" y="17" width="4.4" height="8" rx="2.2" fill="#fff" opacity=".55"/><rect x="13.8" y="12.5" width="4.4" height="12.5" rx="2.2" fill="#fff" opacity=".8"/><rect x="20.1" y="7" width="4.4" height="18" rx="2.2" fill="#fff"/></symbol>
+</svg>
+
+<header class="top on-hero">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="metrikabr, início">
+      <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#1e6bff"/><rect x="7.5" y="17" width="4.4" height="8" rx="2.2" fill="#fff" opacity=".55"/><rect x="13.8" y="12.5" width="4.4" height="12.5" rx="2.2" fill="#fff" opacity=".8"/><rect x="20.1" y="7" width="4.4" height="18" rx="2.2" fill="#fff"/></svg>
+      <span>metrika<span class="br">br</span></span>
+    </a>
+    <nav aria-label="Seções">
+      <a href="/#produto">Produto</a>
+      <a href="/calculadoras" aria-current="page">Calculadoras</a>
+      <a href="/#planos">Planos</a>
+      <a href="/agencias">Para agências</a>
+    </nav>
+    <a class="login" href="/app/">Entrar</a>
+    <button class="btn btn-blue btn-sm" data-signup="pro">Testar grátis</button>
+  </div>
+</header>
+
+<main>
+  <section class="hero calc-hero" aria-labelledby="hero-title">
+    <div class="wrap">
+      <div class="hero-copy">
+        <span class="pill"><b>Grátis</b>Para Meta Ads, Google Ads e TikTok Ads</span>
+        <h1 id="hero-title">Calculadora de CPA, CAC e custo por lead</h1>
+        <p class="lead">Descubra quanto custa cada venda, cada cliente e cada lead das suas campanhas, e qual é o CPA máximo que o seu produto aguenta sem dar prejuízo.</p>
+      </div>
+      <form class="calc roas-calc" novalidate onsubmit="return false">
+        <div class="calc-in">
+          <h2 class="sr">Calcular CPA, CAC e CPL</h2>
+          <div class="f-row"><label class="f"><span>Investimento em anúncios (R$)</span><input id="c-spend" inputmode="decimal" value="5.000" autocomplete="off"></label><label class="f"><span>Vendas no período</span><input id="c-sales" inputmode="decimal" value="100" autocomplete="off"></label></div>
+          <p class="opt">Opcional</p>
+          <div class="f-row"><label class="f"><span>Leads gerados</span><input id="c-leads" inputmode="decimal" value="400" autocomplete="off"></label><label class="f"><span>Outros custos de vendas (R$)</span><input id="c-other" inputmode="decimal" value="1.500" autocomplete="off"></label></div>
+          <div class="f-row"><label class="f"><span>Ticket médio (R$)</span><input id="c-ticket" inputmode="decimal" value="250" autocomplete="off"></label><label class="f"><span>Margem do produto (%)</span><input id="c-margin" inputmode="decimal" value="40" autocomplete="off"></label></div>
+          <small style="color:var(--muted);font-size:13px">Outros custos: equipe comercial, ferramentas, agência e comissões. Entram só no CAC.</small>
+        </div>
+        <div class="calc-out" aria-live="polite">
+          <small>Seu CPA (custo por venda)</small>
+          <div class="big num" id="o-cpa">–</div>
+          <div class="out-grid">
+            <div><small>Custo por lead (CPL)</small><b class="num" id="o-cpl">–</b></div>
+            <div><small>Leads que viram venda</small><b class="num" id="o-conv">–</b></div>
+            <div><small>CAC (com outros custos)</small><b class="num" id="o-cac">–</b></div>
+            <div><small>CPA máximo</small><b class="num" id="o-max">–</b></div>
+          </div>
+          <p class="verdict" id="o-verdict"></p>
+          <button type="button" class="btn btn-white" data-signup="pro">Ver o CPA de todas as minhas campanhas</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section aria-labelledby="oque-title">
+    <div class="wrap prose">
+      <h2 id="oque-title">O que é CPA no marketing digital</h2>
+      <p>CPA quer dizer <b>custo por aquisição</b>: quanto você paga em anúncios para conseguir uma conversão, que normalmente é uma venda, mas pode ser um cadastro, uma assinatura ou um agendamento. É a métrica que diz se a sua mídia está cara ou barata para o que você vende.</p>
+      <p>No mercado financeiro, CPA também é o nome das certificações da ANBIMA. Nesta página, CPA é sempre a métrica de anúncios.</p>
+
+      <h2 id="formula">Como calcular o CPA</h2>
+      <div class="formula">CPA = investimento em anúncios ÷ número de conversões</div>
+      <p><b>Exemplo:</b> uma loja investiu R$ 3.000 em uma campanha de vendas e fez 60 pedidos. O CPA é 3.000 ÷ 60 = <b>R$ 50</b>. Cada venda custou R$ 50 em mídia.</p>
+      <p>Compare campanhas sempre no mesmo período e com o mesmo tipo de conversão. Um CPA de cadastro e um CPA de compra medem coisas diferentes.</p>
+
+      <h2 id="cpa-cac-cpl">CPA, CAC e CPL: qual a diferença</h2>
+      <div class="cmp c3">
+        <div><b>CPL</b><p>Custo por lead. Investimento em anúncios ÷ leads capturados. Mede o topo do funil.</p></div>
+        <div><b>CPA</b><p>Custo por aquisição. Investimento em anúncios ÷ vendas ou conversões. Mede a mídia.</p></div>
+        <div><b>CAC</b><p>Custo de aquisição de cliente. Todos os custos de marketing e vendas ÷ clientes novos. Mede o negócio.</p></div>
+      </div>
+      <p>Os três se conectam pela taxa de conversão: se 25% dos leads compram, o CPA é o CPL dividido por 0,25, ou seja, quatro vezes o CPL. Baixar o CPL não adianta se a qualidade do lead cai e menos gente compra.</p>
+
+      <h2 id="cac">Como calcular o CAC</h2>
+      <div class="formula">CAC = (anúncios + equipe + ferramentas + agência) ÷ clientes novos</div>
+      <p><b>Exemplo:</b> no mês, a empresa investiu R$ 5.000 em anúncios e gastou mais R$ 1.500 com comissões e ferramentas. Conquistou 100 clientes novos. O CAC é 6.500 ÷ 100 = <b>R$ 65</b>, enquanto o CPA de mídia é R$ 50.</p>
+      <p>Em negócios com recompra ou assinatura, compare o CAC com o valor que o cliente deixa ao longo do tempo (LTV). Uma referência comum no mercado é o LTV valer pelo menos três vezes o CAC.</p>
+
+      <h2 id="cpa-ideal">Qual é o CPA ideal</h2>
+      <p>O CPA ideal depende do que sobra de cada venda. O limite é o <b>CPA máximo</b>: acima dele, a venda dá prejuízo.</p>
+      <div class="formula">CPA máximo = ticket médio × margem</div>
+      <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Ticket médio</th><th>Margem de 30%</th><th>Margem de 40%</th><th>Margem de 50%</th></tr></thead><tbody>
+        <tr><td>R$ 100</td><td class="num">R$ 30</td><td class="num">R$ 40</td><td class="num">R$ 50</td></tr>
+        <tr><td>R$ 250</td><td class="num">R$ 75</td><td class="num">R$ 100</td><td class="num">R$ 125</td></tr>
+        <tr><td>R$ 500</td><td class="num">R$ 150</td><td class="num">R$ 200</td><td class="num">R$ 250</td></tr>
+      </tbody></table></div>
+      <p>Na prática, a meta de CPA fica abaixo do máximo para sobrar lucro e cobrir os custos fixos. O CPA também se traduz em ROAS: ROAS = ticket médio ÷ CPA. Com ticket de R$ 250 e CPA de R$ 50, o ROAS é 5x. Veja a relação completa na <a href="/calculadora-roas">calculadora de ROAS</a>.</p>
+
+      <h2 id="onde-ver">Onde ver o CPA no Meta Ads e no Google Ads</h2>
+      <ul>
+        <li><b>Meta Ads:</b> no Gerenciador de Anúncios, a coluna <i>Custo por resultado</i> mostra o CPA do objetivo da campanha. Para vendas, use o custo por compra.</li>
+        <li><b>Google Ads:</b> a coluna <i>Custo/conv.</i> é o CPA. A estratégia de lance <i>CPA desejado</i> tenta manter o custo médio por conversão no valor que você informar.</li>
+      </ul>
+      <p>Os dois números só fazem sentido se a conversão estiver bem configurada no pixel, na API de Conversões ou na tag do Google.</p>
+
+      <h2 id="reduzir">Como reduzir o CPA</h2>
+      <ul>
+        <li><b>Pause o que passa do CPA máximo.</b> Uma campanha cara pesa mais no CPA da conta do que qualquer ajuste fino.</li>
+        <li><b>Troque criativos cansados.</b> Quando a frequência sobe e o CTR cai, cada venda fica mais cara.</li>
+        <li><b>Olhe a página, não só o anúncio.</b> Dobrar a taxa de conversão da página corta o CPA pela metade com a mesma verba.</li>
+        <li><b>Leve verba para os públicos que já compram.</b> Remarketing e públicos parecidos com compradores costumam ter o menor CPA.</li>
+        <li><b>Dê tempo para o algoritmo.</b> Mudanças grandes de orçamento ou público reiniciam o aprendizado e o CPA sobe por alguns dias.</li>
+      </ul>
+      <p>A <a href="/">metrikabr</a> calcula o CPA de cada campanha da Meta e do Google todo dia e avisa quando alguma passa da sua meta.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="mais-title">
+    <div class="wrap">
+      <div class="sec-head"><h2 id="mais-title">Outras calculadoras de marketing</h2></div>
+      <div class="tools"><a class="tool" href="/calculadora-roas"><b>Calculadora de ROAS</b><p>Quanto cada real em anúncios volta em vendas e qual é o ROAS mínimo para não ter prejuízo.</p><span>Abrir calculadora →</span></a><a class="tool" href="/calculadora-cpa" aria-current="page"><b>Calculadora de CPA, CAC e CPL</b><p>Custo por venda, por cliente e por lead, e o CPA máximo que o seu produto aguenta.</p><span>Você está aqui</span></a><a class="tool" href="/calculadora-roi"><b>Calculadora de ROI</b><p>Se a campanha deu lucro de verdade, descontando o custo do produto. Com a diferença entre ROAS e ROI.</p><span>Abrir calculadora →</span></a></div>
+    </div>
+  </section>
+  <section class="alt" aria-labelledby="faq-title">
+    <div class="wrap faq">
+      <h2 id="faq-title">Perguntas sobre CPA, CAC e CPL</h2>
+      <div>
+        <details><summary>Como calcular o CPA?</summary><p>Divida o valor investido em anúncios pelo número de conversões. Se você investiu R$ 3.000 e fez 60 vendas, o CPA é R$ 50: cada venda custou R$ 50 em mídia.</p></details>
+        <details><summary>O que é um bom CPA?</summary><p>É um CPA abaixo do seu CPA máximo, que é o ticket médio multiplicado pela margem. Com ticket de R$ 200 e margem de 40%, cada venda deixa R$ 80 antes da mídia: um CPA de R$ 50 dá lucro, um de R$ 90 dá prejuízo.</p></details>
+        <details><summary>Qual a diferença entre CPA e CAC?</summary><p>O CPA considera só o investimento em anúncios por conversão. O CAC soma todos os custos para conquistar um cliente novo, como equipe comercial, ferramentas, agência e comissões, e divide pelo número de clientes novos. O CAC é sempre igual ou maior que o CPA.</p></details>
+        <details><summary>Qual a diferença entre CPA e CPL?</summary><p>O CPL é o custo por lead, ou seja, por contato capturado. O CPA é o custo por venda ou pela conversão final. Se 1 em cada 4 leads compra, o CPA é quatro vezes o CPL.</p></details>
+        <details><summary>O que é CPA desejado no Google Ads?</summary><p>É uma estratégia de lance automático em que você informa quanto quer pagar, em média, por conversão, e o Google ajusta os lances para chegar perto desse valor. Use como referência um CPA abaixo do seu CPA máximo.</p></details>
+        <details><summary>CPA alto é sempre ruim?</summary><p>Não. Um CPA de R$ 150 é ótimo para um produto de ticket R$ 800 com boa margem, e ruim para um de R$ 90. Em negócios com recompra ou assinatura, compare o CAC com o quanto o cliente gasta ao longo do tempo (LTV).</p></details>
+      </div>
+    </div>
+  </section>
+  <section class="final" aria-labelledby="final-title">
+    <div class="wrap">
+      <h2 id="final-title">Pare de calcular o CPA campanha por campanha.</h2>
+      <p>A metrikabr mostra o custo por venda de todas as campanhas da Meta e do Google contra a sua meta, todo dia. Teste 7 dias grátis, sem cartão.</p>
+      <button class="btn btn-white" data-signup="pro">Testar 7 dias grátis</button>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 metrikabr</span>
+    <nav aria-label="Rodapé">
+      <a href="/agencias">Para agências</a>
+      <a href="/#planos">Planos</a>
+      <a href="/calculadoras">Calculadoras</a>
+      <a href="/app/">Entrar</a>
+      <a href="mailto:comercial@metrikabr.com">comercial@metrikabr.com</a>
+    </nav>
+  </div>
+</footer>
+
+<dialog id="signup" aria-labelledby="su-title" data-default="pro">
+  <form class="dlg" id="su-form" novalidate>
+    <div class="dlg-head">
+      <div><h2 id="su-title">Criar sua conta</h2><p id="su-sub">7 dias grátis do plano Pro. Sem cartão de crédito.</p></div>
+      <button type="button" class="x" id="su-close" aria-label="Fechar">×</button>
+    </div>
+    <fieldset class="seg">
+      <legend class="sr">Plano</legend>
+      <label><input type="radio" name="plan" value="starter">Starter<small class="num">R$ 297/mês</small></label>
+      <label><input type="radio" name="plan" value="pro" checked>Pro<small class="num">R$ 697/mês</small></label>
+      <label><input type="radio" name="plan" value="scale">Scale<small class="num">R$ 1.497/mês</small></label>
+    </fieldset>
+    <div class="fields">
+      <label class="f"><span>Seu nome</span><input name="name" autocomplete="name" required></label>
+      <label class="f"><span>Empresa</span><input name="company" autocomplete="organization" required></label>
+      <label class="f full"><span>E-mail</span><input name="email" type="email" autocomplete="email" inputmode="email" required></label>
+      <label class="f"><span>WhatsApp <em>(opcional)</em></span><input name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(11) 90000-0000"></label>
+      <label class="f"><span>Senha</span><input name="password" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres" required></label>
+      <label class="hp" aria-hidden="true">Site<input name="website" tabindex="-1" autocomplete="off"></label>
+    </div>
+    <p class="err" id="su-err" role="alert" hidden></p>
+    <button class="btn btn-blue" id="su-btn" type="submit">Criar conta e começar o teste</button>
+    <p class="legal">Já tem conta? <a href="/app/">Entrar</a></p>
+  </form>
+</dialog>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  // aceita "1.234,56", "1234.56" e "1234"; vazio vira NaN
+  const num = v => { v = String(v).trim().replace(/[^\d.,-]/g, ""); if (!v) return NaN; if (v.includes(",")) v = v.replace(/\./g, "").replace(",", "."); else if (/\.\d{3}($|\.)/.test(v)) v = v.replace(/\./g, ""); const n = parseFloat(v); return isFinite(n) ? n : NaN; };
+  const f2 = n => n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const brl = n => (n < 0 ? "−R$ " : "R$ ") + Math.abs(n).toLocaleString("pt-BR", Math.abs(n) < 1000 ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : { maximumFractionDigits: 0 });
+  const pct = n => (n < 0 ? "−" : "") + Math.abs(n * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + "%";
+  const put = (id, v) => { $(id).textContent = v; };
+
+  const run = () => {
+
+    const s = num($("c-spend").value), v = num($("c-sales").value), l = num($("c-leads").value), o = num($("c-other").value) || 0;
+    const t = num($("c-ticket").value), m = num($("c-margin").value) / 100;
+    const ok = s > 0 && v > 0, cpa = ok ? s / v : NaN, cac = ok ? (s + o) / v : NaN, max = t > 0 && m > 0 && m <= 1 ? t * m : NaN;
+    put("o-cpa", ok ? brl(cpa) : "–");
+    put("o-cpl", s > 0 && l > 0 ? brl(s / l) : "–");
+    put("o-conv", v > 0 && l > 0 ? pct(v / l) : "–");
+    put("o-cac", ok ? brl(cac) : "–");
+    put("o-max", isFinite(max) ? brl(max) : "–");
+    const roas = ok && t > 0 ? " Isso equivale a um ROAS de " + f2(t / cpa) + "x." : "";
+    put("o-verdict", !ok ? "Informe o investimento e o número de vendas para calcular."
+      : !isFinite(max) ? "Informe o ticket médio e a margem para saber se cada venda dá lucro." + roas
+      : cac <= max ? `Cada venda deixa ${brl(max - cac)} de lucro depois de todos os custos de aquisição.` + roas
+      : cpa <= max ? `A mídia se paga (CPA abaixo de ${brl(max)}), mas com os outros custos cada cliente sai ${brl(cac - max)} no prejuízo.` + roas
+      : `Cada venda custa ${brl(cpa - max)} a mais do que o produto deixa de margem. Baixe o CPA para menos de ${brl(max)}.` + roas);
+  };
+  ["c-spend", "c-sales", "c-leads", "c-other", "c-ticket", "c-margin"].forEach(id => $(id).addEventListener("input", run));
+  run();
+})();
+</script>
+<script src="/lp/lp.js" defer></script>
+</body>
+</html>
