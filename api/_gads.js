@@ -34,7 +34,8 @@ export async function authUrl(req, cid) {
   await cmd("SET", K.state(state), JSON.stringify({ cid, at: Date.now() }), "EX", "600");
   const q = new URLSearchParams({
     client_id: CLIENT_ID(), redirect_uri: redirectUri(req), response_type: "code",
-    scope: SCOPE + " openid email", access_type: "offline", prompt: "consent", include_granted_scopes: "true", state,
+    // só o escopo do Google Ads: com um escopo só, o Google mostra "Permitir" em vez de caixinhas que podem ficar desmarcadas
+    scope: SCOPE, access_type: "offline", prompt: "consent", state,
   });
   return "https://accounts.google.com/o/oauth2/v2/auth?" + q;
 }
@@ -47,9 +48,9 @@ export async function finishAuth(req, code, state) {
   await cmd("DEL", K.state(state));
   const { cid } = JSON.parse(raw);
   const j = await tokenCall({ code, grant_type: "authorization_code", redirect_uri: redirectUri(req) });
-  if (!String(j.scope || "").includes(SCOPE)) throw new HttpError(400, "O acesso ao Google Ads não foi liberado. Na tela do Google, deixe marcada a permissão do Google Ads.", "no_scope");
+  if (!String(j.scope || "").split(/\s+/).includes(SCOPE)) throw new HttpError(400, "O acesso ao Google Ads não foi liberado. Clique em Autorizar no Google de novo e, se o Google mostrar uma caixa de seleção, marque a permissão do Google Ads antes de continuar.", "no_scope");
   if (!j.refresh_token) throw new HttpError(400, "O Google não devolveu a autorização permanente. Tente de novo.");
-  let email = null;
+  let email = null; // o e-mail só vem quando o login já tinha liberado o escopo de e-mail antes
   try { email = JSON.parse(Buffer.from(String(j.id_token || "").split(".")[1] || "", "base64url").toString()).email || null; } catch (e) {}
   await cmd("SET", K.token(cid), JSON.stringify({ refreshToken: j.refresh_token, email, scope: j.scope, at: new Date().toISOString() }));
   await cmd("SET", K.access(cid), j.access_token, "EX", String(Math.max(60, (j.expires_in || 3600) - 300)));
