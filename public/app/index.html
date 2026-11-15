@@ -4314,6 +4314,7 @@ function Login({ auth, showDemo, notice, onSignup }) {
       <label className="hp" aria-hidden="true">Site<input tabIndex="-1" autoComplete="off" value=${su.website} onInput=${suSet("website")} /></label>
       ${err ? html`<div className="err" role="alert">${err}${errCode === "email_taken" ? html` <button type="button" className="link-btn" onClick=${() => { setEmail(su.email.trim()); toLogin(); }}>Entrar com este e-mail</button>` : null}</div>` : null}
       <button className="btn btn-primary" style=${{ height: 42 }} type="submit" disabled=${busy}>${busy ? "Criando sua conta…" : "Criar conta e começar o teste"}</button>
+      <p className="login-alt" style=${{ fontSize: 12.5 }}>Ao criar a conta, você concorda com os <a href="/termos" target="_blank" rel="noopener">Termos de uso</a> e a <a href="/privacidade" target="_blank" rel="noopener">Política de privacidade</a>.</p>
       <p className="login-alt">Já tem conta? <button type="button" className="link-btn" onClick=${toLogin}>Entrar</button></p>
     </form></section>
   </div>`;

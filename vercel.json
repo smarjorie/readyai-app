@@ -91,6 +91,16 @@
       "source": "/calculadoras/",
       "destination": "/calculadoras",
       "permanent": true
+    },
+    {
+      "source": "/privacidade/",
+      "destination": "/privacidade",
+      "permanent": true
+    },
+    {
+      "source": "/termos/",
+      "destination": "/termos",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -117,6 +127,14 @@
     {
       "source": "/calculadoras",
       "destination": "/calculadoras/index.html"
+    },
+    {
+      "source": "/privacidade",
+      "destination": "/privacidade/index.html"
+    },
+    {
+      "source": "/termos",
+      "destination": "/termos/index.html"
     }
   ]
 }
