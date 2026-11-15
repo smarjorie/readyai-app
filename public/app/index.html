@@ -1025,7 +1025,7 @@ const PLANS = {
 };
 // teste grátis (contas criadas pela LP): dias que faltam, 0 no último dia
 const SALES_EMAIL = "comercial@metrikabr.com";
-const TRIAL_DAYS_LABEL = "7 dias";
+const TRIAL_DAYS_LABEL = "3 dias";
 function trialInfo(c) {
   if (!c || !c.trialEndsAt) return null;
   const end = new Date(c.trialEndsAt), left = Math.ceil((end - Date.now()) / 86400e3);
@@ -4330,7 +4330,7 @@ function Login({ auth, showDemo, notice, onSignup }) {
   if (mode === "signup") return html`<div className="login">
     <${LoginSide} />
     <section className="login-main" style=${{ position: "relative" }}>${side}<form className="login-box" onSubmit=${signup} noValidate>
-      <div><h2>Criar sua conta</h2><p style=${{ color: "var(--muted)", marginTop: 4 }}>7 dias grátis do plano ${PLANS[su.plan].name}. Sem cartão de crédito.</p></div>
+      <div><h2>Criar sua conta</h2><p style=${{ color: "var(--muted)", marginTop: 4 }}>3 dias grátis do plano ${PLANS[su.plan].name}. Sem cartão de crédito.</p></div>
       <div className="field"><label id="su-plan">Plano</label><div className="plan-pick" role="radiogroup" aria-labelledby="su-plan">${["starter", "pro", "scale"].map(k => html`<button key=${k} type="button" role="radio" aria-checked=${su.plan === k} className=${su.plan === k ? "on" : ""} onClick=${() => setSu(f => ({ ...f, plan: k }))}>${PLANS[k].name}<small className="num">${brl(PLANS[k].price)}/mês</small></button>`)}</div></div>
       <div className="field-row">
         <div className="field"><label htmlFor="su-n">Seu nome</label><input id="su-n" className="input" autoComplete="name" value=${su.name} onInput=${suSet("name")} autoFocus /></div>
