@@ -27,7 +27,7 @@ export default async function handler(req, res) {
 
     if (body.action === "status") {
       const t = googleReady() ? await tokenInfo(c.id) : null;
-      return send(res, 200, { ready: googleReady(), authorized: !!t, email: t ? t.email : null });
+      return send(res, 200, { ready: googleReady(), authorized: !!t, email: t ? t.email : null, at: t ? t.at : null });
     }
     if (body.action === "connect") return send(res, 200, { url: await authUrl(req, c.id) });
     if (body.action === "accounts") return send(res, 200, { accounts: await listAccounts(c.id) });
