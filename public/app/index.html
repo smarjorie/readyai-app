@@ -3049,7 +3049,9 @@ const slugify = s => (String(s || "cliente").normalize("NFD").replace(/[̀-ͯ]/g
 // a Meta pode ser lida pela Marketing API (token) ou pelo MCP oficial da Meta (mesmo token, com ads_mcp_management)
 const metaApi = m => m && m.via === "mcp" ? "/api/metamcp" : "/api/meta";
 const metaOn = conn => !!(conn && conn.meta && conn.meta.token && conn.meta.accountId);
-const googleOn = conn => !!(conn && conn.google && conn.google.slug && conn.google.customerId);
+// Google Ads pela API oficial (OAuth do app): a autorização fica no servidor, o cadastro guarda só a conta escolhida
+const googleOn = conn => !!(conn && conn.google && conn.google.via === "api" && conn.google.customerId);
+const authHeader = () => { const s = store.get(SESSION_KEY, null); return s && s.token ? { authorization: "Bearer " + s.token } : {}; };
 
 /* ================= período das consultas ================= */
 // "Últimos N dias" são dias completos, até ontem (como a Meta e o Google contam).
@@ -3139,14 +3141,14 @@ function useLiveData(client, enabled, period) {
   const [st, setSt] = useState({ status: "idle", camps: [], errors: {}, sources: [] });
   const m = metaOn(conn) ? conn.meta : null, g = chOn("google") && googleOn(conn) ? conn.google : null;
   const per = period ? { since: period.since, until: period.until } : undefined;
-  const key = JSON.stringify([enabled, m && [m.accountId, m.token.slice(-8), m.via || "api"], g && [g.slug, g.customerId, g.refreshToken || ""], tick, per]);
+  const key = JSON.stringify([enabled, m && [m.accountId, m.token.slice(-8), m.via || "api"], g && [g.customerId, g.loginCustomerId || "", g.at || ""], tick, per]);
   useEffect(() => {
     if (!enabled || (!m && !g)) { setSt({ status: "idle", camps: [], errors: {}, sources: [] }); return; }
     let dead = false;
     setSt(s => ({ ...s, status: "loading", errors: {} }));
     Promise.allSettled([
       m ? apiPost(metaApi(m), { action: "data", account_id: m.accountId, period: per }, { "x-meta-token": m.token }) : Promise.resolve(null),
-      g ? apiPost("/api/google", { action: "data", slug: g.slug, customer_id: g.customerId, refresh_token: g.refreshToken || undefined, period: per }) : Promise.resolve(null),
+      g ? apiPost("/api/google", { action: "data", client_id: client.id, customer_id: g.customerId, login_id: g.loginCustomerId || undefined, period: per }, authHeader()) : Promise.resolve(null),
     ]).then(([rm, rg]) => {
       if (dead) return;
       const camps = [], prev = { spend: 0, revenue: 0, purchases: 0, clicks: 0, impr: 0, tracked: 0 }, errors = {}, sources = [];
@@ -3204,7 +3206,8 @@ function buildLiveInsights(camps) {
     const d = delta(t.cpa, ACTIVE.prev.spend / ACTIVE.prev.purchases);
     list.push({ id: "l6", sev: d <= 0 ? "good" : "warn", tag: "Tendência", icon: "target", title: `CPA ${d <= 0 ? "caiu" : "subiu"} ${pct(Math.abs(d), 0)} no período`, body: `CPA de ${brl2(t.cpa)} contra ${brl2(ACTIVE.prev.spend / ACTIVE.prev.purchases)} nos 30 dias anteriores.`, metric: (d <= 0 ? "−" : "+") + pct(Math.abs(d), 0), ask: d <= 0 ? "O que fez meu CPA cair?" : "Por que meu CPA subiu?", goto: "overview" });
   }
-  if (camps.some(c => c.noRev && c.ch === "google")) list.push({ id: "l7", sev: "info", tag: "Google sem receita", icon: "bulb", title: "Google Ads aparece sem ROAS", body: "O conector do Google Ads ainda não informa o valor das conversões, então as campanhas do Google entram no CPA e nas conversões, mas não no ROAS.", metric: "n/d", ask: "Como estão minhas campanhas do Google pelo CPA?", goto: "campaigns" });
+  const gNoRev = camps.filter(c => c.noRev && c.ch === "google");
+  if (gNoRev.length) list.push({ id: "l7", sev: "info", tag: "Google sem receita", icon: "bulb", title: gNoRev.length === 1 ? `“${gNoRev[0].name}” não registra valor de conversão` : `${gNoRev.length} campanhas do Google sem valor de conversão`, body: "Sem valor de conversão no Google Ads (comum em campanhas de leads ou quando a conversão de compra não envia o valor), elas entram no CPA e nas conversões, mas não no ROAS. Para medir o ROAS, configure o valor da conversão de compra no Google Ads.", metric: "n/d", ask: "Como estão minhas campanhas do Google pelo CPA?", goto: "campaigns" });
   return list;
 }
 
@@ -3354,63 +3357,77 @@ function MetaConnectDrawer({ client, onUpdate, onClose, toast, agency }) {
 }
 
 function GoogleConnectDrawer({ client, onUpdate, onClose, toast }) {
-  const cur = (client.conn || {}).google || null;
-  const [slug, setSlug] = useState(cur ? cur.slug : "readyai-" + slugify(client.company));
-  const [rt, setRt] = useState(cur ? cur.refreshToken || "" : "");
-  const [auth, setAuth] = useState(null); const [list, setList] = useState(null); const [sel, setSel] = useState(cur ? cur.customerId : "");
-  const [busy, setBusy] = useState(""); const [err, setErr] = useState(null);
-  const body = extra => ({ slug, refresh_token: rt.trim() || undefined, ...extra });
-  const authorize = async () => {
-    setBusy("auth"); setErr(null); setList(null);
-    try { const j = await apiPost("/api/google", body({ action: "connect" })); setAuth(j); if (j.authorized) await accounts(); }
-    catch (e) { setErr(e.message); } finally { setBusy(""); }
-  };
+  const cur = googleOn(client.conn) ? client.conn.google : null;
+  const [st, setSt] = useState(null); // { ready, authorized, email } do servidor
+  const [list, setList] = useState(null); const [sel, setSel] = useState(cur ? cur.customerId : "");
+  const [busy, setBusy] = useState("status"); const [err, setErr] = useState(null);
+  const call = (action, extra) => apiPost("/api/google", { action, client_id: client.id, ...(extra || {}) }, authHeader());
   const accounts = async () => {
     setBusy("acc"); setErr(null);
     try {
-      const j = await apiPost("/api/google", body({ action: "accounts" }));
-      const l = j.accounts || []; setList(l); setAuth({ authorized: true });
-      if (!l.length) setErr("O login do Google não enxerga nenhuma conta do Google Ads.");
+      const j = await call("accounts");
+      const l = j.accounts || []; setList(l);
+      if (!l.length) setErr("Esse login do Google não tem acesso a nenhuma conta ativa do Google Ads. Autorize com o e-mail que acessa a conta.");
       else if (!l.some(a => a.id === sel)) setSel((l.find(a => !a.manager) || l[0]).id);
-    } catch (e) { setErr(e.message); if (e.code === "needs_auth") setAuth(null); } finally { setBusy(""); }
+    } catch (e) { setErr(e.message); if (e.code === "needs_auth") setSt(x => ({ ...(x || {}), authorized: false })); } finally { setBusy(""); }
   };
-  useEffect(() => { if (cur && cur.customerId) accounts(); }, []);
-
+  const status = async () => {
+    setBusy("status"); setErr(null);
+    try { const j = await call("status"); setSt(j); if (j.authorized) await accounts(); else setBusy(""); }
+    catch (e) { setErr(e.message); setBusy(""); }
+  };
+  useEffect(() => { status(); }, []);
+  // o login do Google abre numa janela; quando termina, a página de retorno avisa por postMessage
+  useEffect(() => {
+    const onMsg = e => { if (e.origin === location.origin && e.data && e.data.type === "metrikabr-google" && e.data.ok) status(); };
+    window.addEventListener("message", onMsg); return () => window.removeEventListener("message", onMsg);
+  }, []);
+  const authorize = async () => {
+    setErr(null); setBusy("auth");
+    const w = window.open("about:blank", "metrikabr-google", "width=520,height=680"); // aberta no clique, para o navegador não bloquear
+    try { const j = await call("connect"); if (w && !w.closed) w.location.href = j.url; else location.href = j.url; }
+    catch (e) { if (w) w.close(); setErr(e.message); } finally { setBusy(""); }
+  };
+  const disconnect = async () => {
+    setBusy("off");
+    try { await call("disconnect"); } catch (e) {}
+    const c = { ...(client.conn || {}) }; delete c.google; onUpdate({ conn: c }); toast("Google Ads desconectado"); onClose();
+  };
   const save = () => {
     const a = list.find(x => x.id === sel); if (!a) return;
-    onUpdate({ conn: { ...(client.conn || {}), google: { slug, customerId: a.id, customerName: a.name ? a.name + " · " + a.label : a.label, refreshToken: rt.trim() || undefined, at: new Date().toISOString() } } });
+    onUpdate({ conn: { ...(client.conn || {}), google: { via: "api", customerId: a.id, customerName: a.name ? a.name + " · " + a.label : a.label, loginCustomerId: a.via || a.id, email: st && st.email || undefined, at: new Date().toISOString() } } });
     toast("Google Ads conectado: " + (a.name || a.label)); onClose();
   };
+  const authorized = !!(st && st.authorized);
   return html`<${Fragment}><div className="drawer-bg" style=${{ zIndex: 60 }} onClick=${onClose}></div>
     <aside className="drawer" style=${{ zIndex: 61 }} role="dialog" aria-modal="true" aria-label="Conectar Google Ads">
       <div className="drawer-head"><div><div className="eyebrow">Integração · ${client.company}</div><h2 style=${{ fontSize: 20, fontWeight: 700 }}>Conectar Google Ads</h2>
-        <div className="card-sub">Leitura das campanhas pelo MCP do Google Ads, o mesmo conector usado no Claude.</div></div>
+        <div className="card-sub">Leitura das campanhas pela API oficial do Google Ads. A metrikabr só lê os dados.</div></div>
         <button type="button" className="btn btn-ghost btn-sm" onClick=${onClose} aria-label="Fechar"><${Icon} n="x" /></button></div>
       <div className="drawer-body">
+        ${st && !st.ready ? html`<div className="notice warn"><${Icon} n="alert" s=${16} /><div><b>Conexão ainda não configurada</b><span>Faltam as credenciais do Google (GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET) na Vercel.</span></div></div>` : null}
         <ol className="steps">
-          <li className=${auth && auth.authorized ? "done" : "on"}><b>Autorizar no Google</b>
-            <p className="card-sub" style=${{ marginTop: 4 }}>O MCP guarda a autorização deste cliente com o identificador <span className="mono">${slug}</span>. Quem tem acesso à conta do Google Ads faz o login uma vez.</p>
+          <li className=${authorized ? "done" : "on"}><b>Autorizar no Google</b>
+            <p className="card-sub" style=${{ marginTop: 4 }}>${authorized ? html`Autorizado${st.email ? html` com <b style=${{ color: "var(--ink)" }}>${st.email}</b>` : ""}. Para usar outro login, autorize de novo.` : "Quem tem acesso à conta do Google Ads entra com o Google e libera a leitura. Abre numa janela nova."}</p>
             <div style=${{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
-              <button type="button" className="btn btn-primary" disabled=${!!busy} onClick=${authorize}>${busy === "auth" ? "Verificando…" : auth && auth.authorized ? "Verificar de novo" : "Autorizar no Google"}</button>
-              ${auth && !auth.authorized ? html`<button type="button" className="btn btn-line" disabled=${!!busy} onClick=${accounts}>${busy === "acc" ? "Buscando…" : "Já autorizei, buscar contas"}</button>` : null}
+              <button type="button" className=${"btn " + (authorized ? "btn-line" : "btn-primary")} disabled=${!!busy || (st && !st.ready)} onClick=${authorize}>${busy === "auth" ? "Abrindo…" : authorized ? "Autorizar outro login" : "Autorizar no Google"}</button>
+              ${!authorized && st && st.ready ? html`<button type="button" className="btn btn-line" disabled=${!!busy} onClick=${status}>${busy === "status" || busy === "acc" ? "Verificando…" : "Já autorizei"}</button>` : null}
             </div>
-            ${auth && !auth.authorized && auth.url ? html`<div className="auth-link"><span>Abra o login do Google, autorize o acesso e volte aqui:</span><a className="btn btn-sm btn-line" href=${auth.url} target="_blank" rel="noopener noreferrer"><${Icon} n="arrowR" s=${13} />Abrir login do Google</a></div>` : null}
-            <details className="help"><summary>Opções avançadas</summary>
-              <div className="field" style=${{ marginTop: 8 }}><label htmlFor="g-slug">Identificador do cliente no MCP</label><input id="g-slug" className="input mono" style=${{ fontSize: 13 }} value=${slug} onInput=${e => { setSlug(slugify(e.target.value)); setAuth(null); setList(null); }} /><span className="card-sub">Use o mesmo identificador que esse cliente já usa no conector do Claude, se houver.</span></div>
-              <div className="field" style=${{ marginTop: 8 }}><label htmlFor="g-rt">refresh_token (só se o MCP pedir)</label><input id="g-rt" className="input mono" style=${{ fontSize: 13 }} type="password" autoComplete="off" value=${rt} onInput=${e => setRt(e.target.value)} placeholder="Copiado da página de sucesso do login" /><span className="card-sub">Necessário apenas quando o MCP não tem banco persistente e mostra o token na página de sucesso.</span></div>
-            </details>
           </li>
           <li className=${list ? "on" : ""}><b>Conta do Google Ads</b>
-            ${list ? html`<div style=${{ marginTop: 8 }}><${AccountCombo} id="g-acc" label="Conta do Google Ads" value=${sel} onChange=${setSel}
-                items=${[...list].sort((x, y) => (x.manager ? 1 : 0) - (y.manager ? 1 : 0)).map(a => ({ id: a.id, name: a.name || "Conta " + a.label, sub: a.via ? "via MCC " + a.via : "", pill: a.manager ? ["pill-mute", "Gerenciadora"] : null }))} /></div>` : html`<p className="card-sub" style=${{ marginTop: 6 }}>Aparece depois da autorização.</p>`}
+            ${busy === "acc" ? html`<p className="card-sub" style=${{ marginTop: 6 }}>Buscando as contas…</p>`
+              : list && list.length ? html`<div style=${{ marginTop: 8 }}><${AccountCombo} id="g-acc" label="Conta do Google Ads" value=${sel} onChange=${setSel}
+                items=${list.map(a => ({ id: a.id, name: a.name || "Conta " + a.label, sub: (a.label) + (a.via ? " · via MCC " + a.viaLabel : ""), pill: a.manager ? ["pill-mute", "Gerenciadora"] : null }))} /></div>
+                ${list.find(a => a.id === sel && a.manager) ? html`<p className="card-sub" style=${{ marginTop: 6 }}>Contas gerenciadoras (MCC) não têm campanhas. Escolha a subconta.</p>` : null}`
+              : html`<p className="card-sub" style=${{ marginTop: 6 }}>Aparece depois da autorização.</p>`}
           </li>
         </ol>
         ${err ? html`<div className="err" role="alert">${err}</div>` : null}
-        <div className="ai-note"><${Icon} n="bulb" s=${15} /><div>O conector do Google Ads ainda não informa o valor das conversões. As campanhas do Google entram com investimento, cliques e conversões, e o ROAS delas aparece como n/d.</div></div>
+        <div className="ai-note"><${Icon} n="bulb" s=${15} /><div>As campanhas do Google entram com investimento, cliques, conversões e valor de conversão. Campanhas sem valor de conversão (como as de leads) ficam fora do ROAS e são avaliadas pelo CPA.</div></div>
       </div>
       <div className="drawer-foot">
-        ${cur ? html`<button type="button" className="btn btn-line" onClick=${() => { const c = { ...(client.conn || {}) }; delete c.google; onUpdate({ conn: c }); toast("Google Ads desconectado"); onClose(); }}>Desconectar</button>` : html`<button type="button" className="btn btn-line" onClick=${onClose}>Cancelar</button>`}
-        <button type="button" className="btn btn-primary" disabled=${!list || !sel} onClick=${save}>Conectar conta</button>
+        ${cur || authorized ? html`<button type="button" className="btn btn-line" disabled=${!!busy} onClick=${disconnect}>${busy === "off" ? "Desconectando…" : "Desconectar"}</button>` : html`<button type="button" className="btn btn-line" onClick=${onClose}>Cancelar</button>`}
+        <button type="button" className="btn btn-primary" disabled=${!list || !sel || !!(list.find(a => a.id === sel) || {}).manager} onClick=${save}>${cur && sel !== cur.customerId ? "Trocar para esta conta" : "Conectar conta"}</button>
       </div>
     </aside><//>`;
 }
@@ -3437,7 +3454,7 @@ function AdIntegrations({ client, onUpdate, toast, isAgency, live, openCh, clear
     ${isAgency ? html`<p className="card-sub">Na agência, todas as contas de anúncio que o token da Meta acessa viram clientes da carteira. ${dt(" Google Ads e TikTok ainda não entram na carteira.", "")}</p>` : null}
     <div className="grid g2">
       ${card("meta", "Meta Ads", "Campanhas, investimento, compras e receita pela Marketing API ou pelo MCP oficial da Meta", metaOn(conn), metaOn(conn) ? (isAgency ? "Token" + (conn.meta.user ? " de " + conn.meta.user : "") + " · carteira com as contas dele" : conn.meta.accountName + " · " + conn.meta.accountId) + (conn.meta.via === "mcp" ? " · via MCP" : " · via API") : "Marketing API ou MCP da Meta", live && live.errors && live.errors.meta)}
-      ${!chOn("google") ? soon("google", "Google Ads", "Campanhas, investimento, cliques e conversões") : card("google", "Google Ads", "Campanhas, investimento, cliques e conversões pelo MCP do Google Ads", googleOn(conn), googleOn(conn) ? conn.google.customerName : "Login com a conta Google", live && live.errors && live.errors.google)}
+      ${!chOn("google") ? soon("google", "Google Ads", "Campanhas, investimento, cliques e conversões") : card("google", "Google Ads", "Campanhas, investimento, conversões e receita pela API oficial do Google Ads", googleOn(conn), googleOn(conn) ? conn.google.customerName : "Login com a conta Google", live && live.errors && live.errors.google)}
       ${soon("tiktok", "TikTok Ads", "Campanhas e Spark Ads")}
       <form className="card card-pad" onSubmit=${saveTarget} style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
         <div><div className="card-title">Meta de ROAS da conta <span style=${{ fontWeight: 500, color: "var(--muted)", fontSize: 13 }}>(opcional)</span></div><div className="card-sub">Quando preenchida, entra nos insights, nas recomendações e no copilot. Deixe em branco para não usar meta.</div></div>
