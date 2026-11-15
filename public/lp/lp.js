@@ -108,7 +108,7 @@
   const dlg = $("#signup"), form = $("#su-form");
   if (!dlg) return;
   const err = $("#su-err"), btn = $("#su-btn"), sub = $("#su-sub");
-  const setPlan = k => { form.plan.value = k; sub.textContent = `7 dias grátis do plano ${PLANS[k].name}. Sem cartão de crédito.`; };
+  const setPlan = k => { form.plan.value = k; sub.textContent = `3 dias grátis do plano ${PLANS[k].name}. Sem cartão de crédito.`; };
   form.addEventListener("change", e => { if (e.target.name === "plan") setPlan(e.target.value); });
   document.addEventListener("click", e => {
     const b = e.target.closest("[data-signup]"); if (!b) return;
@@ -142,10 +142,12 @@
       if (j.pending) {
         // cadastro fica em análise até a equipe aprovar no console
         done = true;
+        // conversão para o Google Ads / GTM (evento "sign_up"; nenhum dado pessoal vai junto)
+        try { (window.dataLayer = window.dataLayer || []).push({ event: "sign_up", method: "trial", plan: d.plan, source: d.source }); } catch (x) {}
         const box = document.createElement("div");
         box.className = "su-done";
         box.setAttribute("role", "status");
-        box.innerHTML = '<h2>Cadastro recebido</h2><p>Nossa equipe confere cada cadastro antes de liberar o acesso. Assim que a conta de <b></b> for liberada, avisamos em <b></b>. Normalmente liberamos no mesmo dia útil, e os 7 dias de teste começam a contar a partir daí.</p><button type="button" class="btn btn-blue">Entendi</button>';
+        box.innerHTML = '<h2>Cadastro recebido</h2><p>Nossa equipe confere cada cadastro antes de liberar o acesso. Assim que a conta de <b></b> for liberada, avisamos em <b></b>. Normalmente liberamos no mesmo dia útil, e os 3 dias de teste começam a contar a partir daí.</p><button type="button" class="btn btn-blue">Entendi</button>';
         const bs = box.querySelectorAll("b"); bs[0].textContent = d.company.trim(); bs[1].textContent = d.email.trim().toLowerCase();
         box.querySelector("button").addEventListener("click", () => dlg.close());
         form.hidden = true; form.after(box);
