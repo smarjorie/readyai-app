@@ -135,8 +135,22 @@
       const r = await fetch("/api/signup", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(d) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) {
+        if (j.code === "pending") return showErr("Já recebemos um cadastro com esse e-mail e ele está em análise. Avisamos por e-mail assim que o acesso for liberado.");
         if (j.code === "email_taken") return showErr('Já existe uma conta com esse e-mail. <a href="/app/">Entre por aqui</a> ou use outro e-mail.');
         return showErr(j.error || "Não foi possível criar a conta agora. Tente de novo em instantes.");
+      }
+      if (j.pending) {
+        // cadastro fica em análise até a equipe aprovar no console
+        done = true;
+        const box = document.createElement("div");
+        box.className = "su-done";
+        box.setAttribute("role", "status");
+        box.innerHTML = '<h2>Cadastro recebido</h2><p>Nossa equipe confere cada cadastro antes de liberar o acesso. Assim que a conta de <b></b> for liberada, avisamos em <b></b>. Normalmente liberamos no mesmo dia útil, e os 7 dias de teste começam a contar a partir daí.</p><button type="button" class="btn btn-blue">Entendi</button>';
+        const bs = box.querySelectorAll("b"); bs[0].textContent = d.company.trim(); bs[1].textContent = d.email.trim().toLowerCase();
+        box.querySelector("button").addEventListener("click", () => dlg.close());
+        form.hidden = true; form.after(box);
+        dlg.addEventListener("close", () => { box.remove(); form.hidden = false; form.reset(); setPlan(dlg.dataset.default || "pro"); btn.disabled = false; btn.textContent = "Criar conta e começar o teste"; }, { once: true });
+        return;
       }
       if (!j.token) return showErr("Não foi possível criar a conta agora. Tente de novo em instantes.");
       // mesma sessão que o app usa no login

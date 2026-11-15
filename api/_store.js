@@ -243,6 +243,57 @@ export function resetEmail(who, link) {
   return { subject, html, text };
 }
 
+// ---------- e-mails do teste grátis (aprovação pela gestora) ----------
+// Quem recebe os alertas: NOTIFY_EMAIL (pode ter vários, separados por vírgula). Sem ela, vai para ADMIN_EMAIL, se configurado.
+export function notifyTargets() {
+  const raw = process.env.NOTIFY_EMAIL || process.env.ADMIN_EMAIL || "";
+  return raw.split(/[,;\s]+/).map(s => s.trim().toLowerCase()).filter(s => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s));
+}
+function brandEmail({ title, intro, rows, cta, link, foot }) {
+  const table = rows && rows.length ? `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 18px;font-size:13px;border-collapse:collapse">${rows.map(([k, v]) => `<tr><td style="padding:6px 0;color:#6b7280;width:130px;vertical-align:top">${esc(k)}</td><td style="padding:6px 0;color:#111827;font-weight:600">${esc(v)}</td></tr>`).join("")}</table>` : "";
+  return `<!doctype html><html><body style="margin:0;background:#f4f5f7;font-family:Arial,Helvetica,sans-serif;color:#111827">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;padding:32px 12px"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #e6e8ec;border-radius:14px">
+<tr><td style="padding:28px 28px 8px"><div style="font-size:18px;font-weight:700">metrika<span style="color:#1e6bff">br</span></div>
+<div style="font-size:12px;color:#6b7280">Copilot de Marketing</div></td></tr>
+<tr><td style="padding:12px 28px 4px"><h1 style="font-size:20px;line-height:1.3;margin:0 0 10px">${esc(title)}</h1>
+<p style="font-size:14px;line-height:1.6;color:#4b5563;margin:0 0 18px">${intro}</p>${table}
+${cta ? `<a href="${esc(link)}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 20px;border-radius:10px">${esc(cta)}</a>` : ""}</td></tr>
+<tr><td style="padding:18px 28px 26px"><p style="font-size:12px;color:#9aa3b1;margin:0">${foot || ""}</p></td></tr>
+</table></td></tr></table></body></html>`;
+}
+const whenBR = iso => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
+
+// alerta para a gestora: novo cadastro aguardando aprovação
+export function signupAlertEmail(c, planName, link) {
+  const flags = (c.approval && c.approval.flags) || [];
+  const where = c.approval && [c.approval.city, c.approval.region, c.approval.country].filter(Boolean).join(", ");
+  const rows = [["Empresa", c.company], ["Nome", c.name], ["E-mail", c.email], ["WhatsApp", c.phone || "não informado"], ["Plano", planName],
+    ["Origem", { lp: "Landing page", "lp-agencias": "LP de agências", app: "Tela de login do app" }[c.source] || c.source], ["Local aproximado", where || "não identificado"], ["Data", whenBR(c.createdAt)]];
+  if (flags.length) rows.push(["Atenção", flags.join(" · ")]);
+  const subject = `${flags.length ? "⚠️ " : ""}Novo teste aguardando aprovação: ${c.company}`;
+  const text = `Novo cadastro de teste grátis aguardando sua aprovação.\n\n${rows.map(([k, v]) => k + ": " + v).join("\n")}\n\nAprove ou recuse no console: ${link}\n\nEnquanto você não aprovar, a pessoa não consegue entrar.`;
+  const html = brandEmail({ title: "Novo teste aguardando aprovação", intro: `Alguém se cadastrou para testar a metrikabr. <b style="color:#111827">Enquanto você não aprovar, a pessoa não consegue entrar.</b>`, rows, cta: "Abrir no console", link, foot: "Você recebe este alerta porque o seu e-mail está em NOTIFY_EMAIL na Vercel." });
+  return { subject, html, text };
+}
+// para quem se cadastrou: recebemos o pedido
+export function signupReceivedEmail(c) {
+  const first = String(c.name || "").split(" ")[0] || "Olá";
+  const subject = "Recebemos seu cadastro na metrikabr";
+  const text = `${first}, recebemos o cadastro de ${c.company} para o teste grátis da metrikabr.\n\nNossa equipe confere cada cadastro antes de liberar o acesso. Você recebe outro e-mail assim que a conta for liberada, normalmente no mesmo dia útil.\n\nSe você não fez este cadastro, ignore este e-mail.`;
+  const html = brandEmail({ title: `${first}, recebemos seu cadastro`, intro: `Nossa equipe confere cada cadastro antes de liberar o acesso de <b style="color:#111827">${esc(c.company)}</b>. Você recebe outro e-mail assim que a conta for liberada, normalmente no mesmo dia útil.`, foot: "Se você não fez este cadastro, ignore este e-mail." });
+  return { subject, html, text };
+}
+// para quem se cadastrou: acesso liberado
+export function approvedEmail(c, link, days) {
+  const first = String(c.name || "").split(" ")[0] || "Olá";
+  const end = new Date(c.trialEndsAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const subject = "Seu teste grátis da metrikabr foi liberado";
+  const text = `${first}, o acesso de ${c.company} à metrikabr foi liberado. Seu teste de ${days} dias vai até ${end}.\n\nEntre com o e-mail e a senha que você cadastrou:\n${link}`;
+  const html = brandEmail({ title: `${first}, seu acesso foi liberado`, intro: `O teste grátis de <b style="color:#111827">${esc(c.company)}</b> começou agora e vai até ${esc(end)}. Entre com o e-mail e a senha que você cadastrou e conecte suas contas de anúncio.`, cta: "Entrar na metrikabr", link, foot: `Você entra com ${esc(c.email)}. Esqueceu a senha? Use "Esqueci minha senha" na tela de login.` });
+  return { subject, html, text };
+}
+
 export function appUrl(req) {
   if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, "");
   const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:3000";

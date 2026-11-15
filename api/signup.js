@@ -1,15 +1,18 @@
-// Cadastro pela landing page ou pela tela de login do app: cria a conta com teste grátis e já devolve a sessão.
+// Cadastro pela landing page ou pela tela de login do app.
+// A conta nasce "pendente": a pessoa só entra depois que a gestora aprova no console.
+// O teste grátis (trialEndsAt) começa a contar na aprovação, não no cadastro.
 //
 // POST /api/signup { plan, company, name, email, password, phone?, source?, website? }
-//   -> { token, role: "client", client }
+//   -> { pending: true, email }
 // "website" é um campo escondido na LP (armadilha para robôs): se vier preenchido, o cadastro é ignorado.
 
 import crypto from "node:crypto";
 import {
   dbReady, HttpError, send, readBody, fail, cmd,
-  getClientByEmail, saveClient, hashPassword, signSession, publicClient, sendEmail,
+  getClientByEmail, saveClient, hashPassword, sendEmail,
+  notifyTargets, signupAlertEmail, signupReceivedEmail, appUrl,
 } from "./_store.js";
-import { PLANS, PLAN_MODULES, TRIAL_DAYS } from "./_plans.js";
+import { PLANS, PLAN_MODULES, DISPOSABLE, FREE_MAIL } from "./_plans.js";
 
 const isEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 const txt = (v, max = 120) => String(v == null ? "" : v).trim().slice(0, max);
@@ -33,29 +36,44 @@ export default async function handler(req, res) {
     const email = txt(f.email).toLowerCase(), company = txt(f.company), name = txt(f.name), pass = String(f.password || "");
     if (!company || !name || !isEmail(email)) throw new HttpError(400, "Preencha empresa, nome e um e-mail válido.");
     if (pass.length < 8) throw new HttpError(400, "A senha precisa ter pelo menos 8 caracteres.");
-    if (txt(f.website)) return send(res, 200, { ok: true }); // robô: finge sucesso e não cria nada
+    if (txt(f.website)) return send(res, 200, { pending: true, email }); // robô: finge sucesso e não cria nada
     await rateLimit(req);
-    if (await getClientByEmail(email)) throw new HttpError(409, "Já existe uma conta com esse e-mail. Entre pelo login ou use outro e-mail.", "email_taken");
+    const taken = await getClientByEmail(email);
+    if (taken && taken.status === "pendente") throw new HttpError(409, "Já recebemos um cadastro com esse e-mail e ele está em análise. Você recebe um e-mail assim que o acesso for liberado.", "pending");
+    if (taken) throw new HttpError(409, "Já existe uma conta com esse e-mail. Entre pelo login ou use outro e-mail.", "email_taken");
+
+    // sinais para a gestora decidir (nada aqui bloqueia o cadastro)
+    const domain = email.split("@")[1];
+    const flags = [];
+    if (DISPOSABLE.has(domain)) flags.push("e-mail descartável (" + domain + ")");
+    else if (FREE_MAIL.has(domain)) flags.push("e-mail pessoal, não corporativo");
+    const h = k => { try { return decodeURIComponent(String(req.headers[k] || "")).slice(0, 60); } catch (e) { return ""; } };
+    const country = h("x-vercel-ip-country");
+    if (country && country !== "BR") flags.push("cadastro de fora do Brasil (" + country + ")");
 
     const plan = PLANS[f.plan] ? f.plan : "pro";
     const now = new Date();
     const c = {
       id: "cl" + crypto.randomBytes(6).toString("hex"), company, name, email, phone: txt(f.phone, 30) || null,
-      plan, modules: [...PLAN_MODULES[plan]], status: "ativo", source: ["lp", "lp-agencias", "app"].includes(f.source) ? f.source : "lp",
-      since: now.toISOString().slice(0, 10), createdAt: now.toISOString(), lastAccess: now.toISOString(),
-      trialEndsAt: new Date(now.getTime() + TRIAL_DAYS * 86400e3).toISOString(),
+      plan, modules: [...PLAN_MODULES[plan]], status: "pendente", source: ["lp", "lp-agencias", "app"].includes(f.source) ? f.source : "lp",
+      since: now.toISOString().slice(0, 10), createdAt: now.toISOString(), lastAccess: null,
+      trialEndsAt: null, // começa a contar quando a gestora aprovar
+      approval: { requestedAt: now.toISOString(), flags, country: country || null, region: h("x-vercel-ip-country-region") || null, city: h("x-vercel-ip-city") || null, alert: null },
       targetRoas: null, conn: {}, invite: null, passHash: hashPassword(pass),
     };
     await saveClient(c);
 
-    // aviso opcional para a gestora (variável NOTIFY_EMAIL)
-    if (process.env.NOTIFY_EMAIL) {
-      await sendEmail({
-        to: process.env.NOTIFY_EMAIL, key: "signup-" + c.id,
-        subject: `Novo teste grátis: ${company} (${PLANS[plan]})`,
-        text: `${name} (${email}${c.phone ? ", " + c.phone : ""}) criou uma conta de teste de ${company} no plano ${PLANS[plan]}. O teste vai até ${new Date(c.trialEndsAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}.`,
-      }).catch(() => null);
-    }
-    return send(res, 200, { token: signSession({ role: "client", sub: c.id }), role: "client", client: publicClient(c) });
+    // alerta para a gestora (NOTIFY_EMAIL, ou ADMIN_EMAIL) e confirmação para a pessoa
+    const to = notifyTargets();
+    const link = appUrl(req) + "/app/?cliente=" + c.id;
+    const results = await Promise.all(to.map(addr => sendEmail({ to: addr, key: "signup-" + c.id + "-" + addr, ...signupAlertEmail(c, PLANS[plan], link) }).catch(e => ({ sent: false, error: String(e && e.message || e) }))));
+    const failed = results.filter(r => !r.sent);
+    c.approval.alert = !to.length ? { sent: false, error: "Nenhum e-mail de alerta configurado. Crie NOTIFY_EMAIL na Vercel com o seu e-mail." }
+      : failed.length ? { sent: false, error: failed[0].error, to } : { sent: true, to, at: new Date().toISOString() };
+    if (!c.approval.alert.sent) console.error("signup: alerta não enviado", c.id, c.approval.alert.error);
+    await sendEmail({ to: email, key: "signup-received-" + c.id, ...signupReceivedEmail(c) }).catch(() => null);
+    await saveClient(c);
+
+    return send(res, 200, { pending: true, email });
   } catch (e) { return fail(res, e); }
 }
