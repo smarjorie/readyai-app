@@ -190,6 +190,6 @@ Com o banco ativo, só a gestora entra de cara (com a mesma senha, ou a de `ADMI
 ## SEO e ícones
 
 - Ícones em `public/`: `favicon.ico`, `favicon.svg`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` e `site.webmanifest`. Imagens de compartilhamento: `og-image.png` (LP) e `og-agencias.png`.
-- Páginas indexáveis: `/`, `/agencias` e `/calculadora-roas` (calculadora grátis, feita para buscas como "calculadora de ROAS" e "o que é ROAS"). Todas com título, descrição, canonical, Open Graph e dados estruturados (schema.org).
+- Páginas indexáveis: `/`, `/agencias` e as calculadoras grátis em `/calculadoras` (índice), `/calculadora-roas`, `/calculadora-cpa` (CPA, CAC e custo por lead) e `/calculadora-roi` (ROI e ROAS x ROI). O estilo comum das calculadoras fica em `public/lp/tools.css`. Todas com título, descrição, canonical, Open Graph e dados estruturados (schema.org).
 - `/app` fica fora do Google (`noindex`). `robots.txt` e `sitemap.xml` estão em `public/`.
 - Depois de publicar: cadastre `https://www.metrikabr.com` no Google Search Console e no Bing Webmaster Tools e envie o `sitemap.xml`.

@@ -1,0 +1,39 @@
+/* metrikabr · páginas de calculadoras (/calculadoras, /calculadora-roas, /calculadora-cpa, /calculadora-roi). Usa as variáveis de lp.css. */
+.hero.calc-hero{padding-bottom:clamp(56px,7vw,96px)}
+.roas-calc{margin-top:clamp(36px,5vw,56px);text-align:left;color:var(--ink)}
+.roas-calc .f input{width:100%}
+.roas-calc .f small{color:var(--muted);font-size:13px}
+.roas-calc .f-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.roas-calc .opt{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:4px 0 -8px}
+.out-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px 24px;margin:8px 0 18px}
+.out-grid small{display:block;font-size:14px}
+.out-grid b{display:block;font-size:clamp(24px,2.6vw,32px);letter-spacing:-.03em;line-height:1.1}
+.calc-out .verdict{margin:0 0 18px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.12);color:#fff;font-weight:600;font-size:15px}
+.prose{max-width:760px}
+.prose h2{font-size:clamp(28px,3.4vw,40px)}
+.prose h3{margin-top:26px}
+.prose p,.prose li{color:var(--ink-2)}
+.prose p{margin:0 0 16px}
+.prose li{margin-bottom:8px}
+.formula{font-size:clamp(20px,2.4vw,26px);font-weight:800;padding:20px 22px;border-radius:16px;background:var(--surface);border:1px solid var(--line);margin:8px 0 20px;letter-spacing:-.02em}
+.tbl-wrap{overflow-x:auto;margin:8px 0 18px}
+.tbl{width:100%;border-collapse:collapse;margin:8px 0 18px;font-size:16px}
+.tbl-wrap .tbl{margin:0}
+.tbl th,.tbl td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl th{color:var(--muted);font-weight:600;font-size:14px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:8px 0 18px}
+.cmp div{padding:20px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
+.cmp b{display:block;font-size:19px;margin-bottom:6px;color:var(--ink)}
+.cmp p{margin:0}
+.cmp.c3{grid-template-columns:repeat(3,1fr)}
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.tool{display:flex;flex-direction:column;gap:10px;padding:26px;border-radius:20px;background:var(--surface);border:1px solid var(--line);text-decoration:none;transition:border-color .15s,transform .15s}
+.tool:hover{border-color:var(--blue);transform:translateY(-2px)}
+.tool[aria-current]{border-color:var(--blue)}
+.tool b{font-size:21px;letter-spacing:-.02em}
+.tool p{margin:0;color:var(--ink-2);font-size:16px}
+.tool span{margin-top:auto;color:var(--blue-2);font-weight:700;font-size:15px}
+.hero .tools{margin-top:clamp(36px,5vw,56px);text-align:left;color:var(--ink)}
+@media (max-width:900px){.tools,.cmp.c3{grid-template-columns:1fr}}
+@media (max-width:760px){.cmp,.out-grid{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.cmp,.roas-calc .f-row{grid-template-columns:1fr}}

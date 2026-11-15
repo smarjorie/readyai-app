@@ -76,6 +76,21 @@
       "source": "/calculadora-roas/",
       "destination": "/calculadora-roas",
       "permanent": true
+    },
+    {
+      "source": "/calculadora-cpa/",
+      "destination": "/calculadora-cpa",
+      "permanent": true
+    },
+    {
+      "source": "/calculadora-roi/",
+      "destination": "/calculadora-roi",
+      "permanent": true
+    },
+    {
+      "source": "/calculadoras/",
+      "destination": "/calculadoras",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -90,6 +105,18 @@
     {
       "source": "/calculadora-roas",
       "destination": "/calculadora-roas/index.html"
+    },
+    {
+      "source": "/calculadora-cpa",
+      "destination": "/calculadora-cpa/index.html"
+    },
+    {
+      "source": "/calculadora-roi",
+      "destination": "/calculadora-roi/index.html"
+    },
+    {
+      "source": "/calculadoras",
+      "destination": "/calculadoras/index.html"
     }
   ]
 }

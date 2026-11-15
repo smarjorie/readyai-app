@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Calculadora de ROI de marketing e diferença entre ROAS e ROI | metrikabr</title>
+<meta name="description" content="Calcule grátis o ROI das suas campanhas descontando o custo do produto, veja como calcular ROI de marketing e entenda a diferença entre ROAS e ROI, com exemplos.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://www.metrikabr.com/calculadora-roi">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="metrikabr">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:url" content="https://www.metrikabr.com/calculadora-roi">
+<meta property="og:title" content="Calculadora de ROI de marketing">
+<meta property="og:description" content="Descubra se a campanha deu lucro de verdade e compare ROI com ROAS.">
+<meta property="og:image" content="https://www.metrikabr.com/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#070d1f">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "WebApplication", "name": "Calculadora de ROI de marketing", "url": "https://www.metrikabr.com/calculadora-roi", "applicationCategory": "BusinessApplication", "operatingSystem": "Web", "inLanguage": "pt-BR", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "BRL"}, "publisher": {"@type": "Organization", "name": "metrikabr", "url": "https://www.metrikabr.com/"}}, {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "metrikabr", "item": "https://www.metrikabr.com/"}, {"@type": "ListItem", "position": 2, "name": "Calculadoras", "item": "https://www.metrikabr.com/calculadoras"}, {"@type": "ListItem", "position": 3, "name": "Calculadora de ROI", "item": "https://www.metrikabr.com/calculadora-roi"}]}, {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Como calcular o ROI de marketing?", "acceptedAnswer": {"@type": "Answer", "text": "Some o lucro bruto que a campanha gerou (receita × margem do produto), subtraia tudo o que foi gasto com ela (anúncios, agência, ferramentas) e divida pelo total gasto. Multiplique por 100 para ter a porcentagem."}}, {"@type": "Question", "name": "Qual a diferença entre ROI e ROAS?", "acceptedAnswer": {"@type": "Answer", "text": "O ROAS divide a receita pelo investimento em anúncios e não considera o custo do produto. O ROI usa o lucro e todos os custos da campanha. Por isso uma campanha pode ter ROAS de 2x e ROI negativo."}}, {"@type": "Question", "name": "Como transformar ROAS em ROI?", "acceptedAnswer": {"@type": "Answer", "text": "Quando o único custo é a mídia, ROI = ROAS × margem − 1. Com ROAS de 4x e margem de 30%, o ROI é 4 × 0,3 − 1 = 0,2, ou seja, 20%."}}, {"@type": "Question", "name": "O que é um bom ROI em marketing?", "acceptedAnswer": {"@type": "Answer", "text": "Qualquer ROI acima de zero significa que a campanha devolveu mais do que custou. O quanto acima depende dos seus custos fixos e do que você esperaria ganhar colocando o mesmo dinheiro em outro lugar."}}, {"@type": "Question", "name": "ROI negativo quer dizer que devo pausar a campanha?", "acceptedAnswer": {"@type": "Answer", "text": "Nem sempre. Campanhas de topo de funil e de clientes novos costumam ter ROI negativo na primeira compra e se pagar na recompra. Olhe o ROI no prazo em que o cliente costuma voltar antes de cortar."}}]}]}</script>
+<script>
+  (function () { var q = (location.search.match(/[?&]tema=(\w+)/) || [])[1], t = q === "claro" ? "light" : q === "escuro" ? "dark" : null;
+    try { t = t || localStorage.getItem("mk_lp_theme"); } catch (e) {}
+    if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="/lp/lp.css">
+<link rel="stylesheet" href="/lp/tools.css">
+</head>
+<body data-lp="lp">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 7l2-3h12M16 14h2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-logo" viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="#1e6bff"/><rect x="7.5" y="17" width="4.4" height="8" rx="2.2" fill="#fff" opacity=".55"/><rect x="13.8" y="12.5" width="4.4" height="12.5" rx="2.2" fill="#fff" opacity=".8"/><rect x="20.1" y="7" width="4.4" height="18" rx="2.2" fill="#fff"/></symbol>
+</svg>
+
+<header class="top on-hero">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="metrikabr, início">
+      <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#1e6bff"/><rect x="7.5" y="17" width="4.4" height="8" rx="2.2" fill="#fff" opacity=".55"/><rect x="13.8" y="12.5" width="4.4" height="12.5" rx="2.2" fill="#fff" opacity=".8"/><rect x="20.1" y="7" width="4.4" height="18" rx="2.2" fill="#fff"/></svg>
+      <span>metrika<span class="br">br</span></span>
+    </a>
+    <nav aria-label="Seções">
+      <a href="/#produto">Produto</a>
+      <a href="/calculadoras" aria-current="page">Calculadoras</a>
+      <a href="/#planos">Planos</a>
+      <a href="/agencias">Para agências</a>
+    </nav>
+    <a class="login" href="/app/">Entrar</a>
+    <button class="btn btn-blue btn-sm" data-signup="pro">Testar grátis</button>
+  </div>
+</header>
+
+<main>
+  <section class="hero calc-hero" aria-labelledby="hero-title">
+    <div class="wrap">
+      <div class="hero-copy">
+        <span class="pill"><b>Grátis</b>ROI de campanhas e ROAS lado a lado</span>
+        <h1 id="hero-title">Calculadora de ROI de marketing</h1>
+        <p class="lead">Descubra se a sua campanha deu lucro de verdade, descontando o custo do produto e todos os gastos com ela, e compare com o ROAS que aparece no gerenciador.</p>
+      </div>
+      <form class="calc roas-calc" novalidate onsubmit="return false">
+        <div class="calc-in">
+          <h2 class="sr">Calcular ROI</h2>
+          <label class="f"><span>Investimento em anúncios (R$)</span><input id="i-spend" inputmode="decimal" value="5.000" autocomplete="off"></label>
+          <label class="f"><span>Receita gerada pela campanha (R$)</span><input id="i-rev" inputmode="decimal" value="20.000" autocomplete="off"></label>
+          <label class="f"><span>Margem do produto (%)</span><input id="i-margin" inputmode="decimal" value="35" autocomplete="off"><small>Quanto sobra de cada venda depois do custo do produto, frete e impostos.</small></label>
+          <label class="f"><span>Outros custos da campanha (R$, opcional)</span><input id="i-other" inputmode="decimal" value="1.000" autocomplete="off"><small>Agência, criação, ferramentas. Deixe 0 se não houver.</small></label>
+        </div>
+        <div class="calc-out" aria-live="polite">
+          <small>ROI da campanha</small>
+          <div class="big num" id="o-roi">–</div>
+          <div class="out-grid">
+            <div><small>Lucro da campanha</small><b class="num" id="o-profit">–</b></div>
+            <div><small>ROAS</small><b class="num" id="o-roas">–</b></div>
+            <div><small>ROAS de equilíbrio</small><b class="num" id="o-be">–</b></div>
+            <div><small>Lucro por R$ 1 investido</small><b class="num" id="o-per">–</b></div>
+          </div>
+          <p class="verdict" id="o-verdict"></p>
+          <button type="button" class="btn btn-white" data-signup="pro">Acompanhar o retorno das minhas campanhas</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section aria-labelledby="oque-title">
+    <div class="wrap prose">
+      <h2 id="oque-title">O que é ROI</h2>
+      <p>ROI vem do inglês <i>return on investment</i>, ou retorno sobre o investimento. Ele mostra quanto de lucro um investimento gerou em relação ao que custou. Um ROI de 50% quer dizer que, para cada R$ 1 gasto, voltou R$ 1,50: o real investido mais R$ 0,50 de lucro.</p>
+      <div class="formula">ROI = (ganho − custo) ÷ custo × 100</div>
+
+      <h2 id="roi-marketing">Como calcular o ROI de marketing</h2>
+      <p>Em campanhas, o "ganho" não é a receita, é o <b>lucro bruto</b> que as vendas deixaram. E o "custo" é tudo o que a campanha consumiu, não só a mídia.</p>
+      <div class="formula">ROI = (receita × margem − custos da campanha) ÷ custos da campanha</div>
+      <p><b>Exemplo:</b> uma campanha investiu R$ 5.000 em anúncios, pagou R$ 1.000 de criação e gerou R$ 20.000 em vendas de um produto com 35% de margem. O lucro bruto foi R$ 7.000. Tirando os R$ 6.000 de custos, sobram R$ 1.000. O ROI é 1.000 ÷ 6.000 = <b>16,7%</b>.</p>
+      <p>No gerenciador, a mesma campanha aparece com ROAS de 4x, o que parece muito melhor. Os dois números estão certos: medem coisas diferentes.</p>
+
+      <h2 id="roas-x-roi">ROAS x ROI: a diferença</h2>
+      <div class="tbl-wrap"><table class="tbl"><thead><tr><th></th><th>ROAS</th><th>ROI</th></tr></thead><tbody>
+        <tr><td><b>O que mede</b></td><td>Receita por real de anúncio</td><td>Lucro por real investido</td></tr>
+        <tr><td><b>Fórmula</b></td><td>Receita ÷ investimento em anúncios</td><td>(Lucro − custos) ÷ custos</td></tr>
+        <tr><td><b>Considera a margem</b></td><td>Não</td><td>Sim</td></tr>
+        <tr><td><b>Como aparece</b></td><td>Em vezes (4x)</td><td>Em porcentagem (16,7%)</td></tr>
+        <tr><td><b>Melhor para</b></td><td>Comparar campanhas, públicos e criativos no dia a dia</td><td>Decidir se o canal vale o dinheiro no mês</td></tr>
+      </tbody></table></div>
+      <p>Quando a mídia é o único custo, dá para converter um no outro: <b>ROI = ROAS × margem − 1</b>. Com margem de 35%, qualquer ROAS abaixo de 2,86x (1 ÷ 0,35) dá ROI negativo. Esse é o ROAS de equilíbrio, explicado na <a href="/calculadora-roas">calculadora de ROAS</a>.</p>
+
+      <h2 id="quando-usar">Quando usar cada um</h2>
+      <ul>
+        <li><b>ROAS no dia a dia:</b> é rápido, aparece no Meta Ads e no Google Ads e serve para decidir onde colocar a verba entre campanhas do mesmo produto.</li>
+        <li><b>ROI no fechamento:</b> mostra se o marketing como um todo deu lucro, considerando agência, ferramentas e o custo real do que foi vendido.</li>
+        <li><b>Os dois juntos:</b> defina a meta de ROAS a partir do ROI que você quer ter. Assim a otimização diária já leva ao lucro do mês.</li>
+      </ul>
+
+      <h2 id="erros">Erros comuns no cálculo do ROI</h2>
+      <ul>
+        <li><b>Usar a receita no lugar do lucro.</b> Isso transforma o ROI em um ROAS disfarçado e esconde campanhas que dão prejuízo.</li>
+        <li><b>Esquecer custos da campanha.</b> Agência, criação de vídeo e ferramentas fazem parte do investimento.</li>
+        <li><b>Misturar janelas de atribuição.</b> Compare períodos e janelas iguais, ou um canal vai parecer melhor só por contar mais vendas.</li>
+        <li><b>Medir cedo demais.</b> Em produtos com recompra, o ROI da primeira venda subestima o valor do cliente.</li>
+      </ul>
+      <p>A <a href="/">metrikabr</a> compara o ROAS de cada campanha com a sua meta todo dia, para o ROI do mês não ser surpresa.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="mais-title">
+    <div class="wrap">
+      <div class="sec-head"><h2 id="mais-title">Outras calculadoras de marketing</h2></div>
+      <div class="tools"><a class="tool" href="/calculadora-roas"><b>Calculadora de ROAS</b><p>Quanto cada real em anúncios volta em vendas e qual é o ROAS mínimo para não ter prejuízo.</p><span>Abrir calculadora →</span></a><a class="tool" href="/calculadora-cpa"><b>Calculadora de CPA, CAC e CPL</b><p>Custo por venda, por cliente e por lead, e o CPA máximo que o seu produto aguenta.</p><span>Abrir calculadora →</span></a><a class="tool" href="/calculadora-roi" aria-current="page"><b>Calculadora de ROI</b><p>Se a campanha deu lucro de verdade, descontando o custo do produto. Com a diferença entre ROAS e ROI.</p><span>Você está aqui</span></a></div>
+    </div>
+  </section>
+  <section class="alt" aria-labelledby="faq-title">
+    <div class="wrap faq">
+      <h2 id="faq-title">Perguntas sobre ROI e ROAS</h2>
+      <div>
+        <details><summary>Como calcular o ROI de marketing?</summary><p>Some o lucro bruto que a campanha gerou (receita × margem do produto), subtraia tudo o que foi gasto com ela (anúncios, agência, ferramentas) e divida pelo total gasto. Multiplique por 100 para ter a porcentagem.</p></details>
+        <details><summary>Qual a diferença entre ROI e ROAS?</summary><p>O ROAS divide a receita pelo investimento em anúncios e não considera o custo do produto. O ROI usa o lucro e todos os custos da campanha. Por isso uma campanha pode ter ROAS de 2x e ROI negativo.</p></details>
+        <details><summary>Como transformar ROAS em ROI?</summary><p>Quando o único custo é a mídia, ROI = ROAS × margem − 1. Com ROAS de 4x e margem de 30%, o ROI é 4 × 0,3 − 1 = 0,2, ou seja, 20%.</p></details>
+        <details><summary>O que é um bom ROI em marketing?</summary><p>Qualquer ROI acima de zero significa que a campanha devolveu mais do que custou. O quanto acima depende dos seus custos fixos e do que você esperaria ganhar colocando o mesmo dinheiro em outro lugar.</p></details>
+        <details><summary>ROI negativo quer dizer que devo pausar a campanha?</summary><p>Nem sempre. Campanhas de topo de funil e de clientes novos costumam ter ROI negativo na primeira compra e se pagar na recompra. Olhe o ROI no prazo em que o cliente costuma voltar antes de cortar.</p></details>
+      </div>
+    </div>
+  </section>
+  <section class="final" aria-labelledby="final-title">
+    <div class="wrap">
+      <h2 id="final-title">Saiba quais campanhas dão lucro antes do fim do mês.</h2>
+      <p>A metrikabr junta Meta Ads e Google Ads e compara cada campanha com a sua meta de ROAS, todo dia. Teste 7 dias grátis, sem cartão.</p>
+      <button class="btn btn-white" data-signup="pro">Testar 7 dias grátis</button>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 metrikabr</span>
+    <nav aria-label="Rodapé">
+      <a href="/agencias">Para agências</a>
+      <a href="/#planos">Planos</a>
+      <a href="/calculadoras">Calculadoras</a>
+      <a href="/app/">Entrar</a>
+      <a href="mailto:comercial@metrikabr.com">comercial@metrikabr.com</a>
+    </nav>
+  </div>
+</footer>
+
+<dialog id="signup" aria-labelledby="su-title" data-default="pro">
+  <form class="dlg" id="su-form" novalidate>
+    <div class="dlg-head">
+      <div><h2 id="su-title">Criar sua conta</h2><p id="su-sub">7 dias grátis do plano Pro. Sem cartão de crédito.</p></div>
+      <button type="button" class="x" id="su-close" aria-label="Fechar">×</button>
+    </div>
+    <fieldset class="seg">
+      <legend class="sr">Plano</legend>
+      <label><input type="radio" name="plan" value="starter">Starter<small class="num">R$ 297/mês</small></label>
+      <label><input type="radio" name="plan" value="pro" checked>Pro<small class="num">R$ 697/mês</small></label>
+      <label><input type="radio" name="plan" value="scale">Scale<small class="num">R$ 1.497/mês</small></label>
+    </fieldset>
+    <div class="fields">
+      <label class="f"><span>Seu nome</span><input name="name" autocomplete="name" required></label>
+      <label class="f"><span>Empresa</span><input name="company" autocomplete="organization" required></label>
+      <label class="f full"><span>E-mail</span><input name="email" type="email" autocomplete="email" inputmode="email" required></label>
+      <label class="f"><span>WhatsApp <em>(opcional)</em></span><input name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(11) 90000-0000"></label>
+      <label class="f"><span>Senha</span><input name="password" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres" required></label>
+      <label class="hp" aria-hidden="true">Site<input name="website" tabindex="-1" autocomplete="off"></label>
+    </div>
+    <p class="err" id="su-err" role="alert" hidden></p>
+    <button class="btn btn-blue" id="su-btn" type="submit">Criar conta e começar o teste</button>
+    <p class="legal">Já tem conta? <a href="/app/">Entrar</a></p>
+  </form>
+</dialog>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  // aceita "1.234,56", "1234.56" e "1234"; vazio vira NaN
+  const num = v => { v = String(v).trim().replace(/[^\d.,-]/g, ""); if (!v) return NaN; if (v.includes(",")) v = v.replace(/\./g, "").replace(",", "."); else if (/\.\d{3}($|\.)/.test(v)) v = v.replace(/\./g, ""); const n = parseFloat(v); return isFinite(n) ? n : NaN; };
+  const f2 = n => n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const brl = n => (n < 0 ? "−R$ " : "R$ ") + Math.abs(n).toLocaleString("pt-BR", Math.abs(n) < 1000 ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : { maximumFractionDigits: 0 });
+  const pct = n => (n < 0 ? "−" : "") + Math.abs(n * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + "%";
+  const put = (id, v) => { $(id).textContent = v; };
+
+  const run = () => {
+
+    const s = num($("i-spend").value), r = num($("i-rev").value), m = num($("i-margin").value) / 100, o = num($("i-other").value) || 0;
+    const ok = s > 0 && r >= 0, okM = m > 0 && m <= 1, cost = s + o, profit = ok && okM ? r * m - cost : NaN;
+    put("o-roi", isFinite(profit) ? pct(profit / cost) : "–");
+    put("o-profit", isFinite(profit) ? brl(profit) : "–");
+    put("o-per", isFinite(profit) ? brl(profit / cost) : "–");
+    put("o-roas", ok ? f2(r / s) + "x" : "–");
+    put("o-be", okM ? f2(1 / m) + "x" : "–");
+    put("o-verdict", !ok ? "Informe o investimento e a receita para calcular." : !okM ? "Informe a margem do produto para calcular o lucro."
+      : profit > 0 ? `A campanha devolveu o que custou e deixou ${brl(profit)} de lucro.`
+      : profit === 0 ? "A campanha empatou: devolveu exatamente o que custou."
+      : `A campanha vendeu ${brl(r)}, mas deu ${brl(-profit)} de prejuízo. Para empatar, ela precisaria vender ${brl(cost / m)}.`);
+  };
+  ["i-spend", "i-rev", "i-margin", "i-other"].forEach(id => $(id).addEventListener("input", run));
+  run();
+})();
+</script>
+<script src="/lp/lp.js" defer></script>
+</body>
+</html>
