@@ -113,8 +113,12 @@ function adsError(status, j) {
   if (status === 401) return new HttpError(401, "A autorização do Google Ads expirou. Clique em Autorizar no Google de novo.", "needs_auth");
   if (/NOT_APPROVED|only approved for use with test accounts|TEST_ACCOUNT|test accounts only|access level/i.test(details + msg))
     return new HttpError(403, "O projeto do Google Cloud da metrikabr ainda só tem acesso de teste à API do Google Ads. Peça o acesso Explorer em Google Ads API → Níveis de acesso, no Google Cloud.", "test_access");
-  if (/USER_PERMISSION_DENIED|CUSTOMER_NOT_ENABLED|NOT_ADS_USER/i.test(details))
-    return new HttpError(403, "O login do Google usado não tem acesso a essa conta do Google Ads (ou a conta está desativada).", "no_permission");
+  if (/CUSTOMER_NOT_ENABLED/i.test(details))
+    return new HttpError(403, "Essa conta do Google Ads ainda não está ativa: o cadastro não foi concluído (sem faturamento ou sem a primeira campanha), ou ela foi cancelada. Conclua a configuração em ads.google.com ou escolha outra conta.", "not_enabled");
+  if (/NOT_ADS_USER/i.test(details))
+    return new HttpError(403, "Esse login do Google não está ligado a nenhuma conta do Google Ads. Autorize com o e-mail que entra no Google Ads da conta.", "no_permission");
+  if (/USER_PERMISSION_DENIED/i.test(details))
+    return new HttpError(403, "O login do Google usado não tem permissão para ler essa conta do Google Ads. Peça acesso à conta (em ads.google.com → Administrador → Acesso e segurança) ou autorize com outro e-mail.", "no_permission");
   if (/AUTHORIZATION_ERROR|PERMISSION_DENIED/i.test(details + msg) || status === 403)
     return new HttpError(403, "O Google Ads recusou o acesso: " + (msg || "permissão negada") + ". Se o acesso Explorer foi liberado há pouco, aguarde alguns minutos.", "denied");
   if (status === 404) return new HttpError(502, "A versão da API do Google Ads configurada não existe mais. Atualize GOOGLE_ADS_API_VERSION.", "version");
@@ -136,7 +140,7 @@ export async function listAccounts(cid) {
   await Promise.all(ids.map(async id => {
     let me;
     try { me = (await query(cid, id, "SELECT customer.id, customer.descriptive_name, customer.manager, customer.status, customer.currency_code FROM customer LIMIT 1", id))[0]; }
-    catch (e) { console.error("google accounts:", id, e.code, e.message); errors.push(e); return; } // conta sem permissão: fica de fora, mas o motivo é guardado
+    catch (e) { console.error("google accounts:", id, e.code, e.message); if (e.code !== "needs_auth" && e.code !== "test_access") e.message = "Conta " + fmtId(id) + ": " + e.message; errors.push(e); return; } // conta sem permissão: fica de fora, mas o motivo é guardado
     if (!me) return;
     const c = me.customer;
     if (c.status && c.status !== "ENABLED") { inactive.push(c.status); return; }

@@ -3377,15 +3377,29 @@ function GoogleConnectDrawer({ client, onUpdate, onClose, toast }) {
     catch (e) { setErr(e.message); setBusy(""); }
   };
   useEffect(() => { status(); }, []);
-  // o login do Google abre numa janela; quando termina, a página de retorno avisa por postMessage
+  // o login do Google abre numa janela; quando termina, a página de retorno avisa por postMessage, BroadcastChannel ou localStorage
+  // (o window.opener se perde quando a janela passa pelo Google). Enquanto isso, a gaveta também confere o status a cada 3 s.
+  const waiting = useRef(null);
+  const done = () => { if (waiting.current) { clearInterval(waiting.current.t); waiting.current = null; } status(); };
   useEffect(() => {
-    const onMsg = e => { if (e.origin === location.origin && e.data && e.data.type === "metrikabr-google" && e.data.ok) status(); };
-    window.addEventListener("message", onMsg); return () => window.removeEventListener("message", onMsg);
+    const onMsg = e => { if (e.origin === location.origin && e.data && e.data.type === "metrikabr-google" && e.data.ok) done(); };
+    const onStore = e => { if (e.key === "metrikabr_google_auth" && e.newValue && /"ok":true/.test(e.newValue)) done(); };
+    let bc = null; try { bc = new BroadcastChannel("metrikabr-google"); bc.onmessage = e => { if (e.data && e.data.ok) done(); }; } catch (x) {}
+    window.addEventListener("message", onMsg); window.addEventListener("storage", onStore);
+    return () => { window.removeEventListener("message", onMsg); window.removeEventListener("storage", onStore); if (bc) bc.close(); if (waiting.current) clearInterval(waiting.current.t); };
   }, []);
+  const watch = () => {
+    if (waiting.current) clearInterval(waiting.current.t);
+    const before = st && st.at, started = Date.now();
+    waiting.current = { t: setInterval(async () => {
+      if (Date.now() - started > 180000) { clearInterval(waiting.current.t); waiting.current = null; return; }
+      try { const j = await call("status"); if (j.authorized && j.at !== before) done(); } catch (x) {}
+    }, 3000) };
+  };
   const authorize = async () => {
     setErr(null); setBusy("auth");
     const w = window.open("about:blank", "metrikabr-google", "width=520,height=680"); // aberta no clique, para o navegador não bloquear
-    try { const j = await call("connect"); if (w && !w.closed) w.location.href = j.url; else location.href = j.url; }
+    try { const j = await call("connect"); if (w && !w.closed) { w.location.href = j.url; watch(); } else location.href = j.url; }
     catch (e) { if (w) w.close(); setErr(e.message); } finally { setBusy(""); }
   };
   const disconnect = async () => {

@@ -12,8 +12,14 @@ function page(res, status, ok, title, text) {
 .box{max-width:420px;margin:24px;padding:32px;background:#fff;border:1px solid #e6e8ec;border-radius:16px;text-align:center}
 .ic{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;font-size:24px;background:${ok ? "#e7f6ec;color:#15803d" : "#fdecec;color:#b91c1c"}}
 h1{font-size:20px;margin:0 0 8px}p{margin:0 0 18px;color:#4b5563;line-height:1.5}a{display:inline-block;background:#111827;color:#fff;text-decoration:none;font-weight:700;padding:11px 18px;border-radius:10px}</style></head>
-<body><div class="box"><div class="ic">${ok ? "✓" : "!"}</div><h1>${esc(title)}</h1><p>${esc(text)}</p><a href="/app/">Voltar para a metrikabr</a></div>
-<script>try{if(window.opener){window.opener.postMessage({type:"metrikabr-google",ok:${ok ? "true" : "false"}},location.origin);${ok ? "setTimeout(function(){window.close()},1200);" : ""}}}catch(e){}</script></body></html>`);
+<body><div class="box"><div class="ic">${ok ? "✓" : "!"}</div><h1>${esc(title)}</h1><p>${esc(text)}</p><a href="/app/" id="back">Voltar para a metrikabr</a></div>
+<script>(function(){var m={type:"metrikabr-google",ok:${ok ? "true" : "false"},at:Date.now()};
+// a janela passa pelo Google e perde o window.opener: o aviso vai por BroadcastChannel e localStorage também
+try{new BroadcastChannel("metrikabr-google").postMessage(m)}catch(e){}
+try{localStorage.setItem("metrikabr_google_auth",JSON.stringify(m))}catch(e){}
+try{if(window.opener)window.opener.postMessage(m,location.origin)}catch(e){}
+var b=document.getElementById("back");b.textContent="Fechar esta janela";b.addEventListener("click",function(ev){ev.preventDefault();window.close();setTimeout(function(){location.href="/app/"},300)});
+${ok ? 'setTimeout(function(){window.close()},900);' : ''}})();</script></body></html>`);
 }
 
 export default async function handler(req, res) {
@@ -21,7 +27,7 @@ export default async function handler(req, res) {
   if (q.error) return page(res, 200, false, "Autorização cancelada", q.error === "access_denied" ? "Você não liberou o acesso ao Google Ads. Volte para a metrikabr e tente de novo quando quiser." : "O Google não concluiu a autorização (" + q.error + "). Tente de novo.");
   try {
     const r = await finishAuth(req, String(q.code || ""), String(q.state || ""));
-    return page(res, 200, true, "Google Ads autorizado", (r.email ? "A conta " + r.email + " foi conectada. " : "") + "Esta janela fecha sozinha. Se não fechar, volte para a metrikabr e escolha a conta do Google Ads.");
+    return page(res, 200, true, "Google Ads autorizado", (r.email ? "A conta " + r.email + " foi conectada. " : "") + "Pode fechar esta janela: a metrikabr já recebeu a autorização.");
   } catch (e) {
     return page(res, e.status && e.status < 500 ? e.status : 500, false, "Não deu certo", e.message || "Erro inesperado. Volte para a metrikabr e tente de novo.");
   }
