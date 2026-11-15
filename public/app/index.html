@@ -13,7 +13,7 @@
   --accent:#1e6bff; --accent-ink:#1557e0; --accent-soft:#eaf1ff; --on-accent:#ffffff;
   --good:#15803d; --good-soft:#e7f6ec; --warn:#b45309; --warn-soft:#fef3e2;
   --bad:#b91c1c; --bad-soft:#fdecec; --on-bad:#ffffff; --on-good:#ffffff; --violet:#6d28d9; --violet-soft:#f1ecfe;
-  --c-meta:#1e6bff; --c-google:#e0730f; --c-tiktok:#0f9488; --c-spend:#9aa3b1; --c-linkedin:#0a66c2; --c-pinterest:#d0263a; --c-kwai:#e5a000;
+  --c-meta:#1e6bff; --c-google:#e0730f; --c-tiktok:#0f9488; --c-spend:#9aa3b1; --c-linkedin:#0a66c2; --c-pinterest:#d0263a; --c-kwai:#e5a000; --c-openai:#202123;
   --btn:#111827; --btn-hover:#2a3140; --btn-ink:#ffffff;
   --shadow:0 1px 2px rgba(17,24,39,.05),0 8px 24px rgba(17,24,39,.06);
   --overlay:rgba(17,24,39,.32);
@@ -27,7 +27,7 @@
   --accent:#5b8dff; --accent-ink:#8fb0ff; --accent-soft:#1a2540; --on-accent:#0b1020;
   --good:#4ade80; --good-soft:#11251a; --warn:#fbbf24; --warn-soft:#2a2010;
   --bad:#f87171; --bad-soft:#2c1517; --on-bad:#1a0b0b; --on-good:#06180d; --violet:#a78bfa; --violet-soft:#221a38;
-  --c-meta:#5b8dff; --c-google:#f59e3b; --c-tiktok:#2dd4bf; --c-spend:#5d6675; --c-linkedin:#5aa2e8; --c-pinterest:#f06a78; --c-kwai:#f5c242;
+  --c-meta:#5b8dff; --c-google:#f59e3b; --c-tiktok:#2dd4bf; --c-spend:#5d6675; --c-linkedin:#5aa2e8; --c-pinterest:#f06a78; --c-kwai:#f5c242; --c-openai:#d4d7dd;
   --btn:#e8eaee; --btn-hover:#ffffff; --btn-ink:#0e1116;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35); --overlay:rgba(0,0,0,.55);
   color-scheme:dark}
@@ -3013,8 +3013,7 @@ function Insights({ insights, chat, go }) {
 function Integrations({ client, onUpdate, toast, isAgency, live, openCh, clearOpen }) {
   const others = [
     ["Google Analytics 4", "Sessões, receita e atribuição do site", "Ainda sem conector"],
-    ["WhatsApp Business", "Conversas e CRM de vendas", "Disponível em breve"],
-  ].filter(() => !DESKTOP_APP); // no app desktop: sem Google Analytics e sem WhatsApp
+  ].filter(() => !DESKTOP_APP); // no app desktop: sem Google Analytics
   return html`<div className="stack">
     <${PageHead} title="Integrações" sub="Contas que o painel, o copilot e as inteligências do agente usam. Alterações nas contas sempre pedem sua confirmação." />
     <${AdIntegrations} client=${client} onUpdate=${onUpdate} toast=${toast} isAgency=${isAgency} live=${live} openCh=${openCh} clearOpen=${clearOpen} />
@@ -3460,21 +3459,23 @@ function AdIntegrations({ client, onUpdate, toast, isAgency, live, openCh, clear
       <button className=${"btn btn-sm " + (on ? "btn-line" : "btn-primary")} onClick=${() => setOpen(key)}>${on ? "Gerenciar" : "Conectar"}</button></div>
   </article>`;
   // canal que ainda não conecta: cartão sem botão, com "Em breve" (Google no app desktop, TikTok em todo lugar)
-  const soon = (key, title, sub) => html`<article key=${key} className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
-    <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title" style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: CH[key].color }}></span>${title}</div><div className="card-sub">${sub}</div></div><span className="pill pill-violet">Em breve</span></div>
+  const soon = (key, title, sub, color) => html`<article key=${key} className="card card-pad" style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div style=${{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div><div className="card-title" style=${{ display: "flex", alignItems: "center", gap: 8 }}><span className="ch-dot" style=${{ background: color || CH[key].color }}></span>${title}</div><div className="card-sub">${sub}</div></div><span className="pill pill-violet">Em breve</span></div>
     <span className="mono" style=${{ color: "var(--muted)" }}>Ainda sem conector</span></article>`;
   return html`<div className="stack" style=${{ gap: 10 }}>
     <div className="eyebrow">Contas de anúncio</div>
-    ${isAgency ? html`<p className="card-sub">Na agência, todas as contas de anúncio que o token da Meta acessa viram clientes da carteira. ${dt(" Google Ads e TikTok ainda não entram na carteira.", "")}</p>` : null}
+    ${isAgency ? html`<p className="card-sub">Na agência, todas as contas de anúncio que o token da Meta acessa viram clientes da carteira. ${dt(" Google Ads, TikTok e OpenAI Ads ainda não entram na carteira.", "")}</p>` : null}
     <div className="grid g2">
       ${card("meta", "Meta Ads", "Campanhas, investimento, compras e receita pela Marketing API ou pelo MCP oficial da Meta", metaOn(conn), metaOn(conn) ? (isAgency ? "Token" + (conn.meta.user ? " de " + conn.meta.user : "") + " · carteira com as contas dele" : conn.meta.accountName + " · " + conn.meta.accountId) + (conn.meta.via === "mcp" ? " · via MCP" : " · via API") : "Marketing API ou MCP da Meta", live && live.errors && live.errors.meta)}
       ${!chOn("google") ? soon("google", "Google Ads", "Campanhas, investimento, cliques e conversões") : card("google", "Google Ads", "Campanhas, investimento, conversões e receita pela API oficial do Google Ads", googleOn(conn), googleOn(conn) ? conn.google.customerName : "Login com a conta Google", live && live.errors && live.errors.google)}
       ${soon("tiktok", "TikTok Ads", "Campanhas e Spark Ads")}
-      <form className="card card-pad" onSubmit=${saveTarget} style=${{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <div><div className="card-title">Meta de ROAS da conta <span style=${{ fontWeight: 500, color: "var(--muted)", fontSize: 13 }}>(opcional)</span></div><div className="card-sub">Quando preenchida, entra nos insights, nas recomendações e no copilot. Deixe em branco para não usar meta.</div></div>
-        <div style=${{ display: "flex", gap: 8, alignItems: "center" }}><input id="target-roas" className="input num" style=${{ maxWidth: 110 }} inputMode="decimal" value=${target} onInput=${e => setTarget(e.target.value)} placeholder="Sem meta" aria-label="Meta de ROAS" /><span style=${{ color: "var(--muted)" }}>x</span><button className="btn btn-sm btn-line" type="submit">Salvar</button></div>
-      </form>
+      ${soon("openai", "OpenAI Ads", "Anúncios no ChatGPT: campanhas, investimento e conversões", "var(--c-openai)")}
     </div>
+    <div className="eyebrow" style=${{ marginTop: 6 }}>Metas da conta</div>
+    <form className="card card-pad" onSubmit=${saveTarget} style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+      <div style=${{ flex: "1 1 320px", minWidth: 0 }}><div className="card-title">Meta de ROAS <span style=${{ fontWeight: 500, color: "var(--muted)", fontSize: 13 }}>(opcional)</span></div><div className="card-sub">Vale para todos os canais. Quando preenchida, entra nos insights, nas recomendações e no copilot. Deixe em branco para não usar meta.</div></div>
+      <div style=${{ display: "flex", gap: 8, alignItems: "center" }}><input id="target-roas" className="input num" style=${{ maxWidth: 110 }} inputMode="decimal" value=${target} onInput=${e => setTarget(e.target.value)} placeholder="Sem meta" aria-label="Meta de ROAS" /><span style=${{ color: "var(--muted)" }}>x</span><button className="btn btn-sm btn-line" type="submit">Salvar</button></div>
+    </form>
     ${open === "meta" ? html`<${MetaConnectDrawer} client=${client} onUpdate=${onUpdate} onClose=${() => setOpen(null)} toast=${toast} agency=${isAgency} />` : null}
     ${open === "google" && chOn("google") ? html`<${GoogleConnectDrawer} client=${client} onUpdate=${onUpdate} onClose=${() => setOpen(null)} toast=${toast} />` : null}
   </div>`;
