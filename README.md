@@ -4,7 +4,7 @@
 
 Painel de marketing multicanal com um copilot conversacional.
 
-- **Dados reais:** Meta Ads pela Marketing API (token de acesso) e Google Ads pelo MCP do Google Ads.
+- **Dados reais:** Meta Ads pela Marketing API (token de acesso) e Google Ads pela API oficial do Google Ads (OAuth do próprio app).
 - **Copilot:** conversa usando Claude (Anthropic), ChatGPT (OpenAI) ou Groq com a chave de API da própria pessoa.
 - Sem contas conectadas, o painel mostra dados de exemplo, com um aviso no topo.
 
@@ -15,7 +15,9 @@ public/index.html   app completo (React via CDN, sem build)
 api/chat.js         conversa do copilot -> Anthropic, OpenAI ou Groq
 api/meta.js         Meta Ads -> Graph API v25 (contas, campanhas, 30 dias, semana, período anterior)
 api/metamcp.js      Meta Ads -> MCP oficial da Meta (mcp.facebook.com/ads), mesmo formato do meta.js
-api/google.js       Google Ads -> MCP do Google Ads (autorização, contas, campanhas)
+api/google.js       Google Ads -> API oficial (status, autorização, contas, campanhas, desconectar)
+api/google-callback.js  retorno do login do Google (guarda a autorização do cliente)
+api/_gads.js        OAuth e consultas GAQL à API do Google Ads (não vira rota)
 api/_mcp.js         cliente MCP usado pelas rotas (não vira rota)
 api/auth.js         login, sessão e aceite do convite
 api/clients.js      cadastro de clientes: criar (com convite por e-mail), editar, excluir, reenviar convite
@@ -65,9 +67,8 @@ Sem banco, o app continua funcionando no modo local, com o aviso "Modo local" no
 2. Na gaveta do cliente, clique em **Conectar contas deste cliente**. A plataforma abre como esse cliente, direto em Integrações.
 3. **Meta Ads → Conectar:** cole o token, clique em *Validar e buscar contas*, escolha a conta de anúncio e clique em *Conectar conta*.
 4. **Google Ads → Conectar:** clique em *Autorizar no Google*.
-   - Se aparecer *Abrir login do Google*, quem tem acesso à conta faz o login.
-   - Depois, volte e clique em *Já autorizei, buscar contas*.
-   - Escolha a conta (não a gerenciadora/MCC) e clique em *Conectar conta*.
+   - Abre uma janela do Google: quem tem acesso à conta faz o login e libera o acesso. A janela fecha sozinha.
+   - As contas aparecem na gaveta (subcontas de MCC aparecem como "via MCC"). Escolha a conta e clique em *Conectar conta*.
 5. O topo passa a mostrar **Dados reais** com as contas conectadas. Painel, campanhas, insights e copilot usam esses números.
 
 ### Meta: Marketing API ou MCP da Meta
@@ -87,11 +88,17 @@ O painel, a carteira da agência e o copilot funcionam igual nos dois caminhos. 
 - **Para testar:** no [Graph API Explorer](https://developers.facebook.com/tools/explorer/), escolha um app, adicione a permissão `ads_read` e gere o token. Ele expira em poucas horas.
 - **Para uso contínuo:** no Business Manager, em Configurações do negócio › Usuários do sistema, crie um usuário do sistema, dê acesso às contas de anúncio e gere um token com `ads_read`. Esse token não expira.
 
-### MCP do Google Ads
+### Google Ads (API oficial)
 
-- Por padrão o app usa `https://google-ads-api-five.vercel.app/mcp`. Para outro endereço, crie a variável `GOOGLE_MCP_URL` na Vercel. Se o MCP exigir chave na URL, inclua a chave nela.
-- Cada cliente tem um identificador no MCP (padrão `readyai-<empresa>`). Se o cliente já usa o conector no Claude com outro identificador, informe o mesmo em *Opções avançadas*.
-- Se o MCP não tiver banco persistente, ele mostra um `refresh_token` na página de sucesso do login. Cole esse token em *Opções avançadas*.
+O app fala direto com a API do Google Ads (REST, versão em `GOOGLE_ADS_API_VERSION`, padrão `v26`), com o login do Google feito pelo próprio app. A autorização de cada cliente (refresh token) fica só no banco, na chave `gads:<id do cliente>`, e nunca vai para o navegador. *Desconectar* apaga do banco e revoga no Google.
+
+**Configurar no Google Cloud** (projeto `metrikabr`):
+1. Ative a **Google Ads API** e peça o acesso **Explorer** em *Google Ads API → Níveis de acesso*. Sem ele, a API só funciona com contas de teste. Desde setembro de 2026 não é preciso developer token nem conta MCC.
+2. Em *Google Auth Platform*: Branding com os links de `/privacidade` e `/termos`, público **Externo**, escopo `https://www.googleapis.com/auth/adwords`.
+3. Crie um cliente OAuth **Aplicativo da Web** com o redirecionamento `https://www.metrikabr.com/api/google-callback` (e `http://localhost:3000/api/google-callback` para testes).
+4. Na Vercel: `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`. Opcionais: `GOOGLE_REDIRECT_URI` (se o endereço de retorno for outro), `GOOGLE_ADS_API_VERSION` e `GOOGLE_ADS_DEVELOPER_TOKEN` (ignorado pelo Google hoje).
+
+Em modo **Teste**, só os usuários de teste cadastrados no Google Cloud conseguem autorizar, e a autorização expira em 7 dias. Para clientes de verdade, envie o app para verificação na *Central de verificação*.
 
 ## Agência (plano Scale)
 
@@ -140,7 +147,7 @@ Onde criar as chaves:
 | Investimento, receita, compras/leads/conversas, ROAS, CPA, CTR | Real (Meta e Google) |
 | Comparação com os 30 dias anteriores e variação da semana | Real |
 | Insights, saúde da conta, recomendações por campanha, copilot | Calculados sobre os dados reais |
-| Google Ads: receita e ROAS | Aparecem como n/d. O MCP ainda não devolve valor de conversão |
+| Google Ads: receita e ROAS | Real, pelo valor de conversão. Campanhas sem valor de conversão (ex.: leads) ficam fora do ROAS |
 | Gráfico diário, horário, público, região, criativos | Ainda de exemplo (sinalizado na tela) |
 | TikTok Ads | Ainda sem conector |
 | Carteira da agência (plano Scale) | Real para a Meta: cada conta de anúncio do token vira um cliente (até 100 contas) |
@@ -173,7 +180,7 @@ Com o banco ativo, só a gestora entra de cara (com a mesma senha, ou a de `ADMI
 
 - **Sem banco, tudo fica no navegador.** Sem o Upstash configurado, o app volta ao modo local: clientes, senhas e conexões ficam no localStorage de quem configurou, e não há convite por e-mail.
 - **Admin no código.** O acesso da gestora tem senha padrão no código (só o hash). Troque com `ADMIN_PASSWORD` na Vercel.
-- **Tokens no banco em texto.** Com banco, o token da Meta, o identificador do Google e a chave da IA ficam no cadastro de cada cliente, no Upstash, sem criptografia.
+- **Tokens no banco em texto.** Com banco, o token da Meta, a autorização do Google e a chave da IA ficam no cadastro de cada cliente, no Upstash, sem criptografia.
 - **Pausar e mudar orçamento continuam simulação.**
 
 ## Landing page e teste grátis

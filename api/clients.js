@@ -35,7 +35,7 @@ function cleanConn(conn) {
   if (!conn || typeof conn !== "object") return {};
   const out = {};
   if (conn.meta && typeof conn.meta === "object") out.meta = Object.fromEntries(Object.entries(conn.meta).filter(([k]) => ["token", "via", "accountId", "accountName", "user", "at"].includes(k)).map(([k, v]) => [k, txt(v, 600)]));
-  if (conn.google && typeof conn.google === "object") out.google = Object.fromEntries(Object.entries(conn.google).filter(([k]) => ["slug", "customerId", "customerName", "refreshToken", "at"].includes(k)).map(([k, v]) => [k, txt(v, 600)]));
+  if (conn.google && typeof conn.google === "object") out.google = Object.fromEntries(Object.entries(conn.google).filter(([k]) => ["via", "customerId", "customerName", "loginCustomerId", "email", "at"].includes(k)).map(([k, v]) => [k, txt(v, 600)]));
   return out;
 }
 // conexão da IA do cliente (Claude, ChatGPT ou Groq); null desconecta

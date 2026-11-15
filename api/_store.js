@@ -71,7 +71,7 @@ export async function saveClient(c, prevEmails) {
   return c;
 }
 export async function deleteClient(c) {
-  const cmds = [["DEL", K.client(c.id)], ["SREM", K.ids, c.id], ["DEL", K.email(c.email)]];
+  const cmds = [["DEL", K.client(c.id)], ["SREM", K.ids, c.id], ["DEL", K.email(c.email)], ["DEL", P + "gads:" + c.id], ["DEL", P + "gads-at:" + c.id]];
   if (c.invite && c.invite.tokenHash) cmds.push(["DEL", K.invite(c.invite.tokenHash)]);
   for (const u of c.users || []) {
     cmds.push(["DEL", K.email(u.email)]);
